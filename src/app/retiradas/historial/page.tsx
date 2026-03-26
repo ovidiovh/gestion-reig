@@ -251,27 +251,25 @@ export default function HistorialPage() {
 
           {/* Barra de acciones para selección múltiple */}
           {editables.length > 0 && (
-            <div className="flex items-center gap-3 mb-4 bg-gray-50 rounded-lg px-4 py-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4 bg-gray-50 rounded-lg px-3 sm:px-4 py-3">
               <button
                 onClick={selectAllEditables}
                 className="text-sm text-reig-green underline"
               >
-                {selected.size === editables.length ? "Deseleccionar" : "Seleccionar"} pendientes
+                {selected.size === editables.length ? "Deseleccionar" : "Seleccionar"}
               </button>
               {selected.size > 0 && (
                 <>
                   <span className="text-sm text-gray-500">
-                    {selected.size} sel. · {totalSelected.toFixed(2)} €
+                    {selected.size} sel. · {totalSelected.toFixed(0)}€
                   </span>
-                  <div className="ml-auto flex gap-2">
-                    <button
-                      disabled={updating}
-                      onClick={crearRemesa}
-                      className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                    >
-                      Crear remesa banco
-                    </button>
-                  </div>
+                  <button
+                    disabled={updating}
+                    onClick={crearRemesa}
+                    className="ml-auto px-3 py-1.5 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                  >
+                    Crear remesa
+                  </button>
                 </>
               )}
             </div>
@@ -296,7 +294,7 @@ export default function HistorialPage() {
                   <div
                     key={s.id}
                     onClick={() => !bloqueado && !enRemesa && toggleSelect(s.id)}
-                    className={`flex items-center justify-between rounded-lg px-4 py-3 transition-all ${
+                    className={`rounded-lg px-3 sm:px-4 py-3 transition-all ${
                       bloqueado || enRemesa
                         ? remesaConfirmada
                           ? "bg-green-50 opacity-90"
@@ -306,94 +304,96 @@ export default function HistorialPage() {
                         : "bg-gray-50 hover:bg-gray-100 cursor-pointer"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      {/* Checkbox solo para editables sin remesa */}
-                      {!bloqueado && !enRemesa && (
-                        <div
-                          className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                            isSelected
-                              ? "bg-reig-green border-reig-green text-white"
-                              : "border-gray-300"
-                          }`}
-                        >
-                          {isSelected && <span className="text-xs">✓</span>}
-                        </div>
-                      )}
-                      {bloqueado && !enRemesa && (
-                        <div className="w-5 h-5 flex items-center justify-center text-gray-400">🔒</div>
-                      )}
-                      {enRemesa && (
-                        <div className="w-5 h-5 flex items-center justify-center">
-                          {remesaConfirmada ? (
-                            <span className="text-green-600 text-sm">✓</span>
-                          ) : (
-                            <span className="text-amber-500 text-sm">⏳</span>
-                          )}
-                        </div>
-                      )}
-
-                      <div>
-                        <span className="font-medium">
-                          {new Date(s.fecha + "T12:00:00").toLocaleDateString("es-ES", {
-                            weekday: "short",
-                            day: "numeric",
-                            month: "short",
-                          })}
-                        </span>
-                        <span className="text-xs text-gray-400 ml-2">
-                          {s.num_cajas} caja{Number(s.num_cajas) !== 1 ? "s" : ""}
-                        </span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                        {/* Checkbox / icono estado */}
+                        {!bloqueado && !enRemesa && (
+                          <div
+                            className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-all ${
+                              isSelected
+                                ? "bg-reig-green border-reig-green text-white"
+                                : "border-gray-300"
+                            }`}
+                          >
+                            {isSelected && <span className="text-xs">✓</span>}
+                          </div>
+                        )}
+                        {bloqueado && !enRemesa && (
+                          <div className="w-5 h-5 flex items-center justify-center shrink-0 text-gray-400">🔒</div>
+                        )}
                         {enRemesa && (
-                          <span className="text-xs text-blue-500 ml-2">
-                            Remesa #{s.remesa_id}
+                          <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                            {remesaConfirmada ? (
+                              <span className="text-green-600 text-sm">✓</span>
+                            ) : (
+                              <span className="text-amber-500 text-sm">⏳</span>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="min-w-0">
+                          <span className="font-medium text-sm sm:text-base">
+                            {new Date(s.fecha + "T12:00:00").toLocaleDateString("es-ES", {
+                              weekday: "short",
+                              day: "numeric",
+                              month: "short",
+                            })}
+                          </span>
+                          <span className="text-xs text-gray-400 ml-1 sm:ml-2">
+                            {s.num_cajas}cj
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                        {/* Badge destino */}
+                        {!bloqueado && !enRemesa ? (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); entregarABea(s.id); }}
+                            disabled={updating}
+                            className="text-xs rounded px-2 py-1 bg-purple-50 text-purple-600 hover:bg-purple-100 font-medium transition-colors hidden sm:inline-block"
+                          >
+                            A Bea
+                          </button>
+                        ) : (
+                          <span
+                            className={`text-xs rounded px-2 py-1 font-medium ${
+                              enRemesa
+                                ? remesaConfirmada
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-blue-100 text-blue-700"
+                                : DESTINO_COLORS[s.destino] || ""
+                            }`}
+                          >
+                            {enRemesa
+                              ? remesaConfirmada
+                                ? "Banco ✓"
+                                : "Banco ⏳"
+                              : DESTINO_LABELS[s.destino] || s.destino}
                           </span>
                         )}
-                      </div>
-                    </div>
 
-                    <div className="flex items-center gap-3">
-                      {/* Badge destino */}
-                      {!bloqueado && !enRemesa ? (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); entregarABea(s.id); }}
-                          disabled={updating}
-                          className="text-xs rounded px-2 py-1 bg-purple-50 text-purple-600 hover:bg-purple-100 font-medium transition-colors"
-                        >
-                          A Bea
-                        </button>
-                      ) : (
+                        <span className="font-mono font-bold text-sm sm:text-base">
+                          {Number(s.total_cajas).toFixed(0)}€
+                        </span>
                         <span
-                          className={`text-xs rounded px-2 py-1 font-medium ${
-                            enRemesa
-                              ? remesaConfirmada
-                                ? "bg-green-100 text-green-700"
-                                : "bg-blue-100 text-blue-700"
-                              : DESTINO_COLORS[s.destino] || ""
+                          className={`text-sm ${
+                            s.auditada === 1
+                              ? "text-green-600"
+                              : s.auditada === -1
+                              ? "text-red-600"
+                              : "text-gray-400"
                           }`}
                         >
-                          {enRemesa
-                            ? remesaConfirmada
-                              ? "Banco ✓"
-                              : "Banco ⏳"
-                            : DESTINO_LABELS[s.destino] || s.destino}
+                          {s.auditada === 1 ? "✓" : s.auditada === -1 ? "✗" : "—"}
                         </span>
-                      )}
-
-                      <span className="font-mono font-bold">
-                        {Number(s.total_cajas).toFixed(2)} €
-                      </span>
-                      <span
-                        className={`text-sm ${
-                          s.auditada === 1
-                            ? "text-green-600"
-                            : s.auditada === -1
-                            ? "text-red-600"
-                            : "text-gray-400"
-                        }`}
-                      >
-                        {s.auditada === 1 ? "✓" : s.auditada === -1 ? "✗" : "—"}
-                      </span>
+                      </div>
                     </div>
+                    {enRemesa && (
+                      <div className="text-xs text-blue-500 mt-1 ml-7 sm:ml-8">
+                        Remesa #{s.remesa_id}
+                      </div>
+                    )}
                   </div>
                 );
               })}

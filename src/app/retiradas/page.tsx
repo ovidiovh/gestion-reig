@@ -176,7 +176,7 @@ export default function RetiradasPage() {
               <button
                 key={n}
                 onClick={() => toggleCaja(n)}
-                className={`py-3 rounded-lg text-lg font-semibold transition-all ${
+                className={`py-3 rounded-lg text-base sm:text-lg font-semibold transition-all ${
                   cajasSeleccionadas.includes(n)
                     ? "bg-reig-green text-white shadow-md"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -203,14 +203,13 @@ export default function RetiradasPage() {
       {paso === "cajas" && cajaActual !== null && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold">
+            <h3 className="text-lg sm:text-xl font-semibold">
               Caja {cajaActual}
-              <span className="text-sm text-gray-400 ml-2">
-                ({cajasSeleccionadas.indexOf(cajaActual) + 1} de{" "}
-                {cajasSeleccionadas.length})
+              <span className="text-xs sm:text-sm text-gray-400 ml-2">
+                ({cajasSeleccionadas.indexOf(cajaActual) + 1}/{cajasSeleccionadas.length})
               </span>
             </h3>
-            <span className="text-2xl font-mono font-bold text-reig-green">
+            <span className="text-xl sm:text-2xl font-mono font-bold text-reig-green">
               {calcTotal(billetes).toFixed(2)} €
             </span>
           </div>
@@ -219,12 +218,12 @@ export default function RetiradasPage() {
             {DENOMINACIONES.map((d) => (
               <div
                 key={d}
-                className="flex items-center gap-4 bg-gray-50 rounded-lg p-3"
+                className="flex items-center gap-2 sm:gap-4 bg-gray-50 rounded-lg p-2 sm:p-3"
               >
-                <span className="w-16 text-right font-mono font-semibold text-lg">
-                  {d} €
+                <span className="w-12 sm:w-16 text-right font-mono font-semibold text-base sm:text-lg">
+                  {d}€
                 </span>
-                <span className="text-gray-400">×</span>
+                <span className="text-gray-400 text-sm">×</span>
                 <input
                   type="number"
                   min={0}
@@ -233,12 +232,12 @@ export default function RetiradasPage() {
                     setBillete(d, parseInt(e.target.value) || 0)
                   }
                   onFocus={(e) => e.target.select()}
-                  className="w-20 text-center border border-gray-300 rounded-lg py-2 text-lg font-mono focus:border-reig-green focus:ring-1 focus:ring-reig-green outline-none"
+                  className="w-16 sm:w-20 text-center border border-gray-300 rounded-lg py-2 text-base sm:text-lg font-mono focus:border-reig-green focus:ring-1 focus:ring-reig-green outline-none"
                   inputMode="numeric"
                 />
-                <span className="text-gray-400">=</span>
-                <span className="w-24 text-right font-mono text-lg">
-                  {(d * billetes[d]).toFixed(2)} €
+                <span className="text-gray-400 text-sm">=</span>
+                <span className="flex-1 text-right font-mono text-base sm:text-lg">
+                  {(d * billetes[d]).toFixed(0)}€
                 </span>
               </div>
             ))}
@@ -341,7 +340,7 @@ export default function RetiradasPage() {
                 <span className="w-24 text-right font-mono text-lg">
                   {(d * auditBilletes[d]).toFixed(2)} €
                 </span>
-                <span className="ml-auto text-xs text-gray-400">
+                <span className="text-xs text-gray-400 hidden sm:inline">
                   cajas: {sumarPorDenom(d)}
                 </span>
               </div>
