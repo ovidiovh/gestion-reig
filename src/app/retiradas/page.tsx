@@ -24,8 +24,7 @@ const hoy = () => new Date().toISOString().slice(0, 10);
 // ─── Componente principal ────────────────────────────────
 export default function RetiradasPage() {
   const [paso, setPaso] = useState<Paso>("cajas");
-  const [fecha, setFecha] = useState(hoy());
-  const [destino, setDestino] = useState<"caja_fuerte" | "bea">("caja_fuerte");
+  const fecha = hoy(); // Siempre hoy, no editable
   const [cajasSeleccionadas, setCajasSeleccionadas] = useState<number[]>([]);
   const [cajaActual, setCajaActual] = useState<number | null>(null);
   const [cajasData, setCajasData] = useState<CajaData[]>([]);
@@ -109,7 +108,7 @@ export default function RetiradasPage() {
     try {
       const body = {
         fecha,
-        destino,
+        destino: "caja_fuerte",
         cajas: cajasData.map((c) => ({
           num_caja: c.num_caja,
           b200: c.billetes[200], b100: c.billetes[100], b50: c.billetes[50],
@@ -137,8 +136,7 @@ export default function RetiradasPage() {
 
   const reset = () => {
     setPaso("cajas");
-    setFecha(hoy());
-    setDestino("caja_fuerte");
+    // fecha se calcula siempre con hoy()
     setCajasSeleccionadas([]);
     setCajaActual(null);
     setCajasData([]);
@@ -158,44 +156,16 @@ export default function RetiradasPage() {
       {/* ── PASO 1: Selección de cajas ────────────────── */}
       {paso === "cajas" && cajaActual === null && (
         <div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Fecha
-            </label>
-            <input
-              type="date"
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Destino
-            </label>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setDestino("caja_fuerte")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  destino === "caja_fuerte"
-                    ? "bg-reig-green text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                Caja fuerte
-              </button>
-              <button
-                onClick={() => setDestino("bea")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  destino === "bea"
-                    ? "bg-reig-green text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                Entrega a Bea
-              </button>
-            </div>
+          {/* Fecha: siempre hoy */}
+          <div className="mb-4 flex items-center gap-2 text-sm text-gray-500">
+            <span>Fecha:</span>
+            <span className="font-mono font-medium text-gray-800">
+              {new Date(fecha + "T12:00:00").toLocaleDateString("es-ES", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              })}
+            </span>
           </div>
 
           <p className="text-sm font-medium text-gray-700 mb-3">
@@ -293,7 +263,7 @@ export default function RetiradasPage() {
         <div>
           <h3 className="text-xl font-semibold mb-2">Resumen de cajas</h3>
           <p className="text-sm text-gray-500 mb-4">
-            {fecha} — Destino: {destino === "caja_fuerte" ? "Caja fuerte" : "Entrega a Bea"}
+            {new Date(fecha + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "short" })} — Destino: Caja fuerte
           </p>
           <div className="space-y-2 mb-4">
             {cajasData.map((c) => (
