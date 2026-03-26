@@ -1,0 +1,56 @@
+import { db } from "@/lib/db";
+import { NextResponse } from "next/server";
+
+export async function POST() {
+  try {
+    await db.executeMultiple(`
+      CREATE TABLE IF NOT EXISTS retiradas_sesion (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        fecha         TEXT NOT NULL,
+        created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+        usuario       TEXT NOT NULL DEFAULT 'ovidio',
+        total_cajas   REAL NOT NULL DEFAULT 0,
+        total_audit   REAL,
+        destino       TEXT NOT NULL DEFAULT 'caja_fuerte',
+        auditada      INTEGER NOT NULL DEFAULT 0,
+        notas         TEXT
+      );
+
+      CREATE TABLE IF NOT EXISTS retiradas_caja (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        sesion_id     INTEGER NOT NULL REFERENCES retiradas_sesion(id),
+        num_caja      INTEGER NOT NULL CHECK(num_caja BETWEEN 1 AND 10),
+        b200          INTEGER NOT NULL DEFAULT 0,
+        b100          INTEGER NOT NULL DEFAULT 0,
+        b50           INTEGER NOT NULL DEFAULT 0,
+        b20           INTEGER NOT NULL DEFAULT 0,
+        b10           INTEGER NOT NULL DEFAULT 0,
+        b5            INTEGER NOT NULL DEFAULT 0,
+        total         REAL NOT NULL DEFAULT 0,
+        created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE(sesion_id, num_caja)
+      );
+
+      CREATE TABLE IF NOT EXISTS retiradas_audit (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        sesion_id     INTEGER NOT NULL UNIQUE REFERENCES retiradas_sesion(id),
+        b200          INTEGER NOT NULL DEFAULT 0,
+        b100          INTEGER NOT NULL DEFAULT 0,
+        b50           INTEGER NOT NULL DEFAULT 0,
+        b20           INTEGER NOT NULL DEFAULT 0,
+        b10           INTEGER NOT NULL DEFAULT 0,
+        b5            INTEGER NOT NULL DEFAULT 0,
+        total         REAL NOT NULL DEFAULT 0,
+        cuadra        INTEGER NOT NULL DEFAULT 0,
+        created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+    `);
+
+    return NextResponse.json({ ok: true, message: "Tablas creadas correctamente" });
+  } catch (error) {
+    return NextResponse.json(
+      { ok: false, error: String(error) },
+      { status: 500 }
+    );
+  }
+}

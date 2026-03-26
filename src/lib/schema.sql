@@ -1,0 +1,47 @@
+-- =============================================
+-- RETIRADAS DE CAJA — Schema
+-- =============================================
+
+-- Sesión de retirada (una por día/operación)
+CREATE TABLE IF NOT EXISTS retiradas_sesion (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  fecha         TEXT NOT NULL,                    -- YYYY-MM-DD
+  created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  usuario       TEXT NOT NULL DEFAULT 'ovidio',
+  total_cajas   REAL NOT NULL DEFAULT 0,          -- suma automática de todas las cajas
+  total_audit   REAL,                             -- suma del conteo de auditoría
+  destino       TEXT NOT NULL DEFAULT 'caja_fuerte', -- caja_fuerte | bea
+  auditada      INTEGER NOT NULL DEFAULT 0,       -- 0=pendiente, 1=cuadra, -1=descuadre
+  notas         TEXT
+);
+
+-- Detalle por caja dentro de una sesión
+CREATE TABLE IF NOT EXISTS retiradas_caja (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  sesion_id     INTEGER NOT NULL REFERENCES retiradas_sesion(id),
+  num_caja      INTEGER NOT NULL CHECK(num_caja BETWEEN 1 AND 10),
+  b200          INTEGER NOT NULL DEFAULT 0,       -- cantidad de billetes de 200€
+  b100          INTEGER NOT NULL DEFAULT 0,
+  b50           INTEGER NOT NULL DEFAULT 0,
+  b20           INTEGER NOT NULL DEFAULT 0,
+  b10           INTEGER NOT NULL DEFAULT 0,
+  b5            INTEGER NOT NULL DEFAULT 0,
+  total         REAL NOT NULL DEFAULT 0,          -- calculado: 200*b200 + 100*b100 + ...
+  created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(sesion_id, num_caja)
+);
+
+-- Auditoría: conteo global de billetes para verificar
+CREATE TABLE IF NOT EXISTS retiradas_audit (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  sesion_id     INTEGER NOT NULL UNIQUE REFERENCES retiradas_sesion(id),
+  b200          INTEGER NOT NULL DEFAULT 0,
+  b100          INTEGER NOT NULL DEFAULT 0,
+  b50           INTEGER NOT NULL DEFAULT 0,
+  b20           INTEGER NOT NULL DEFAULT 0,
+  b10           INTEGER NOT NULL DEFAULT 0,
+  b5            INTEGER NOT NULL DEFAULT 0,
+  total         REAL NOT NULL DEFAULT 0,
+  cuadra        INTEGER NOT NULL DEFAULT 0,       -- 1=sí, 0=no
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);

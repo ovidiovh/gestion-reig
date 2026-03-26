@@ -1,0 +1,112 @@
+import { db } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
+
+// GET — listar sesiones de retirada
+export async function GET() {
+  try {
+    const result = await db.execute(
+      `SELECT s.*,
+              (SELECT COUNT(*) FROM retiradas_caja c WHERE c.sesion_id = s.id) as num_cajas
+       FROM retiradas_sesion s
+       ORDER BY s.fecha DESC, s.created_at DESC
+       LIMIT 50`
+    );
+    return NextResponse.json({ ok: true, data: result.rows });
+  } catch (error) {
+    return NextResponse.json({ ok: false, error: String(error) }, { status: 500 });
+  }
+}
+
+// POST — crear nueva sesión de retirada
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { fecha, destino, cajas, audit } = body as {
+      fecha: string;
+      destino?: string;
+      cajas: Array<{
+        num_caja: number;
+        b200: number; b100: number; b50: number;
+        b20: number; b10: number; b5: number;
+      }>;
+      audit?: {
+        b200: number; b100: number; b50: number;
+        b20: number; b10: number; b5: number;
+      };
+    };
+
+    if (!fecha || !cajas || cajas.length === 0) {
+      return NextResponse.json(
+        { ok: false, error: "Faltan fecha y/o cajas" },
+        { status: 400 }
+      );
+    }
+
+    // Calcular totales por caja
+    const cajasConTotal = cajas.map((c) => ({
+      ...c,
+      total: c.b200 * 200 + c.b100 * 100 + c.b50 * 50 + c.b20 * 20 + c.b10 * 10 + c.b5 * 5,
+    }));
+
+    const totalCajas = cajasConTotal.reduce((sum, c) => sum + c.total, 0);
+
+    // Crear sesión
+    const sesionResult = await db.execute({
+      sql: `INSERT INTO retiradas_sesion (fecha, destino, total_cajas) VALUES (?, ?, ?)`,
+      args: [fecha, destino || "caja_fuerte", totalCajas],
+    });
+
+    const sesionId = Number(sesionResult.lastInsertRowid);
+
+    // Insertar cada caja
+    for (const c of cajasConTotal) {
+      await db.execute({
+        sql: `INSERT INTO retiradas_caja (sesion_id, num_caja, b200, b100, b50, b20, b10, b5, total)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [sesionId, c.num_caja, c.b200, c.b100, c.b50, c.b20, c.b10, c.b5, c.total],
+      });
+    }
+
+    // Si viene auditoría, insertarla y comparar
+    let auditada = 0;
+    if (audit) {
+      const totalAudit =
+        audit.b200 * 200 + audit.b100 * 100 + audit.b50 * 50 +
+        audit.b20 * 20 + audit.b10 * 10 + audit.b5 * 5;
+
+      // Comparar billetes individuales
+      const sumB200 = cajasConTotal.reduce((s, c) => s + c.b200, 0);
+      const sumB100 = cajasConTotal.reduce((s, c) => s + c.b100, 0);
+      const sumB50 = cajasConTotal.reduce((s, c) => s + c.b50, 0);
+      const sumB20 = cajasConTotal.reduce((s, c) => s + c.b20, 0);
+      const sumB10 = cajasConTotal.reduce((s, c) => s + c.b10, 0);
+      const sumB5 = cajasConTotal.reduce((s, c) => s + c.b5, 0);
+
+      const cuadra =
+        audit.b200 === sumB200 && audit.b100 === sumB100 &&
+        audit.b50 === sumB50 && audit.b20 === sumB20 &&
+        audit.b10 === sumB10 && audit.b5 === sumB5 ? 1 : 0;
+
+      await db.execute({
+        sql: `INSERT INTO retiradas_audit (sesion_id, b200, b100, b50, b20, b10, b5, total, cuadra)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [sesionId, audit.b200, audit.b100, audit.b50, audit.b20, audit.b10, audit.b5, totalAudit, cuadra],
+      });
+
+      auditada = cuadra ? 1 : -1;
+      await db.execute({
+        sql: `UPDATE retiradas_sesion SET total_audit = ?, auditada = ? WHERE id = ?`,
+        args: [totalAudit, auditada, sesionId],
+      });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      sesion_id: sesionId,
+      total_cajas: totalCajas,
+      auditada,
+    });
+  } catch (error) {
+    return NextResponse.json({ ok: false, error: String(error) }, { status: 500 });
+  }
+}
