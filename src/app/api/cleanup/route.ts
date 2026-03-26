@@ -1,37 +1,38 @@
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
-// ONE-TIME cleanup — delete duplicate sessions, keep lowest ID per fecha
+// ONE-TIME cleanup — delete duplicate sessions using single SQL statements
 export async function POST(req: NextRequest) {
   const secret = req.nextUrl.searchParams.get("key");
   if (secret !== "reig-cleanup-2026") {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  // Find duplicates: for each fecha, keep the MIN(id) and delete the rest
-  const dupes = await db.execute(`
-    SELECT id FROM retiradas_sesion
-    WHERE id NOT IN (
+  // Delete audit records for duplicate sessions in one go
+  await db.execute(`
+    DELETE FROM retiradas_audit WHERE sesion_id NOT IN (
       SELECT MIN(id) FROM retiradas_sesion GROUP BY fecha
     )
   `);
 
-  const idsToDelete = dupes.rows.map((r) => Number(r.id));
+  // Delete caja records for duplicate sessions
+  await db.execute(`
+    DELETE FROM retiradas_caja WHERE sesion_id NOT IN (
+      SELECT MIN(id) FROM retiradas_sesion GROUP BY fecha
+    )
+  `);
 
-  for (const id of idsToDelete) {
-    await db.execute({ sql: "DELETE FROM retiradas_audit WHERE sesion_id = ?", args: [id] });
-    await db.execute({ sql: "DELETE FROM retiradas_caja WHERE sesion_id = ?", args: [id] });
-    await db.execute({ sql: "DELETE FROM retiradas_sesion WHERE id = ?", args: [id] });
-  }
+  // Delete duplicate sessions themselves
+  await db.execute(`
+    DELETE FROM retiradas_sesion WHERE id NOT IN (
+      SELECT MIN(id) FROM retiradas_sesion GROUP BY fecha
+    )
+  `);
 
-  // Verify what's left
+  // Verify
   const remaining = await db.execute(
-    "SELECT id, fecha, total_cajas FROM retiradas_sesion ORDER BY fecha"
+    "SELECT id, fecha, total_cajas, destino FROM retiradas_sesion ORDER BY fecha"
   );
 
-  return NextResponse.json({
-    ok: true,
-    deleted_ids: idsToDelete,
-    remaining: remaining.rows,
-  });
+  return NextResponse.json({ ok: true, remaining: remaining.rows });
 }
