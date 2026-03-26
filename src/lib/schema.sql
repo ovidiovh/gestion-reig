@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS retiradas_sesion (
   usuario       TEXT NOT NULL DEFAULT 'ovidio',
   total_cajas   REAL NOT NULL DEFAULT 0,          -- suma automática de todas las cajas
   total_audit   REAL,                             -- suma del conteo de auditoría
-  destino       TEXT NOT NULL DEFAULT 'caja_fuerte', -- caja_fuerte | bea
+  destino       TEXT NOT NULL DEFAULT 'caja_fuerte', -- caja_fuerte | entrega_bea | banco
+  remesa_id     INTEGER REFERENCES retiradas_remesa(id), -- NULL si no está en remesa
   auditada      INTEGER NOT NULL DEFAULT 0,       -- 0=pendiente, 1=cuadra, -1=descuadre
   notas         TEXT
 );
@@ -29,6 +30,17 @@ CREATE TABLE IF NOT EXISTS retiradas_caja (
   total         REAL NOT NULL DEFAULT 0,          -- calculado: 200*b200 + 100*b100 + ...
   created_at    TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE(sesion_id, num_caja)
+);
+
+-- Remesa: agrupación de sesiones para un único ingreso bancario
+CREATE TABLE IF NOT EXISTS retiradas_remesa (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  total         REAL NOT NULL DEFAULT 0,           -- suma de las sesiones agrupadas
+  estado        TEXT NOT NULL DEFAULT 'pendiente', -- pendiente | confirmada
+  confirmada_at TEXT,                              -- fecha de confirmación (email banco)
+  email_subject TEXT,                              -- asunto del email de confirmación
+  notas         TEXT
 );
 
 -- Auditoría: conteo global de billetes para verificar

@@ -7,8 +7,11 @@ export async function GET(req: NextRequest) {
     const desde = req.nextUrl.searchParams.get("desde") || "2000-01-01";
     const result = await db.execute({
       sql: `SELECT s.*,
-              (SELECT COUNT(*) FROM retiradas_caja c WHERE c.sesion_id = s.id) as num_cajas
+              (SELECT COUNT(*) FROM retiradas_caja c WHERE c.sesion_id = s.id) as num_cajas,
+              r.estado as remesa_estado,
+              r.confirmada_at as remesa_confirmada_at
        FROM retiradas_sesion s
+       LEFT JOIN retiradas_remesa r ON s.remesa_id = r.id
        WHERE s.fecha >= ?
        ORDER BY s.fecha DESC, s.created_at DESC
        LIMIT 200`,

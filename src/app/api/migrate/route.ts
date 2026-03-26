@@ -13,6 +13,7 @@ export async function POST() {
         total_audit   REAL,
         destino       TEXT NOT NULL DEFAULT 'caja_fuerte',
         auditada      INTEGER NOT NULL DEFAULT 0,
+        remesa_id     INTEGER,
         notas         TEXT
       );
 
@@ -44,9 +45,26 @@ export async function POST() {
         cuadra        INTEGER NOT NULL DEFAULT 0,
         created_at    TEXT NOT NULL DEFAULT (datetime('now'))
       );
+
+      CREATE TABLE IF NOT EXISTS retiradas_remesa (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+        total         REAL NOT NULL DEFAULT 0,
+        estado        TEXT NOT NULL DEFAULT 'pendiente',
+        confirmada_at TEXT,
+        email_subject TEXT,
+        notas         TEXT
+      );
     `);
 
-    return NextResponse.json({ ok: true, message: "Tablas creadas correctamente" });
+    // Migración incremental: añadir remesa_id si no existe
+    try {
+      await db.execute("ALTER TABLE retiradas_sesion ADD COLUMN remesa_id INTEGER");
+    } catch {
+      // Ya existe, ignorar
+    }
+
+    return NextResponse.json({ ok: true, message: "Tablas creadas/actualizadas correctamente" });
   } catch (error) {
     return NextResponse.json(
       { ok: false, error: String(error) },
