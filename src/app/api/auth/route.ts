@@ -49,16 +49,16 @@ export async function POST(req: NextRequest) {
     }
 
     const token = makeToken(emailNorm, Date.now());
-    const response = NextResponse.json({ ok: true });
-    response.cookies.set("reig-auth", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60, // 30 días
-      path: "/",
-    });
+    const maxAge = 30 * 24 * 60 * 60;
+    const cookieValue = `reig-auth=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
 
-    return response;
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Set-Cookie": cookieValue,
+      },
+    });
   } catch (error) {
     return NextResponse.json({ ok: false, error: String(error) }, { status: 500 });
   }
@@ -66,13 +66,11 @@ export async function POST(req: NextRequest) {
 
 // DELETE — logout
 export async function DELETE() {
-  const response = NextResponse.json({ ok: true });
-  response.cookies.set("reig-auth", "", {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-    maxAge: 0,
-    path: "/",
+  return new Response(JSON.stringify({ ok: true }), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
+      "Set-Cookie": "reig-auth=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0",
+    },
   });
-  return response;
 }
