@@ -45,6 +45,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // No permitir crear retiradas con fecha pasada
+    const hoy = new Date().toISOString().slice(0, 10);
+    if (fecha !== hoy) {
+      return NextResponse.json(
+        { ok: false, error: "Solo se pueden crear retiradas con fecha de hoy" },
+        { status: 400 }
+      );
+    }
+
     // Calcular totales por caja
     const cajasConTotal = cajas.map((c) => ({
       ...c,
@@ -109,6 +118,52 @@ export async function POST(req: NextRequest) {
       total_cajas: totalCajas,
       auditada,
     });
+  } catch (error) {
+    return NextResponse.json({ ok: false, error: String(error) }, { status: 500 });
+  }
+}
+
+// PATCH — cambiar destino de una sesión (con bloqueo)
+export async function PATCH(req: NextRequest) {
+  try {
+    const { id, destino } = (await req.json()) as {
+      id: number;
+      destino: string;
+    };
+
+    const validDestinos = ["caja_fuerte", "entrega_bea", "banco"];
+    if (!id || !destino || !validDestinos.includes(destino)) {
+      return NextResponse.json(
+        { ok: false, error: "ID y destino válido requeridos (caja_fuerte, entrega_bea, banco)" },
+        { status: 400 }
+      );
+    }
+
+    // Verificar que la sesión existe y no está bloqueada
+    const sesion = await db.execute({
+      sql: "SELECT id, destino FROM retiradas_sesion WHERE id = ?",
+      args: [id],
+    });
+
+    if (sesion.rows.length === 0) {
+      return NextResponse.json({ ok: false, error: "Sesión no encontrada" }, { status: 404 });
+    }
+
+    const actual = sesion.rows[0].destino as string;
+    // Si ya está en banco o entrega_bea → bloqueado, no se puede cambiar
+    if (actual === "banco" || actual === "entrega_bea") {
+      return NextResponse.json(
+        { ok: false, error: `Sesión bloqueada — destino final: ${actual}` },
+        { status: 403 }
+      );
+    }
+
+    await db.execute({
+      sql: "UPDATE retiradas_sesion SET destino = ? WHERE id = ?",
+      args: [destino, id],
+    });
+
+    return NextResponse.json({ ok: true, id, destino });
   } catch (error) {
     return NextResponse.json({ ok: false, error: String(error) }, { status: 500 });
   }
