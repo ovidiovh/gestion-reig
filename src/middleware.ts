@@ -26,7 +26,7 @@ export function middleware(req: NextRequest) {
   }
 
   // Verificación básica del token (formato válido + no expirado)
-  const parts = token.split(".");
+  const parts = token.split("~");
   if (parts.length !== 2) {
     return NextResponse.redirect(new URL("/login", req.url));
   }

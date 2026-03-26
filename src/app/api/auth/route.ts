@@ -22,7 +22,7 @@ function makeToken(email: string, timestamp: number): string {
     hash = ((hash << 5) - hash) + char;
     hash |= 0;
   }
-  return `${email}|${Math.abs(hash).toString(36)}.${timestamp}`;
+  return `${email}|${Math.abs(hash).toString(36)}~${timestamp}`;
 }
 
 // POST — login
