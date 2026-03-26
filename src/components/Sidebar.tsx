@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 
 const modules = [
   { name: "Inicio", href: "/", icon: "🏠" },
-  { name: "Retiradas de Caja", href: "/retiradas", icon: "💶", ready: true },
+  { name: "Nueva retirada", href: "/retiradas", icon: "💶", ready: true },
+  { name: "Historial", href: "/retiradas/historial", icon: "📋", ready: true },
   { name: "Ventas", href: "/ventas", icon: "📊", ready: false },
   { name: "CRM", href: "/crm", icon: "👥", ready: false },
 ];

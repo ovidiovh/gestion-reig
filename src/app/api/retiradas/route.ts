@@ -2,15 +2,18 @@ import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET — listar sesiones de retirada
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const result = await db.execute(
-      `SELECT s.*,
+    const desde = req.nextUrl.searchParams.get("desde") || "2000-01-01";
+    const result = await db.execute({
+      sql: `SELECT s.*,
               (SELECT COUNT(*) FROM retiradas_caja c WHERE c.sesion_id = s.id) as num_cajas
        FROM retiradas_sesion s
+       WHERE s.fecha >= ?
        ORDER BY s.fecha DESC, s.created_at DESC
-       LIMIT 50`
-    );
+       LIMIT 200`,
+      args: [desde],
+    });
     return NextResponse.json({ ok: true, data: result.rows });
   } catch (error) {
     return NextResponse.json({ ok: false, error: String(error) }, { status: 500 });
