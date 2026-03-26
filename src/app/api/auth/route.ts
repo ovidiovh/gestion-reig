@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 
 const AUTH_SECRET = process.env.AUTH_SECRET || "reig-default-secret-change-me";
 
@@ -50,8 +49,8 @@ export async function POST(req: NextRequest) {
     }
 
     const token = makeToken(emailNorm, Date.now());
-    const cookieStore = await cookies();
-    cookieStore.set("reig-auth", token, {
+    const response = NextResponse.json({ ok: true });
+    response.cookies.set("reig-auth", token, {
       httpOnly: true,
       secure: true,
       sameSite: "lax",
@@ -59,7 +58,7 @@ export async function POST(req: NextRequest) {
       path: "/",
     });
 
-    return NextResponse.json({ ok: true });
+    return response;
   } catch (error) {
     return NextResponse.json({ ok: false, error: String(error) }, { status: 500 });
   }
@@ -67,7 +66,13 @@ export async function POST(req: NextRequest) {
 
 // DELETE — logout
 export async function DELETE() {
-  const cookieStore = await cookies();
-  cookieStore.delete("reig-auth");
-  return NextResponse.json({ ok: true });
+  const response = NextResponse.json({ ok: true });
+  response.cookies.set("reig-auth", "", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    maxAge: 0,
+    path: "/",
+  });
+  return response;
 }
