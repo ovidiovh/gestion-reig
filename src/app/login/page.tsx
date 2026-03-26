@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,7 +19,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
 
@@ -49,6 +50,24 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
               <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:border-reig-green focus:ring-1 focus:ring-reig-green outline-none"
+                placeholder="tu@email.com"
+                autoFocus
+              />
+            </div>
+
+            <div className="mb-4">
+              <label
                 htmlFor="password"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
@@ -71,7 +90,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading || !password}
+              disabled={loading || !email || !password}
               className="w-full py-3 bg-reig-green text-white rounded-lg font-semibold hover:bg-reig-green-dark transition-colors disabled:opacity-50"
             >
               {loading ? "Entrando..." : "Entrar"}

@@ -2,50 +2,54 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 const AUTH_SECRET = process.env.AUTH_SECRET || "reig-default-secret-change-me";
-const AUTH_PASSWORD = process.env.AUTH_PASSWORD || "";
 
-function makeToken(timestamp: number): string {
-  // Simple hash: password + secret + timestamp
-  const raw = `${AUTH_PASSWORD}:${AUTH_SECRET}:${timestamp}`;
+// Usuarios autorizados: email → contraseña (de variables de entorno)
+// Formato AUTH_USERS: "email1:pass1,email2:pass2"
+function getUsers(): Record<string, string> {
+  const raw = process.env.AUTH_USERS || "";
+  const users: Record<string, string> = {};
+  raw.split(",").forEach((pair) => {
+    const [email, pass] = pair.split(":");
+    if (email && pass) users[email.trim().toLowerCase()] = pass.trim();
+  });
+  return users;
+}
+
+function makeToken(email: string, timestamp: number): string {
+  const raw = `${email}:${AUTH_SECRET}:${timestamp}`;
   let hash = 0;
   for (let i = 0; i < raw.length; i++) {
     const char = raw.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
     hash |= 0;
   }
-  return `${Math.abs(hash).toString(36)}.${timestamp}`;
-}
-
-export function verifyToken(token: string): boolean {
-  const parts = token.split(".");
-  if (parts.length !== 2) return false;
-  const timestamp = parseInt(parts[1]);
-  if (isNaN(timestamp)) return false;
-  // Token válido 30 días
-  if (Date.now() - timestamp > 30 * 24 * 60 * 60 * 1000) return false;
-  return token === makeToken(timestamp);
+  return `${email}|${Math.abs(hash).toString(36)}.${timestamp}`;
 }
 
 // POST — login
 export async function POST(req: NextRequest) {
   try {
-    const { password } = await req.json();
+    const { email, password } = await req.json();
+    const users = getUsers();
 
-    if (!AUTH_PASSWORD) {
+    if (Object.keys(users).length === 0) {
       return NextResponse.json(
-        { ok: false, error: "AUTH_PASSWORD no configurada en el servidor" },
+        { ok: false, error: "No hay usuarios configurados en el servidor" },
         { status: 500 }
       );
     }
 
-    if (password !== AUTH_PASSWORD) {
+    const emailNorm = (email || "").trim().toLowerCase();
+    const userPass = users[emailNorm];
+
+    if (!userPass || userPass !== password) {
       return NextResponse.json(
-        { ok: false, error: "Contraseña incorrecta" },
+        { ok: false, error: "Email o contraseña incorrectos" },
         { status: 401 }
       );
     }
 
-    const token = makeToken(Date.now());
+    const token = makeToken(emailNorm, Date.now());
     const cookieStore = await cookies();
     cookieStore.set("reig-auth", token, {
       httpOnly: true,
