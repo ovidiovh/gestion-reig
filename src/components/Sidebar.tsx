@@ -86,7 +86,7 @@ const icons = {
     </svg>
   ),
   chevron: (
-    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
     </svg>
   ),
@@ -229,25 +229,25 @@ export default function Sidebar({
         {section.collapsible ? (
           <button
             onClick={() => toggleSection(section.key)}
-            className="w-full flex items-center justify-between px-3 pb-1 pt-0.5 group"
+            className="w-full flex items-center justify-between px-3 pb-1.5 pt-1 group"
           >
             <span
-              className={`text-[10px] font-semibold tracking-wider transition-colors ${
-                hasActive ? "text-white/70" : "text-white/40 group-hover:text-white/50"
+              className={`text-xs font-bold tracking-wider transition-colors ${
+                hasActive ? "text-white/80" : "text-white/50 group-hover:text-white/70"
               }`}
             >
               {section.title}
             </span>
             <span
-              className={`text-white/30 transition-transform duration-200 ${
+              className={`transition-transform duration-200 ${
                 isCollapsed ? "-rotate-90" : ""
-              }`}
+              } ${hasActive ? "text-white/60" : "text-white/40 group-hover:text-white/60"}`}
             >
               {icons.chevron}
             </span>
           </button>
         ) : (
-          <p className="px-3 pb-1 text-[10px] font-semibold tracking-wider text-white/40">
+          <p className="px-3 pb-1.5 text-xs font-bold tracking-wider text-white/50">
             {section.title}
           </p>
         )}
