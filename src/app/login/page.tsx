@@ -71,7 +71,7 @@ function LoginContent() {
 
           {/* Botón Google */}
           <button
-            onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+            onClick={() => signIn("google", { callbackUrl: "/" })}
             className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg border text-sm font-medium transition-all hover:bg-gray-50 active:scale-[0.98]"
             style={{
               borderColor: "#d1d5db",

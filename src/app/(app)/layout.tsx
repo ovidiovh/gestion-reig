@@ -1,0 +1,16 @@
+import { requireUser } from "@/lib/auth";
+import AppShell from "./AppShell";
+
+export default async function AuthenticatedLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const user = await requireUser();
+
+  return (
+    <AppShell userName={user.nombre || user.email} userImage={user.image}>
+      {children}
+    </AppShell>
+  );
+}
