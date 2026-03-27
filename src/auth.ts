@@ -20,14 +20,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   callbacks: {
     async signIn({ user }) {
-      // Solo permitir emails de @farmaciareig.net
       if (!user.email?.endsWith("@farmaciareig.net")) {
+        return false;
+      }
+      const dbUser = await getUsuario(user.email);
+      if (!dbUser || dbUser.activo !== 1) {
         return false;
       }
       return true;
     },
     async jwt({ token, user, trigger }) {
-      // En el primer login, cargar rol y departamento desde Turso
       if (user?.email) {
         const dbUser = await getUsuario(user.email);
         if (dbUser) {
@@ -35,15 +37,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.departamento = dbUser.departamento;
           token.nombre = dbUser.nombre;
           token.activo = dbUser.activo;
-          // Registrar último login
           await registrarLogin(user.email);
-        } else {
-          // Usuario con email @farmaciareig.net pero sin registro en BD
-          // Se le asigna rol por defecto: usuario, departamento farmacia
-          token.role = "usuario";
-          token.departamento = "farmacia";
-          token.nombre = user.name || user.email.split("@")[0];
-          token.activo = 1;
         }
       }
       return token;
