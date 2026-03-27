@@ -1,28 +1,27 @@
 import type { Metadata } from "next";
-import AppShell from "@/components/AppShell";
+import Providers from "@/components/Providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Gestión — Farmacia Reig",
+  title: "Gestión Reig — Farmacia Reig",
   description: "Panel de gestión interna de Farmacia Reig",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="es" className="h-full antialiased">
+    <html lang="es">
       <head>
         <link
-          href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500&display=swap"
+          href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500;600&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-full font-sans bg-white text-gray-900">
-        <AppShell>{children}</AppShell>
+      <body className="antialiased">
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

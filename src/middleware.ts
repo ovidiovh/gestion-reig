@@ -1,42 +1,44 @@
-import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/api/auth"];
-
-export function middleware(req: NextRequest) {
+/**
+ * Middleware de autenticación con Auth.js v5.
+ * - Rutas públicas: /login, /api/auth/*, /api/setup, assets estáticos
+ * - Todo lo demás requiere sesión Google válida
+ * - Usuarios desactivados (activo=0) son rechazados
+ */
+export default auth((req) => {
   const { pathname } = req.nextUrl;
 
-  // Rutas públicas: no bloquear
-  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
-    return NextResponse.next();
-  }
-
-  // Archivos estáticos: no bloquear
+  // Rutas públicas — no requieren autenticación
   if (
+    pathname === "/login" ||
+    pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/api/setup") ||
     pathname.startsWith("/_next") ||
-    pathname.startsWith("/favicon") ||
-    pathname.includes(".")
+    pathname.startsWith("/favicon")
   ) {
     return NextResponse.next();
   }
 
-  // Verificar cookie de autenticación
-  const token = req.cookies.get("reig-auth")?.value;
-  if (!token) {
+  // Si no hay sesión → redirigir a login (o 401 para API)
+  if (!req.auth) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // Verificación básica del token (formato válido + no expirado)
-  const parts = token.split("~");
-  if (parts.length !== 2) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
-  const timestamp = parseInt(parts[1]);
-  if (isNaN(timestamp) || Date.now() - timestamp > 30 * 24 * 60 * 60 * 1000) {
-    return NextResponse.redirect(new URL("/login", req.url));
+  // Si el usuario está desactivado → cerrar sesión
+  if (req.auth.user?.activo === 0) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Usuario desactivado" }, { status: 403 });
+    }
+    return NextResponse.redirect(new URL("/login?error=desactivado", req.url));
   }
 
   return NextResponse.next();
-}
+});
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
