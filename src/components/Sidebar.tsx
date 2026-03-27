@@ -119,7 +119,7 @@ const sections: NavSection[] = [
     title: "MARKETING",
     collapsible: true,
     items: [
-      { label: "CRM", href: "/crm", activo: false, icon: icons.users },
+      { label: "CRM", href: "/crm", activo: true, icon: icons.users },
       { label: "Fichas producto", href: "/fichas", activo: false, icon: icons.tag },
     ],
   },
@@ -229,11 +229,11 @@ export default function Sidebar({
         {section.collapsible ? (
           <button
             onClick={() => toggleSection(section.key)}
-            className="w-full flex items-center justify-between px-3 pb-1.5 pt-1 group"
+            className="w-full flex items-center justify-between px-3 pb-1.5 pt-3 group"
           >
             <span
-              className={`text-xs font-bold tracking-wider transition-colors ${
-                hasActive ? "text-white/80" : "text-white/50 group-hover:text-white/70"
+              className={`text-sm font-bold tracking-wide transition-colors ${
+                hasActive ? "text-white/90" : "text-white/60 group-hover:text-white/80"
               }`}
             >
               {section.title}
@@ -241,13 +241,13 @@ export default function Sidebar({
             <span
               className={`transition-transform duration-200 ${
                 isCollapsed ? "-rotate-90" : ""
-              } ${hasActive ? "text-white/60" : "text-white/40 group-hover:text-white/60"}`}
+              } ${hasActive ? "text-white/70" : "text-white/50 group-hover:text-white/70"}`}
             >
               {icons.chevron}
             </span>
           </button>
         ) : (
-          <p className="px-3 pb-1.5 text-xs font-bold tracking-wider text-white/50">
+          <p className="px-3 pb-1.5 pt-3 text-sm font-bold tracking-wide text-white/60">
             {section.title}
           </p>
         )}
