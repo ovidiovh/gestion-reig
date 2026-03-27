@@ -20,9 +20,9 @@
 
 ## Documentación de Proyecto
 
-Documentación transversal del proyecto IA Reig (abarca más que la app web):
+La documentación transversal del proyecto IA Reig vive en su propio repo:
 
-- [[proyecto/README]] — Índice: visión general, fichas SEO, datos, automatizaciones, roadmap
+→ **[ovidiovh/reig-docs](https://github.com/ovidiovh/reig-docs)** — Visión general, fichas SEO, datos, automatizaciones, roadmap
 
 ---
 
