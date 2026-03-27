@@ -18,9 +18,11 @@
 
 - [[diagramas/arquitectura.drawio]] — Arquitectura general del sistema (abrir con draw.io)
 
-## Documentación de Proyecto (fuera del repo)
+## Documentación de Proyecto
 
-La documentación transversal del proyecto IA Reig (visión general, fichas SEO, infraestructura de datos, automatizaciones, roadmap) vive en la carpeta de proyecto compartida, no en este repositorio, porque abarca más que la app web.
+Documentación transversal del proyecto IA Reig (abarca más que la app web):
+
+- [[proyecto/README]] — Índice: visión general, fichas SEO, datos, automatizaciones, roadmap
 
 ---
 
