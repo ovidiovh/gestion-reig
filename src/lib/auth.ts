@@ -41,7 +41,7 @@ export async function requireUser(): Promise<UserSession> {
     const { redirect } = await import("next/navigation");
     redirect("/login");
   }
-  return user;
+  return user as UserSession;
 }
 
 /**
@@ -53,5 +53,5 @@ export async function requireAdmin(): Promise<UserSession> {
     const { redirect } = await import("next/navigation");
     redirect("/dashboard?error=sin-permisos");
   }
-  return user;
+  return user as UserSession;
 }
