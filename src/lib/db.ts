@@ -48,3 +48,15 @@ export async function batch(
     }))
   );
 }
+
+/**
+ * Backward-compatible export for routes that do `import { db } from "@/lib/db"`.
+ * Uses a Proxy to lazily initialize the Turso client on first property access.
+ */
+export const db: Client = new Proxy({} as Client, {
+  get(_, prop) {
+    const c = getTurso();
+    const value = (c as Record<string, unknown>)[prop as string];
+    return typeof value === "function" ? (value as Function).bind(c) : value;
+  },
+});
