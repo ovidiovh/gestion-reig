@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import {
   getResumenBase,
   getClienteKpis,
