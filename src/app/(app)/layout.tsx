@@ -9,7 +9,12 @@ export default async function AuthenticatedLayout({
   const user = await requireUser();
 
   return (
-    <AppShell userName={user.nombre || user.email} userImage={user.image}>
+    <AppShell
+      userName={user.nombre || user.email}
+      userImage={user.image}
+      departamento={user.departamento}
+      role={user.role}
+    >
       {children}
     </AppShell>
   );
