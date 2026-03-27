@@ -1,0 +1,160 @@
+<mxfile host="app.diagrams.net" modified="2026-03-27T12:00:00.000Z" agent="Claude" version="24.0.0">
+  <diagram name="Arquitectura General" id="arch-general">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- TÍTULO -->
+        <mxCell id="title" value="&lt;b&gt;Farmacia Reig — Arquitectura del Sistema&lt;/b&gt;&lt;br&gt;27 marzo 2026" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;fontSize=16;fontFamily=DM Sans;" vertex="1" parent="1">
+          <mxGeometry x="420" y="20" width="380" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ CAPA: USUARIOS ═══ -->
+        <mxCell id="user-ovidio" value="&lt;b&gt;Ovidio&lt;/b&gt;&lt;br&gt;CEO Operativo" style="shape=actor;whiteSpace=wrap;html=1;fillColor=#1A8C3A;fontColor=#FFFFFF;strokeColor=#14702E;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="100" y="100" width="80" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="user-bea" value="&lt;b&gt;Bea&lt;/b&gt;&lt;br&gt;Titular" style="shape=actor;whiteSpace=wrap;html=1;fillColor=#1A8C3A;fontColor=#FFFFFF;strokeColor=#14702E;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="220" y="100" width="80" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ CAPA: FRONTEND ═══ -->
+        <mxCell id="group-web" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5EC;strokeColor=#1A8C3A;strokeWidth=2;dashed=1;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="50" y="220" width="500" height="160" as="geometry"/>
+        </mxCell>
+        <mxCell id="label-web" value="&lt;b&gt;gestion.vidalreig.com&lt;/b&gt; (Next.js 16 + Vercel)" style="text;html=1;align=left;verticalAlign=top;fontSize=12;fontColor=#1A8C3A;" vertex="1" parent="1">
+          <mxGeometry x="60" y="225" width="300" height="25" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="mod-retiradas" value="&lt;b&gt;Retiradas&lt;/b&gt;&lt;br&gt;de Caja&lt;br&gt;&lt;font color=&quot;#666&quot;&gt;✅ Activo&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1A8C3A;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="70" y="260" width="110" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="mod-remesas" value="&lt;b&gt;Remesas&lt;/b&gt;&lt;br&gt;Banco&lt;br&gt;&lt;font color=&quot;#666&quot;&gt;✅ Activo&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1A8C3A;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="200" y="260" width="110" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="mod-ventas" value="&lt;b&gt;Ventas&lt;/b&gt;&lt;br&gt;Dashboard&lt;br&gt;&lt;font color=&quot;#999&quot;&gt;⏳ Próximo&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CCCCCC;fontSize=11;fontColor=#999999;" vertex="1" parent="1">
+          <mxGeometry x="330" y="260" width="100" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="mod-crm" value="&lt;b&gt;CRM&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#999&quot;&gt;⏳ Próximo&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CCCCCC;fontSize=11;fontColor=#999999;" vertex="1" parent="1">
+          <mxGeometry x="445" y="260" width="90" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="label-auth" value="Auth: Cookie httpOnly + middleware" style="text;html=1;align=left;fontSize=10;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="70" y="345" width="250" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ CAPA: APIs ═══ -->
+        <mxCell id="api-box" value="&lt;b&gt;API Routes&lt;/b&gt; (Next.js App Router)&lt;br&gt;&lt;font color=&quot;#666&quot; size=&quot;1&quot;&gt;/api/auth · /api/retiradas · /api/remesas · /api/migrate&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1A8C3A;strokeWidth=2;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="50" y="420" width="500" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ CAPA: BASE DE DATOS ═══ -->
+        <mxCell id="turso" value="&lt;b&gt;Turso Cloud&lt;/b&gt;&lt;br&gt;libSQL (AWS EU West 1)&lt;br&gt;&lt;font color=&quot;#666&quot; size=&quot;1&quot;&gt;retiradas_sesion · retiradas_caja&lt;br&gt;retiradas_remesa · retiradas_audit&lt;/font&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#1A8C3A;fontColor=#FFFFFF;strokeColor=#14702E;size=12;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="175" y="520" width="200" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ CAPA: DATOS LOCALES ═══ -->
+        <mxCell id="group-local" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E1;strokeColor=#FFB300;strokeWidth=2;dashed=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="650" y="220" width="350" height="280" as="geometry"/>
+        </mxCell>
+        <mxCell id="label-local" value="&lt;b&gt;ReigBI — Datos Locales&lt;/b&gt; (OneDrive)" style="text;html=1;align=left;verticalAlign=top;fontSize=12;fontColor=#E65100;" vertex="1" parent="1">
+          <mxGeometry x="660" y="225" width="280" height="25" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="farmatic" value="&lt;b&gt;Farmatic v16&lt;/b&gt;&lt;br&gt;SQL Server&lt;br&gt;&lt;font color=&quot;#666&quot; size=&quot;1&quot;&gt;Sistema gestión farmacia&lt;/font&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#FFB300;fontColor=#FFFFFF;strokeColor=#E65100;size=12;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="760" y="260" width="140" height="80" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="reigdb" value="&lt;b&gt;reig.db&lt;/b&gt;&lt;br&gt;SQLite (904MB)&lt;br&gt;&lt;font color=&quot;#666&quot; size=&quot;1&quot;&gt;ventas · compras&lt;br&gt;dispensaciones · inventario&lt;/font&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#FFE082;strokeColor=#FFB300;size=12;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="670" y="380" width="140" height="100" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="kpis" value="&lt;b&gt;KPIs JSON&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;1&quot;&gt;Fuente autoritativa&lt;/font&gt;" style="shape=document;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#FFB300;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="850" y="400" width="120" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ CAPA: SEO ═══ -->
+        <mxCell id="group-seo" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;strokeWidth=2;dashed=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="650" y="540" width="350" height="170" as="geometry"/>
+        </mxCell>
+        <mxCell id="label-seo" value="&lt;b&gt;SEO Web&lt;/b&gt; (farmaciareig.net)" style="text;html=1;align=left;verticalAlign=top;fontSize=12;fontColor=#1565C0;" vertex="1" parent="1">
+          <mxGeometry x="660" y="545" width="200" height="25" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="claude-api" value="&lt;b&gt;Claude API&lt;/b&gt;&lt;br&gt;+ Skill fichas" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1565C0;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="670" y="580" width="100" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="n8n" value="&lt;b&gt;n8n&lt;/b&gt;&lt;br&gt;Automatización" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1565C0;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="790" y="580" width="100" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="wmi" value="&lt;b&gt;We Make It&lt;/b&gt;&lt;br&gt;CMS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1565C0;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="910" y="580" width="80" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="audit-v3" value="&lt;b&gt;Auditoría V3&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;1&quot;&gt;37+15 checks&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#1565C0;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="730" y="650" width="100" height="45" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ CAPA: EMAILS ═══ -->
+        <mxCell id="santander" value="&lt;b&gt;Email Santander&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;1&quot;&gt;ingresos@farmaciareig.net&lt;/font&gt;" style="shape=message;whiteSpace=wrap;html=1;fillColor=#E8EAF6;strokeColor=#3F51B5;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="50" y="560" width="170" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="gas" value="&lt;b&gt;Google Apps&lt;br&gt;Script&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;1&quot;&gt;→ Sheets&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8EAF6;strokeColor=#3F51B5;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="50" y="650" width="100" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ FLECHAS ═══ -->
+        <!-- Usuarios → Web -->
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#1A8C3A;strokeWidth=2;" edge="1" parent="1" source="user-ovidio" target="mod-retiradas">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e1b" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#1A8C3A;strokeWidth=2;" edge="1" parent="1" source="user-bea" target="mod-remesas">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Web → API -->
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#1A8C3A;" edge="1" parent="1" source="group-web" target="api-box">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- API → Turso -->
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#1A8C3A;" edge="1" parent="1" source="api-box" target="turso">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Farmatic → reig.db -->
+        <mxCell id="e4" value="export manual" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#FFB300;dashed=1;fontSize=10;" edge="1" parent="1" source="farmatic" target="reigdb">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- reig.db → Turso (migración) -->
+        <mxCell id="e5" value="migración" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#FFB300;dashed=1;fontSize=10;" edge="1" parent="1" source="reigdb" target="turso">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- reig.db → KPIs -->
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#FFB300;" edge="1" parent="1" source="reigdb" target="kpis">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Claude → n8n → WMI -->
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#1565C0;" edge="1" parent="1" source="claude-api" target="n8n">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#1565C0;" edge="1" parent="1" source="n8n" target="wmi">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#1565C0;" edge="1" parent="1" source="n8n" target="audit-v3">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Santander → GAS → Remesas (futuro) -->
+        <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#3F51B5;" edge="1" parent="1" source="santander" target="gas">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e11" value="futuro: matching" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#3F51B5;dashed=1;fontSize=10;" edge="1" parent="1" source="santander" target="turso">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
