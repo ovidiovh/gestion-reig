@@ -56,7 +56,8 @@ export async function batch(
 export const db: Client = new Proxy({} as Client, {
   get(_, prop) {
     const c = getTurso();
-    const value = (c as Record<string, unknown>)[prop as string];
-    return typeof value === "function" ? (value as Function).bind(c) : value;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const value = (c as any)[prop];
+    return typeof value === "function" ? value.bind(c) : value;
   },
 });
