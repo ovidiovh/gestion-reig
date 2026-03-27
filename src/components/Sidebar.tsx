@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -22,8 +22,10 @@ interface NavItem {
 }
 
 interface NavSection {
+  key: string;
   title: string;
   adminOnly?: boolean;
+  collapsible?: boolean;
   items: NavItem[];
 }
 
@@ -83,20 +85,29 @@ const icons = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m8 0H8m8 0h2a2 2 0 012 2v9a2 2 0 01-2 2H6a2 2 0 01-2-2v-9a2 2 0 012-2h2" />
     </svg>
   ),
+  chevron: (
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+    </svg>
+  ),
 };
 
 /* ───── Secciones de navegacion ───── */
 
 const sections: NavSection[] = [
   {
+    key: "general",
     title: "GENERAL",
+    collapsible: false,
     items: [
       { label: "Inicio", href: "/", activo: true, icon: icons.home },
       { label: "Horarios / Guardias", href: "/horarios", activo: false, icon: icons.calendar },
     ],
   },
   {
+    key: "financiero",
     title: "FINANCIERO",
+    collapsible: true,
     items: [
       { label: "Nueva retirada", href: "/retiradas", activo: true, icon: icons.cash },
       { label: "Historial", href: "/retiradas/historial", activo: true, icon: icons.clock },
@@ -104,21 +115,27 @@ const sections: NavSection[] = [
     ],
   },
   {
+    key: "marketing",
     title: "MARKETING",
+    collapsible: true,
     items: [
       { label: "CRM", href: "/crm", activo: false, icon: icons.users },
       { label: "Fichas producto", href: "/fichas", activo: false, icon: icons.tag },
     ],
   },
   {
+    key: "rrhh",
     title: "RRHH",
+    collapsible: true,
     items: [
       { label: "Equipo", href: "/equipo", activo: false, icon: icons.briefcase },
     ],
   },
   {
+    key: "admin",
     title: "ADMINISTRACION",
     adminOnly: true,
+    collapsible: true,
     items: [
       { label: "Usuarios", href: "/admin/usuarios", activo: false, icon: icons.cog },
     ],
@@ -144,16 +161,38 @@ export default function Sidebar({
     return pathname.startsWith(href);
   };
 
+  // Auto-expand sections that contain the current active route
+  const sectionHasActiveRoute = (section: NavSection) =>
+    section.items.some((item) => isActive(item.href));
+
   const visibleSections = sections.filter(
     (s) => !s.adminOnly || role === "admin"
   );
+
+  // Initialize collapsed state: expanded if section has active route, collapsed otherwise
+  const defaultCollapsed = useMemo(() => {
+    const state: Record<string, boolean> = {};
+    visibleSections.forEach((s) => {
+      if (s.collapsible) {
+        state[s.key] = !sectionHasActiveRoute(s);
+      }
+    });
+    return state;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(defaultCollapsed);
+
+  const toggleSection = (key: string) => {
+    setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const renderItem = (item: NavItem) => {
     if (!item.activo) {
       return (
         <div
           key={item.href}
-          className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-not-allowed"
+          className="flex items-center gap-3 px-3 py-1.5 rounded-lg cursor-not-allowed"
         >
           <span className="text-white/30">{item.icon}</span>
           <span className="text-white/30 text-sm">{item.label}</span>
@@ -169,7 +208,7 @@ export default function Sidebar({
         key={item.href}
         href={item.href}
         onClick={() => setOpen(false)}
-        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+        className={`flex items-center gap-3 px-3 py-1.5 rounded-lg transition-colors ${
           active
             ? "bg-white/20 text-white"
             : "text-white/70 hover:bg-white/10 hover:text-white"
@@ -178,6 +217,46 @@ export default function Sidebar({
         <span>{item.icon}</span>
         <span className="text-sm font-medium">{item.label}</span>
       </Link>
+    );
+  };
+
+  const renderSection = (section: NavSection) => {
+    const isCollapsed = section.collapsible && collapsed[section.key];
+    const hasActive = sectionHasActiveRoute(section);
+
+    return (
+      <div key={section.key}>
+        {section.collapsible ? (
+          <button
+            onClick={() => toggleSection(section.key)}
+            className="w-full flex items-center justify-between px-3 pb-1 pt-0.5 group"
+          >
+            <span
+              className={`text-[10px] font-semibold tracking-wider transition-colors ${
+                hasActive ? "text-white/70" : "text-white/40 group-hover:text-white/50"
+              }`}
+            >
+              {section.title}
+            </span>
+            <span
+              className={`text-white/30 transition-transform duration-200 ${
+                isCollapsed ? "-rotate-90" : ""
+              }`}
+            >
+              {icons.chevron}
+            </span>
+          </button>
+        ) : (
+          <p className="px-3 pb-1 text-[10px] font-semibold tracking-wider text-white/40">
+            {section.title}
+          </p>
+        )}
+        {!isCollapsed && (
+          <div className="space-y-0.5">
+            {section.items.map(renderItem)}
+          </div>
+        )}
+      </div>
     );
   };
 
@@ -202,22 +281,13 @@ export default function Sidebar({
       </div>
 
       {/* Nav sections */}
-      <nav className="flex-1 px-3 py-2 space-y-4 overflow-y-auto">
-        {visibleSections.map((section) => (
-          <div key={section.title}>
-            <p className="px-3 pb-1 text-[10px] font-semibold tracking-wider text-white/40">
-              {section.title}
-            </p>
-            <div className="space-y-0.5">
-              {section.items.map(renderItem)}
-            </div>
-          </div>
-        ))}
+      <nav className="flex-1 px-3 py-2 space-y-3 overflow-y-auto">
+        {visibleSections.map(renderSection)}
       </nav>
 
       {/* User info + logout */}
-      <div className="px-4 py-4 border-t border-white/10">
-        <div className="flex items-center gap-3 px-2 mb-3">
+      <div className="px-4 py-3 border-t border-white/10">
+        <div className="flex items-center gap-3 px-2 mb-2">
           {userImage ? (
             <img src={userImage} alt="" className="w-8 h-8 rounded-full" />
           ) : (
@@ -229,14 +299,14 @@ export default function Sidebar({
         </div>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="w-full text-left px-2 py-1.5 text-white/50 hover:text-white/80 text-xs transition-colors"
+          className="w-full text-left px-2 py-1 text-white/50 hover:text-white/80 text-xs transition-colors"
         >
           Cerrar sesion
         </button>
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-3 border-t border-white/10">
+      <div className="px-6 py-2 border-t border-white/10">
         <p className="text-white/30 text-[10px] leading-relaxed">
           C/ Guatiza 10, 35110 Vecindario
           <br />
