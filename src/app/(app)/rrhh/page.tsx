@@ -6,12 +6,11 @@ import {
   HorarioAsignacion,
   calcGuardDates, MESES, DIAS_SEMANA,
   GREEN, GREEN_DARK, GREEN_LIGHT,
-  toDateStr, getWeekStart, getTurnoForWeek,
-  EMPLEADOS_ROTATIVOS, EMPLEADOS_ESPECIALES,
-  TURNO_LABELS, TURNO_SHORT, TURNO_COLORS,
+  toDateStr, getWeekStart,
 } from "./types";
 import GuardiaPanel from "./GuardiaPanel";
 import VacacionesTab from "./VacacionesTab";
+import DayViewPanel from "./DayViewPanel";
 
 // ── Guardias precalculadas (cliente) ─────────────────────────────────────────
 const GUARD_DATES = calcGuardDates();
@@ -26,192 +25,6 @@ const btnBase: React.CSSProperties = {
   padding: "5px 12px", cursor: "pointer", color: GREEN_DARK,
   fontSize: 14, fontWeight: 700,
 };
-
-// ── Panel vista diaria ────────────────────────────────────────────────────────
-
-function DayViewPanel({
-  fecha,
-  empleados,
-  festivos,
-  vacaciones,
-  asignaciones,
-  isGuardia,
-  loadingGuardia,
-  onOpenGuardia,
-  onGoToVac,
-  onClose,
-}: {
-  fecha: string;
-  empleados: Empleado[];
-  festivos: Festivo[];
-  vacaciones: Vacacion[];
-  asignaciones: HorarioAsignacion[];
-  isGuardia: boolean;
-  loadingGuardia: boolean;
-  onOpenGuardia: () => void;
-  onGoToVac: () => void;
-  onClose: () => void;
-}) {
-  const dt = new Date(fecha + "T00:00:00");
-  const festivo = festivos.find(f => f.fecha === fecha);
-  const vacsHoy = vacaciones.filter(v => fecha >= v.fecha_inicio && fecha <= v.fecha_fin);
-  const weekStart = getWeekStart(dt);
-
-  // Trabajadores de turno hoy (auxiliares + Zuleica)
-  const rotativosHoy = empleados.filter(e =>
-    (EMPLEADOS_ROTATIVOS.includes(e.id) || EMPLEADOS_ESPECIALES.includes(e.id)) && e.activo !== 0
-  );
-
-  const getTurno = (empId: string): number => {
-    const override = asignaciones.find(a => a.empleado_id === empId && a.week_start === weekStart);
-    if (override) return override.turno;
-    if (EMPLEADOS_ESPECIALES.includes(empId)) return 0;
-    return getTurnoForWeek(empId, weekStart);
-  };
-
-  const fechaLabel = dt.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  const dow = dt.getDay();
-  const isWeekend = dow === 0 || dow === 6;
-
-  return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 50,
-      background: "rgba(0,0,0,0.45)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      padding: "16px",
-    }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{
-        background: "#fff", borderRadius: 14, padding: 20,
-        maxWidth: 440, width: "100%", maxHeight: "90vh", overflowY: "auto",
-        boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
-      }}>
-        {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: GREEN_DARK, textTransform: "capitalize" }}>
-              {fechaLabel}
-            </div>
-            <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
-              {festivo && (
-                <span style={{ fontSize: 10, background: "#fdecea", color: "#c0392b", padding: "2px 8px", borderRadius: 10, fontWeight: 700 }}>
-                  🎉 {festivo.nombre}
-                </span>
-              )}
-              {isGuardia && (
-                <span style={{ fontSize: 10, background: GREEN_LIGHT, color: GREEN_DARK, padding: "2px 8px", borderRadius: 10, fontWeight: 700 }}>
-                  🏥 DÍA DE GUARDIA
-                </span>
-              )}
-              {isWeekend && !festivo && (
-                <span style={{ fontSize: 10, background: "#f3f4f6", color: "#6b7280", padding: "2px 8px", borderRadius: 10 }}>
-                  Fin de semana
-                </span>
-              )}
-            </div>
-          </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: "#aaa", lineHeight: 1 }}>×</button>
-        </div>
-
-        {/* Turnos del día */}
-        {!isWeekend && rotativosHoy.length > 0 && (
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
-              Turnos hoy
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {rotativosHoy.map(emp => {
-                const turno = getTurno(emp.id);
-                const colors = TURNO_COLORS[turno] ?? { bg: "#f9fafb", color: "#555" };
-                const isOnVac = vacsHoy.some(v => v.empleado_id === emp.id);
-                return (
-                  <div key={emp.id} style={{
-                    display: "flex", alignItems: "center", gap: 10,
-                    padding: "8px 12px", borderRadius: 8,
-                    background: isOnVac ? "#f9fafb" : colors.bg,
-                    opacity: isOnVac ? 0.5 : 1,
-                    border: `1px solid ${isOnVac ? "#e5e7eb" : colors.color + "40"}`,
-                  }}>
-                    <div style={{
-                      width: 26, height: 26, borderRadius: "50%",
-                      background: isOnVac ? "#e5e7eb" : colors.color,
-                      color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 11, fontWeight: 700, flexShrink: 0,
-                    }}>
-                      {emp.nombre.charAt(0)}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: isOnVac ? "#aaa" : "#2a2e2b" }}>
-                        {emp.nombre}
-                        {isOnVac && <span style={{ fontSize: 10, color: "#c0392b", marginLeft: 6 }}>🌴 Vacaciones</span>}
-                      </div>
-                      {!isOnVac && (
-                        <div style={{ fontSize: 10, color: colors.color, fontWeight: 600 }}>
-                          {TURNO_SHORT[turno]} · {TURNO_LABELS[turno]}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Vacaciones hoy */}
-        {vacsHoy.length > 0 && (
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
-              De vacaciones / ausencia
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {vacsHoy.map(v => {
-                const emp = empleados.find(e => e.id === v.empleado_id);
-                return (
-                  <button
-                    key={v.id}
-                    onClick={() => { onClose(); onGoToVac(); }}
-                    style={{
-                      background: emp?.farmaceutico ? "#fdecea" : "#dbeafe",
-                      color: emp?.farmaceutico ? "#c0392b" : "#1d4ed8",
-                      border: "none", borderRadius: 20, padding: "4px 12px",
-                      fontSize: 12, fontWeight: 600, cursor: "pointer",
-                    }}
-                    title="Ver en pestaña Vacaciones"
-                  >
-                    {v.nombre} →
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Botón guardia */}
-        {isGuardia && (
-          <button
-            onClick={() => { onClose(); onOpenGuardia(); }}
-            disabled={loadingGuardia}
-            style={{
-              width: "100%", background: GREEN, color: "#fff",
-              border: "none", borderRadius: 8, padding: "10px",
-              cursor: "pointer", fontSize: 13, fontWeight: 700,
-              marginTop: 4,
-            }}
-          >
-            {loadingGuardia ? "Cargando…" : "🏥 Abrir plantilla de guardia"}
-          </button>
-        )}
-
-        {/* Si no hay nada especial */}
-        {!isGuardia && !festivo && vacsHoy.length === 0 && isWeekend && (
-          <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "20px 0" }}>
-            Día libre
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 // ── Componente principal ───────────────────────────────────────────────────────
 
@@ -832,6 +645,7 @@ export default function RRHHPage() {
           festivos={festivos}
           vacaciones={vacaciones}
           asignaciones={asignaciones}
+          guardiaId={guardiaMap.get(dayView)?.id}
           isGuardia={GUARD_DATES.has(dayView)}
           loadingGuardia={loadingGuardia}
           onOpenGuardia={() => openGuardia(dayView)}

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Empleado, Vacacion, GuardiaStats, GREEN, GREEN_DARK, fmtDate, daysBetween } from "./types";
+import { useState, useEffect } from "react";
+import { Empleado, Vacacion, GuardiaStats, BancoHoras, GREEN, GREEN_DARK, fmtDate, daysBetween } from "./types";
 
 interface Props {
   empleados: Empleado[];
@@ -142,6 +142,44 @@ export default function VacacionesTab({
   const [tipoAdd, setTipoAdd] = useState<"vac" | "comp">("vac");
   const [saving, setSaving]   = useState(false);
 
+  // ── Banco de horas ─────────────────────────────────────────────────────────
+  const [bancoHoras, setBancoHoras]     = useState<BancoHoras[]>([]);
+  const [showAddBH, setShowAddBH]       = useState(false);
+  const [bhFecha, setBhFecha]           = useState("");
+  const [bhConcepto, setBhConcepto]     = useState<"deuda" | "recupera">("deuda");
+  const [bhMinutos, setBhMinutos]       = useState(30);
+  const [bhNotas, setBhNotas]           = useState("");
+  const [savingBH, setSavingBH]         = useState(false);
+
+  useEffect(() => {
+    if (!selEmp) return;
+    fetch(`/api/rrhh/banco-horas?empleado_id=${selEmp}`)
+      .then(r => r.json())
+      .then(d => { if (d.ok) setBancoHoras(d.entradas); })
+      .catch(() => undefined);
+  }, [selEmp]);
+
+  const handleAddBH = async () => {
+    if (!selEmp || !bhFecha || bhMinutos <= 0) return;
+    setSavingBH(true);
+    const res = await fetch("/api/rrhh/banco-horas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ empleado_id: selEmp, fecha: bhFecha, concepto: bhConcepto, minutos: bhMinutos, notas: bhNotas }),
+    });
+    const d = await res.json();
+    if (d.ok) {
+      setBancoHoras(prev => [...prev, d.entrada].sort((a, b) => a.fecha.localeCompare(b.fecha)));
+      setBhFecha(""); setBhMinutos(30); setBhNotas(""); setShowAddBH(false);
+    }
+    setSavingBH(false);
+  };
+
+  const handleDeleteBH = async (id: number) => {
+    await fetch(`/api/rrhh/banco-horas?id=${id}`, { method: "DELETE" });
+    setBancoHoras(prev => prev.filter(e => e.id !== id));
+  };
+
   const pendientes = vacaciones.filter(v => v.estado === "pend" && v.tipo !== "comp");
 
   const handleAdd = async () => {
@@ -164,7 +202,7 @@ export default function VacacionesTab({
     return (
       <div>
         <button
-          onClick={() => { setSelEmp(null); setShowAdd(false); }}
+          onClick={() => { setSelEmp(null); setShowAdd(false); setBancoHoras([]); setShowAddBH(false); }}
           style={{ background: "#fff", color: GREEN, border: `1px solid ${GREEN}`, borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontSize: 10, marginBottom: 12 }}
         >
           ← Volver
@@ -312,6 +350,113 @@ export default function VacacionesTab({
             ))}
           </div>
         )}
+
+        {/* ── Banco de horas ── */}
+        <div style={{ marginTop: 20, padding: "14px 16px", background: "#fefce8", borderRadius: 8, border: "1px solid #fde68a" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#78350f", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                Banco de horas
+              </div>
+              {(() => {
+                const deuda   = bancoHoras.filter(e => e.concepto === "deuda").reduce((s, e) => s + e.minutos, 0);
+                const recuper = bancoHoras.filter(e => e.concepto === "recupera").reduce((s, e) => s + e.minutos, 0);
+                const bal     = deuda - recuper;
+                const hh      = Math.floor(Math.abs(bal) / 60);
+                const mm      = Math.abs(bal) % 60;
+                const txt     = hh > 0 ? `${hh}h ${mm}min` : `${mm}min`;
+                return bal === 0
+                  ? <div style={{ fontSize: 12, color: "#6b7280" }}>Balance: sin deuda</div>
+                  : bal > 0
+                  ? <div style={{ fontSize: 12, color: "#b45309", fontWeight: 700 }}>⚠ Debe {txt} al centro</div>
+                  : <div style={{ fontSize: 12, color: "#166534", fontWeight: 700 }}>✓ El centro debe {txt}</div>;
+              })()}
+            </div>
+            <button
+              onClick={() => setShowAddBH(!showAddBH)}
+              style={{ background: "#f59e0b", color: "#fff", border: "none", borderRadius: 6, padding: "4px 12px", cursor: "pointer", fontSize: 10, fontWeight: 600 }}
+            >
+              + Registrar
+            </button>
+          </div>
+
+          {/* Formulario añadir */}
+          {showAddBH && (
+            <div style={{ padding: 10, background: "#fff", borderRadius: 6, marginBottom: 10, border: "1px solid #fde68a" }}>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const, alignItems: "center" }}>
+                <input type="date" value={bhFecha} onChange={e => setBhFecha(e.target.value)}
+                  style={{ border: "1px solid #ddd", borderRadius: 4, padding: "3px 6px", fontSize: 11 }} />
+                <select value={bhConcepto} onChange={e => setBhConcepto(e.target.value as "deuda" | "recupera")}
+                  style={{ border: "1px solid #ddd", borderRadius: 4, padding: "3px 6px", fontSize: 11 }}>
+                  <option value="deuda">Sale antes / llega tarde</option>
+                  <option value="recupera">Recupera tiempo</option>
+                </select>
+                <input type="number" min={1} max={480} value={bhMinutos}
+                  onChange={e => setBhMinutos(parseInt(e.target.value) || 30)}
+                  style={{ width: 60, border: "1px solid #ddd", borderRadius: 4, padding: "3px 6px", fontSize: 11 }}
+                  placeholder="min" />
+                <span style={{ fontSize: 10, color: "#888" }}>min</span>
+                <input type="text" value={bhNotas} onChange={e => setBhNotas(e.target.value)}
+                  placeholder="Notas (opcional)"
+                  style={{ flex: 1, minWidth: 100, border: "1px solid #ddd", borderRadius: 4, padding: "3px 6px", fontSize: 11 }} />
+                <button onClick={handleAddBH} disabled={savingBH || !bhFecha}
+                  style={{ background: "#f59e0b", color: "#fff", border: "none", borderRadius: 6, padding: "5px 14px", cursor: "pointer", fontSize: 11, fontWeight: 600 }}>
+                  {savingBH ? "…" : "Guardar"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Libro de entradas */}
+          {bancoHoras.length === 0 ? (
+            <p style={{ fontSize: 10, color: "#aaa", fontStyle: "italic" }}>Sin entradas registradas</p>
+          ) : (
+            <div>
+              {/* Cabecera */}
+              <div style={{ display: "grid", gridTemplateColumns: "90px 1fr 60px 40px 28px", gap: 4, padding: "4px 4px", borderBottom: "1px solid #fde68a" }}>
+                {["Fecha", "Concepto / Notas", "Minutos", "Saldo", ""].map(h => (
+                  <div key={h} style={{ fontSize: 8, fontWeight: 700, color: "#92400e", textTransform: "uppercase" }}>{h}</div>
+                ))}
+              </div>
+              {(() => {
+                let saldo = 0;
+                return bancoHoras.map(e => {
+                  saldo += e.concepto === "deuda" ? e.minutos : -e.minutos;
+                  const saldoTxt = saldo === 0 ? "0" : saldo > 0 ? `+${saldo}` : `${saldo}`;
+                  return (
+                    <div key={e.id} style={{
+                      display: "grid", gridTemplateColumns: "90px 1fr 60px 40px 28px", gap: 4,
+                      padding: "5px 4px", borderBottom: "1px solid #fef9c3", alignItems: "center",
+                    }}>
+                      <div style={{ fontSize: 10, color: "#555", fontFamily: "monospace" }}>{e.fecha}</div>
+                      <div style={{ fontSize: 10, color: "#374151" }}>
+                        <span style={{
+                          fontSize: 8, fontWeight: 700, padding: "1px 5px", borderRadius: 3, marginRight: 4,
+                          background: e.concepto === "deuda" ? "#fef2f2" : "#f0fdf4",
+                          color: e.concepto === "deuda" ? "#b45309" : "#166534",
+                        }}>
+                          {e.concepto === "deuda" ? "Sale antes" : "Recupera"}
+                        </span>
+                        {e.notas && <span style={{ color: "#6b7280", fontSize: 9 }}>{e.notas}</span>}
+                      </div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: e.concepto === "deuda" ? "#b45309" : "#166534", fontFamily: "monospace", textAlign: "right" }}>
+                        {e.concepto === "deuda" ? `+${e.minutos}` : `-${e.minutos}`}min
+                      </div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: saldo > 0 ? "#b45309" : saldo < 0 ? "#166534" : "#9ca3af", fontFamily: "monospace", textAlign: "right" }}>
+                        {saldoTxt}
+                      </div>
+                      <button onClick={() => handleDeleteBH(e.id)}
+                        style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#d1d5db", padding: 0 }}
+                        title="Eliminar entrada">
+                        ✕
+                      </button>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          )}
+        </div>
       </div>
     );
   }

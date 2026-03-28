@@ -23,10 +23,12 @@ export async function POST(req: NextRequest) {
       id, nombre, categoria = "auxiliar", empresa = "reig",
       farmaceutico = 0, hace_guardia = 0,
       complemento_eur = 0, h_lab_complemento = 0, orden = 99,
+      departamento = "farmacia",
     } = body as {
       id: string; nombre: string; categoria?: string; empresa?: string;
       farmaceutico?: number; hace_guardia?: number;
       complemento_eur?: number; h_lab_complemento?: number; orden?: number;
+      departamento?: string;
     };
 
     if (!id || !nombre) {
@@ -35,9 +37,9 @@ export async function POST(req: NextRequest) {
 
     await db.execute({
       sql: `INSERT INTO rrhh_empleados
-            (id, nombre, categoria, empresa, farmaceutico, hace_guardia, complemento_eur, h_lab_complemento, orden, activo)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-      args: [id, nombre, categoria, empresa, farmaceutico, hace_guardia, complemento_eur, h_lab_complemento, orden],
+            (id, nombre, categoria, empresa, farmaceutico, hace_guardia, complemento_eur, h_lab_complemento, orden, activo, departamento)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
+      args: [id, nombre, categoria, empresa, farmaceutico, hace_guardia, complemento_eur, h_lab_complemento, orden, departamento],
     });
 
     const rows = await query(`SELECT * FROM rrhh_empleados WHERE id = ?`, [id]);
@@ -58,7 +60,8 @@ export async function PATCH(req: NextRequest) {
     }
 
     const allowed = ["nombre", "categoria", "empresa", "farmaceutico", "hace_guardia",
-                     "complemento_eur", "h_lab_complemento", "activo", "orden", "guardias_manual"];
+                     "complemento_eur", "h_lab_complemento", "activo", "orden", "guardias_manual", "departamento",
+                     "horario_inicio_a", "horario_fin_a", "horario_inicio_b", "horario_fin_b"];
     const updates = Object.entries(fields).filter(([k]) => allowed.includes(k));
 
     if (updates.length === 0) {

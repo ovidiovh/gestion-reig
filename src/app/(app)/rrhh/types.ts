@@ -9,6 +9,12 @@ export interface Empleado {
   h_lab_complemento: number;
   activo: number;
   orden: number;
+  departamento: string;
+  // Horario fijo en media-horas desde medianoche (null = usar HORARIO_DEFAULT)
+  horario_inicio_a: number | null;
+  horario_fin_a: number | null;
+  horario_inicio_b: number | null;
+  horario_fin_b: number | null;
 }
 
 export interface Festivo {
@@ -49,6 +55,16 @@ export interface Vacacion {
   tipo: "vac" | "comp";
   nombre: string;
   farmaceutico: number;
+}
+
+export interface BancoHoras {
+  id: number;
+  empleado_id: string;
+  fecha: string;
+  concepto: "deuda" | "recupera";
+  minutos: number;
+  notas: string | null;
+  created_at: string;
 }
 
 export interface GuardiaStats {
@@ -153,6 +169,43 @@ export function calcGuardDates(): Set<string> {
 
   return set;
 }
+
+// ── Horario visual por turno (media-horas desde medianoche) ─────────────────
+// [inicio_a, fin_a, inicio_b | null, fin_b | null]
+export const TURNO_HORARIO: Record<number, [number, number, number | null, number | null]> = {
+  0: [17, 25, null, null],  // Esp (Zuleica): 8:30–12:30
+  1: [17, 33, null, null],  // T1:  8:30–16:30
+  2: [18, 26, 32, 40],      // T2:  9–13 / 16–20
+  3: [25, 41, null, null],  // T3: 12:30–20:30
+};
+
+// Horario por defecto para empleados no rotativos (media-horas desde medianoche)
+// Valores confirmados por la dirección. Se pueden sobreescribir por empleado en BD.
+export const HORARIO_DEFAULT: Record<string, [number, number, number | null, number | null]> = {
+  ovidio:  [23, 41, null, null],   // 11:30–20:30
+  bea:     [14, 31, null, null],   // 7:00–15:30
+  maria:   [25, 41, null, null],   // 12:30–20:30
+  julio:   [18, 28, 34, 40],       // 9:00–14:00 / 17:00–20:00
+  celia:   [18, 34, null, null],   // 9:00–17:00
+  noelia:  [18, 26, 30, 37],       // 9:00–13:00 / 15:00–18:30
+  miriam:  [18, 34, null, null],   // 9:00–17:00
+  monica:  [18, 34, null, null],   // 9:00–17:00
+  javier:  [18, 34, null, null],   // 9:00–17:00 (días sin guardia)
+  teresa:  [17, 24, null, null],   // 8:30–12:00
+  luisa:   [17, 24, null, null],   // 8:30–12:00
+};
+
+/** Convierte media-hora (ej. 17=8:30, 26=13:00) a etiqueta "H:MM" */
+export function hhToLabel(hh: number): string {
+  const h = Math.floor(hh / 2);
+  const m = hh % 2 === 0 ? "00" : "30";
+  return `${h}:${m}`;
+}
+
+// Grid visual: 8:30 (17hh) a 20:30 (41hh) = 24 franjas de 30 min
+export const GRID_START_HH = 17;  // 8:30
+export const GRID_END_HH   = 41;  // 20:30
+export const GRID_COLS     = GRID_END_HH - GRID_START_HH; // 24
 
 export const MESES      = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 export const DIAS_SEMANA = ["L","M","X","J","V","S","D"];

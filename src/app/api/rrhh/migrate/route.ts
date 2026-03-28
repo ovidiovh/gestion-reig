@@ -18,21 +18,26 @@ const FESTIVOS_2026 = [
   { fecha: "2026-12-25", nombre: "Natividad del Señor", tipo: "nacional" },
 ];
 
+// Horarios en media-horas: 8:30=17, 9:00=18, 11:30=23, 12:30=25, 13:00=26,
+//   14:00=28, 15:00=30, 15:30=31, 17:00=34, 18:30=37, 20:30=41
 const EMPLEADOS = [
-  { id: "ovidio",  nombre: "Ovidio",    categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_eur: 0,   h_lab_complemento: 0,  orden: 1 },
-  { id: "bea",     nombre: "Bea",       categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 2 },
-  { id: "maria",   nombre: "María N.",  categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_eur: 180, h_lab_complemento: 0,  orden: 3 },
-  { id: "julio",   nombre: "Julio",     categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_eur: 280, h_lab_complemento: 19, orden: 4 },
-  { id: "celia",   nombre: "Celia",     categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_eur: 280, h_lab_complemento: 19, orden: 5 },
-  { id: "ani",     nombre: "Ani",       categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_eur: 30,  h_lab_complemento: 9,  orden: 6 },
-  { id: "noelia",  nombre: "Noelia",    categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_eur: 30,  h_lab_complemento: 9,  orden: 7 },
-  { id: "dulce",   nombre: "Dulce",     categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_eur: 30,  h_lab_complemento: 9,  orden: 8 },
-  { id: "leti",    nombre: "Leti",      categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_eur: 30,  h_lab_complemento: 9,  orden: 9 },
-  { id: "yoli",    nombre: "Yoli",      categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 10 },
-  { id: "zuleica", nombre: "Zuleica",   categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 11 },
-  { id: "javier",  nombre: "Javier M.", categoria: "mantenimiento",empresa: "mirelus", farmaceutico: 0, hace_guardia: 1, complemento_eur: 60,  h_lab_complemento: 9,  orden: 12 },
-  { id: "teresa",  nombre: "M. Teresa", categoria: "limpieza",     empresa: "mirelus", farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 13 },
-  { id: "luisa",   nombre: "Luisa",     categoria: "otro",         empresa: "mirelus", farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 14 },
+  { id: "ovidio",  nombre: "Ovidio",    categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_eur: 0,   h_lab_complemento: 0,  orden: 1,  departamento: "farmacia", ia: 23, fa: 41, ib: null, fb: null },
+  { id: "bea",     nombre: "Bea",       categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 2,  departamento: "farmacia", ia: 14, fa: 31, ib: null, fb: null },
+  { id: "maria",   nombre: "María N.",  categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_eur: 180, h_lab_complemento: 0,  orden: 3,  departamento: "farmacia", ia: 25, fa: 41, ib: null, fb: null },
+  { id: "julio",   nombre: "Julio",     categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_eur: 280, h_lab_complemento: 19, orden: 4,  departamento: "farmacia", ia: 18, fa: 28, ib: 34,   fb: 40   },
+  { id: "celia",   nombre: "Celia",     categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_eur: 280, h_lab_complemento: 19, orden: 5,  departamento: "farmacia", ia: 18, fa: 34, ib: null, fb: null },
+  { id: "ani",     nombre: "Ani",       categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_eur: 30,  h_lab_complemento: 9,  orden: 6,  departamento: "farmacia", ia: null, fa: null, ib: null, fb: null },
+  { id: "noelia",  nombre: "Noelia",    categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_eur: 30,  h_lab_complemento: 9,  orden: 7,  departamento: "farmacia", ia: 18, fa: 26, ib: 30,   fb: 37   },
+  { id: "dulce",   nombre: "Dulce",     categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_eur: 30,  h_lab_complemento: 9,  orden: 8,  departamento: "farmacia", ia: null, fa: null, ib: null, fb: null },
+  { id: "leti",    nombre: "Leti",      categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_eur: 30,  h_lab_complemento: 9,  orden: 9,  departamento: "farmacia", ia: null, fa: null, ib: null, fb: null },
+  { id: "yoli",    nombre: "Yoli",      categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 10, departamento: "farmacia", ia: null, fa: null, ib: null, fb: null },
+  { id: "zuleica", nombre: "Zuleica",   categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 11, departamento: "farmacia", ia: null, fa: null, ib: null, fb: null },
+  { id: "javier",  nombre: "Javier M.", categoria: "mantenimiento",empresa: "mirelus", farmaceutico: 0, hace_guardia: 1, complemento_eur: 60,  h_lab_complemento: 9,  orden: 12, departamento: "otro",     ia: 18, fa: 34, ib: null, fb: null },
+  { id: "teresa",  nombre: "M. Teresa", categoria: "limpieza",     empresa: "mirelus", farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 13, departamento: "otro",     ia: 17, fa: 24, ib: null, fb: null },
+  { id: "luisa",   nombre: "Luisa",     categoria: "otro",         empresa: "mirelus", farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 14, departamento: "otro",     ia: 17, fa: 24, ib: null, fb: null },
+  { id: "miriam",  nombre: "Miriam",    categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 15, departamento: "optica",    ia: 18, fa: 34, ib: null, fb: null },
+  { id: "monica",  nombre: "Mónica",    categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 16, departamento: "ortopedia", ia: 18, fa: 34, ib: null, fb: null },
+  { id: "jenny",   nombre: "Jenny",     categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 17, departamento: "farmacia",  ia: null, fa: null, ib: null, fb: null },
 ];
 
 // Slots de guardia por defecto
@@ -130,6 +135,16 @@ export async function POST() {
         notas        TEXT,
         UNIQUE(week_start, empleado_id)
       );
+
+      CREATE TABLE IF NOT EXISTS rrhh_banco_horas (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        empleado_id  TEXT NOT NULL REFERENCES rrhh_empleados(id),
+        fecha        TEXT NOT NULL,
+        concepto     TEXT NOT NULL DEFAULT 'deuda',
+        minutos      INTEGER NOT NULL,
+        notas        TEXT,
+        created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+      );
     `);
 
     // 1b. Migraciones idempotentes (añadir columnas si no existen)
@@ -141,18 +156,34 @@ export async function POST() {
       `ALTER TABLE rrhh_guardia_defaults ADD COLUMN hora_fin2 INTEGER`,
       // Ajuste manual del contador de guardias realizadas (nullable = usar valor calculado)
       `ALTER TABLE rrhh_empleados ADD COLUMN guardias_manual INTEGER`,
+      // Departamento del empleado (farmacia, optica, ortopedia, otro)
+      `ALTER TABLE rrhh_empleados ADD COLUMN departamento TEXT NOT NULL DEFAULT 'farmacia'`,
+      // Horario fijo en media-horas (null = usar horario por defecto del código)
+      `ALTER TABLE rrhh_empleados ADD COLUMN horario_inicio_a INTEGER`,
+      `ALTER TABLE rrhh_empleados ADD COLUMN horario_fin_a INTEGER`,
+      `ALTER TABLE rrhh_empleados ADD COLUMN horario_inicio_b INTEGER`,
+      `ALTER TABLE rrhh_empleados ADD COLUMN horario_fin_b INTEGER`,
     ];
     for (const sql of alterations) {
       try { await db.execute(sql); } catch { /* columna ya existe — ignorar */ }
     }
 
-    // 2. Seed empleados (INSERT OR IGNORE)
+    // 2. Seed empleados (upsert — preserva datos de usuario, actualiza horarios y departamento)
     for (const e of EMPLEADOS) {
       await db.execute({
-        sql: `INSERT OR IGNORE INTO rrhh_empleados
-              (id, nombre, categoria, empresa, farmaceutico, hace_guardia, complemento_eur, h_lab_complemento, orden)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        args: [e.id, e.nombre, e.categoria, e.empresa, e.farmaceutico, e.hace_guardia, e.complemento_eur, e.h_lab_complemento, e.orden],
+        sql: `INSERT INTO rrhh_empleados
+              (id, nombre, categoria, empresa, farmaceutico, hace_guardia, complemento_eur, h_lab_complemento, orden, departamento,
+               horario_inicio_a, horario_fin_a, horario_inicio_b, horario_fin_b)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              ON CONFLICT(id) DO UPDATE SET
+                departamento      = excluded.departamento,
+                horario_inicio_a  = COALESCE(horario_inicio_a, excluded.horario_inicio_a),
+                horario_fin_a     = COALESCE(horario_fin_a,    excluded.horario_fin_a),
+                horario_inicio_b  = COALESCE(horario_inicio_b, excluded.horario_inicio_b),
+                horario_fin_b     = COALESCE(horario_fin_b,    excluded.horario_fin_b)`,
+        args: [e.id, e.nombre, e.categoria, e.empresa, e.farmaceutico, e.hace_guardia,
+               e.complemento_eur, e.h_lab_complemento, e.orden, e.departamento,
+               e.ia, e.fa, e.ib, e.fb],
       });
     }
 
@@ -185,6 +216,7 @@ export async function POST() {
         "rrhh_empleados", "rrhh_festivos", "rrhh_guardias",
         "rrhh_guardia_slots", "rrhh_guardia_defaults",
         "rrhh_vacaciones", "rrhh_ausencias", "rrhh_horarios_asignacion",
+        "rrhh_banco_horas",
       ],
       empleados: EMPLEADOS.length,
       festivos: FESTIVOS_2026.length,

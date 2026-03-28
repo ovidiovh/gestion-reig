@@ -54,9 +54,9 @@ function NuevoEmpleadoModal({ onSave, onClose }: {
   onSave: (data: Partial<Empleado> & { id: string; nombre: string }) => Promise<void>;
   onClose: () => void;
 }) {
-  const [form, setForm] = useState<{ id: string; nombre: string; categoria: string; empresa: "reig" | "mirelus"; farmaceutico: number; hace_guardia: number; complemento_eur: number; h_lab_complemento: number }>({
+  const [form, setForm] = useState<{ id: string; nombre: string; categoria: string; empresa: "reig" | "mirelus"; farmaceutico: number; hace_guardia: number; complemento_eur: number; h_lab_complemento: number; departamento: string }>({
     id: "", nombre: "", categoria: "auxiliar", empresa: "reig",
-    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0, h_lab_complemento: 0,
+    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0, h_lab_complemento: 0, departamento: "farmacia",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -129,6 +129,15 @@ function NuevoEmpleadoModal({ onSave, onClose }: {
             </select>
           </div>
           <div>
+            <label style={lbl}>Departamento</label>
+            <select style={inp} value={form.departamento} onChange={e => setForm(f => ({ ...f, departamento: e.target.value }))}>
+              <option value="farmacia">Farmacia</option>
+              <option value="optica">Óptica</option>
+              <option value="ortopedia">Ortopedia</option>
+              <option value="otro">Otros</option>
+            </select>
+          </div>
+          <div>
             <label style={lbl}>Complemento guardia (€)</label>
             <input type="number" style={inp} value={form.complemento_eur} onChange={e => setForm(f => ({ ...f, complemento_eur: parseInt(e.target.value) || 0 }))} />
           </div>
@@ -163,6 +172,27 @@ function NuevoEmpleadoModal({ onSave, onClose }: {
 
 // ── Fila de empleado con edición inline ──────────────────────────────────────
 
+const DEPTO_OPTS = [
+  { value: "farmacia",  label: "Farmacia" },
+  { value: "optica",    label: "Óptica" },
+  { value: "ortopedia", label: "Ortopedia" },
+  { value: "otro",      label: "Otros" },
+];
+
+function hhField(val: number | null, onChange: (v: number | null) => void, placeholder: string) {
+  const inp2: React.CSSProperties = { width: 44, border: "1px solid #ddd", borderRadius: 4, fontSize: 11, padding: "2px 4px" };
+  return (
+    <input
+      type="number"
+      min={0} max={48} step={1}
+      value={val ?? ""}
+      placeholder={placeholder}
+      onChange={e => onChange(e.target.value === "" ? null : parseInt(e.target.value))}
+      style={inp2}
+    />
+  );
+}
+
 function EmpleadoRow({
   emp, index, onUpdate, onBaja,
 }: {
@@ -172,7 +202,15 @@ function EmpleadoRow({
   onBaja: (id: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState({ complemento_eur: emp.complemento_eur, h_lab_complemento: emp.h_lab_complemento });
+  const [draft, setDraft] = useState({
+    complemento_eur: emp.complemento_eur,
+    h_lab_complemento: emp.h_lab_complemento,
+    departamento: emp.departamento || "farmacia",
+    horario_inicio_a: emp.horario_inicio_a,
+    horario_fin_a:    emp.horario_fin_a,
+    horario_inicio_b: emp.horario_inicio_b,
+    horario_fin_b:    emp.horario_fin_b,
+  });
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
@@ -184,115 +222,181 @@ function EmpleadoRow({
 
   const jornada = JORNADA_ESPECIAL[emp.id] ?? (CATEGORIA_JORNADA[emp.categoria] ?? "—");
 
+  const deptoBadge = DEPTO_OPTS.find(d => d.value === (emp.departamento || "farmacia"))?.label ?? "—";
+
   return (
     <div style={{
-      display: "grid",
-      gridTemplateColumns: "1.5fr 1.8fr 0.9fr 0.6fr 0.8fr 0.8fr 0.7fr",
-      padding: "10px 16px", alignItems: "center",
       background: index % 2 === 0 ? "#fff" : "#f9fafb",
       borderBottom: "1px solid #f0f0f0",
     }}>
-      {/* Nombre */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <div style={{
-          width: 28, height: 28, borderRadius: "50%",
-          background: emp.farmaceutico ? GREEN_LIGHT : "#f0f0f0",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 11, fontWeight: 700,
-          color: emp.farmaceutico ? GREEN_DARK : "#888", flexShrink: 0,
-        }}>
-          {emp.nombre.charAt(0).toUpperCase()}
-        </div>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: emp.farmaceutico ? 700 : 500, color: emp.farmaceutico ? GREEN_DARK : "#2a2e2b" }}>
-            {emp.nombre}
+      {/* ─ Fila principal ─ */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "1.5fr 1.8fr 0.9fr 0.6fr 0.8fr 0.8fr 0.7fr",
+        padding: "10px 16px", alignItems: "center",
+      }}>
+        {/* Nombre */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{
+            width: 28, height: 28, borderRadius: "50%",
+            background: emp.farmaceutico ? GREEN_LIGHT : "#f0f0f0",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 11, fontWeight: 700,
+            color: emp.farmaceutico ? GREEN_DARK : "#888", flexShrink: 0,
+          }}>
+            {emp.nombre.charAt(0).toUpperCase()}
           </div>
-          {emp.farmaceutico ? <div style={{ fontSize: 8, color: GREEN, fontWeight: 700 }}>Farm.</div> : null}
+          <div>
+            <div style={{ fontSize: 12, fontWeight: emp.farmaceutico ? 700 : 500, color: emp.farmaceutico ? GREEN_DARK : "#2a2e2b" }}>
+              {emp.nombre}
+            </div>
+            <div style={{ fontSize: 8, color: "#9ca3af" }}>{deptoBadge}</div>
+          </div>
+        </div>
+
+        {/* Categoría */}
+        <div style={{ fontSize: 11, color: "#555" }}>{CATEGORIA_LABEL[emp.categoria] ?? emp.categoria}</div>
+
+        {/* Jornada */}
+        <div style={{ fontSize: 11, color: "#555", fontFamily: "'JetBrains Mono', monospace" }}>{jornada}</div>
+
+        {/* Guardia */}
+        <div>
+          {emp.hace_guardia ? (
+            <span style={{ background: GREEN_LIGHT, color: GREEN, fontWeight: 700, fontSize: 9, padding: "2px 7px", borderRadius: 10 }}>✓ Sí</span>
+          ) : (
+            <span style={{ color: "#ccc", fontSize: 10 }}>—</span>
+          )}
+        </div>
+
+        {/* Complemento € — editable */}
+        <div>
+          {editing ? (
+            <input
+              type="number"
+              value={draft.complemento_eur}
+              onChange={e => setDraft(d => ({ ...d, complemento_eur: parseInt(e.target.value) || 0 }))}
+              style={{ width: 64, border: "1px solid #ddd", borderRadius: 4, fontSize: 11, padding: "2px 6px" }}
+            />
+          ) : (
+            <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", fontWeight: emp.complemento_eur > 0 ? 700 : 400, color: emp.complemento_eur > 0 ? GREEN_DARK : "#ccc" }}>
+              {emp.complemento_eur > 0 ? `${emp.complemento_eur}€` : "—"}
+            </span>
+          )}
+        </div>
+
+        {/* h/Guardia — editable */}
+        <div>
+          {editing ? (
+            <input
+              type="number"
+              value={draft.h_lab_complemento}
+              onChange={e => setDraft(d => ({ ...d, h_lab_complemento: parseInt(e.target.value) || 0 }))}
+              style={{ width: 48, border: "1px solid #ddd", borderRadius: 4, fontSize: 11, padding: "2px 6px" }}
+            />
+          ) : (
+            <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: emp.h_lab_complemento > 0 ? "#555" : "#ccc" }}>
+              {emp.h_lab_complemento > 0 ? `${emp.h_lab_complemento}h` : "—"}
+            </span>
+          )}
+        </div>
+
+        {/* Acciones */}
+        <div style={{ display: "flex", gap: 4 }}>
+          {editing ? (
+            <>
+              <button onClick={handleSave} disabled={saving} style={{ background: GREEN, color: "#fff", border: "none", borderRadius: 4, padding: "3px 8px", cursor: "pointer", fontSize: 10, fontWeight: 600 }}>
+                {saving ? "…" : "✓"}
+              </button>
+              <button onClick={() => setEditing(false)} style={{ background: "#f5f5f5", color: "#555", border: "none", borderRadius: 4, padding: "3px 8px", cursor: "pointer", fontSize: 10 }}>
+                ✕
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => setEditing(true)}
+                title="Editar datos"
+                style={{ background: GREEN_LIGHT, color: GREEN_DARK, border: "none", borderRadius: 4, padding: "3px 8px", cursor: "pointer", fontSize: 10 }}
+              >
+                ✎
+              </button>
+              <button
+                onClick={() => onBaja(emp.id)}
+                title="Dar de baja"
+                style={{ background: "#fef2f2", color: "#c0392b", border: "none", borderRadius: 4, padding: "3px 8px", cursor: "pointer", fontSize: 10 }}
+              >
+                ✗
+              </button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Categoría */}
-      <div style={{ fontSize: 11, color: "#555" }}>{CATEGORIA_LABEL[emp.categoria] ?? emp.categoria}</div>
-
-      {/* Jornada */}
-      <div style={{ fontSize: 11, color: "#555", fontFamily: "'JetBrains Mono', monospace" }}>{jornada}</div>
-
-      {/* Guardia */}
-      <div>
-        {emp.hace_guardia ? (
-          <span style={{ background: GREEN_LIGHT, color: GREEN, fontWeight: 700, fontSize: 9, padding: "2px 7px", borderRadius: 10 }}>✓ Sí</span>
-        ) : (
-          <span style={{ color: "#ccc", fontSize: 10 }}>—</span>
-        )}
-      </div>
-
-      {/* Complemento € — editable */}
-      <div>
-        {editing ? (
-          <input
-            type="number"
-            value={draft.complemento_eur}
-            onChange={e => setDraft(d => ({ ...d, complemento_eur: parseInt(e.target.value) || 0 }))}
-            style={{ width: 64, border: "1px solid #ddd", borderRadius: 4, fontSize: 11, padding: "2px 6px" }}
-          />
-        ) : (
-          <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", fontWeight: emp.complemento_eur > 0 ? 700 : 400, color: emp.complemento_eur > 0 ? GREEN_DARK : "#ccc" }}>
-            {emp.complemento_eur > 0 ? `${emp.complemento_eur}€` : "—"}
-          </span>
-        )}
-      </div>
-
-      {/* h/Guardia — editable */}
-      <div>
-        {editing ? (
-          <input
-            type="number"
-            value={draft.h_lab_complemento}
-            onChange={e => setDraft(d => ({ ...d, h_lab_complemento: parseInt(e.target.value) || 0 }))}
-            style={{ width: 48, border: "1px solid #ddd", borderRadius: 4, fontSize: 11, padding: "2px 6px" }}
-          />
-        ) : (
-          <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: emp.h_lab_complemento > 0 ? "#555" : "#ccc" }}>
-            {emp.h_lab_complemento > 0 ? `${emp.h_lab_complemento}h` : "—"}
-          </span>
-        )}
-      </div>
-
-      {/* Acciones */}
-      <div style={{ display: "flex", gap: 4 }}>
-        {editing ? (
-          <>
-            <button onClick={handleSave} disabled={saving} style={{ background: GREEN, color: "#fff", border: "none", borderRadius: 4, padding: "3px 8px", cursor: "pointer", fontSize: 10, fontWeight: 600 }}>
-              {saving ? "…" : "✓"}
-            </button>
-            <button onClick={() => setEditing(false)} style={{ background: "#f5f5f5", color: "#555", border: "none", borderRadius: 4, padding: "3px 8px", cursor: "pointer", fontSize: 10 }}>
-              ✕
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              onClick={() => setEditing(true)}
-              title="Editar complementos"
-              style={{ background: GREEN_LIGHT, color: GREEN_DARK, border: "none", borderRadius: 4, padding: "3px 8px", cursor: "pointer", fontSize: 10 }}
+      {/* ─ Panel de edición expandido ─ */}
+      {editing && (
+        <div style={{
+          padding: "10px 16px 14px", background: "#f0fdf4",
+          borderTop: "1px solid #bbf7d0",
+          display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10,
+        }}>
+          {/* Departamento */}
+          <div>
+            <div style={{ fontSize: 9, color: "#555", fontWeight: 700, textTransform: "uppercase", marginBottom: 3 }}>Departamento</div>
+            <select
+              value={draft.departamento}
+              onChange={e => setDraft(d => ({ ...d, departamento: e.target.value }))}
+              style={{ width: "100%", border: "1px solid #ddd", borderRadius: 4, fontSize: 12, padding: "4px 6px" }}
             >
-              ✎
-            </button>
-            <button
-              onClick={() => onBaja(emp.id)}
-              title="Dar de baja"
-              style={{ background: "#fef2f2", color: "#c0392b", border: "none", borderRadius: 4, padding: "3px 8px", cursor: "pointer", fontSize: 10 }}
-            >
-              ✗
-            </button>
-          </>
-        )}
-      </div>
+              {DEPTO_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+
+          {/* Turno A */}
+          <div>
+            <div style={{ fontSize: 9, color: "#555", fontWeight: 700, textTransform: "uppercase", marginBottom: 3 }}>Turno A (media-horas)</div>
+            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+              {hhField(draft.horario_inicio_a, v => setDraft(d => ({ ...d, horario_inicio_a: v })), "inicio")}
+              <span style={{ fontSize: 10, color: "#aaa" }}>→</span>
+              {hhField(draft.horario_fin_a, v => setDraft(d => ({ ...d, horario_fin_a: v })), "fin")}
+            </div>
+          </div>
+
+          {/* Turno B (opcional) */}
+          <div>
+            <div style={{ fontSize: 9, color: "#555", fontWeight: 700, textTransform: "uppercase", marginBottom: 3 }}>Turno B (opcional)</div>
+            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+              {hhField(draft.horario_inicio_b, v => setDraft(d => ({ ...d, horario_inicio_b: v })), "inicio")}
+              <span style={{ fontSize: 10, color: "#aaa" }}>→</span>
+              {hhField(draft.horario_fin_b, v => setDraft(d => ({ ...d, horario_fin_b: v })), "fin")}
+            </div>
+          </div>
+
+          <div style={{ fontSize: 9, color: "#888", alignSelf: "end", paddingBottom: 2 }}>
+            Ej: 9:00=18, 13:00=26, 14:00=28, 17:00=34, 20:30=41
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// ── Vista de horarios rotativos ───────────────────────────────────────────────
+// Horario en texto para mostrar en tabla (derivado de HORARIO_DEFAULT confirmados)
+const HORARIO_TEXTO: Record<string, string> = {
+  ovidio:  "11:30 – 20:30",
+  bea:     "7:00 – 15:30",
+  maria:   "12:30 – 20:30",
+  julio:   "9:00 – 14:00 / 17:00 – 20:00",
+  celia:   "9:00 – 17:00",
+  noelia:  "9:00 – 13:00 / 15:00 – 18:30",
+  miriam:  "9:00 – 17:00",
+  monica:  "9:00 – 17:00",
+  javier:  "9:00 – 17:00 (guardia: 9–14 / 20–23)",
+  teresa:  "8:30 – 12:00",
+  luisa:   "8:30 – 12:00",
+};
+
+// ── Vista de horarios de todo el equipo ───────────────────────────────────────
 
 function HorariosTab({ empleados, asignaciones, week, onChangeWeek, onSaveAsignacion }: {
   empleados: Empleado[];
@@ -301,9 +405,7 @@ function HorariosTab({ empleados, asignaciones, week, onChangeWeek, onSaveAsigna
   onChangeWeek: (w: string) => void;
   onSaveAsignacion: (empId: string, turno: number) => Promise<void>;
 }) {
-  // Empleados rotativos activos
-  const rotativos = empleados.filter(e => EMPLEADOS_ROTATIVOS.includes(e.id));
-  const especiales = empleados.filter(e => EMPLEADOS_ESPECIALES.includes(e.id));
+  const activos = empleados.filter(e => e.activo !== 0);
 
   const getAsignacion = (empId: string): number => {
     const override = asignaciones.find(a => a.empleado_id === empId && a.week_start === week);
@@ -322,6 +424,11 @@ function HorariosTab({ empleados, asignaciones, week, onChangeWeek, onSaveAsigna
 
   const isCurrentWeek = week === getWeekStart(new Date());
 
+  const inp: React.CSSProperties = {
+    border: "none", background: "none", fontSize: 11, color: "#555",
+    cursor: "default", width: "100%",
+  };
+
   return (
     <div>
       {/* Navegación de semana */}
@@ -332,12 +439,12 @@ function HorariosTab({ empleados, asignaciones, week, onChangeWeek, onSaveAsigna
           {isCurrentWeek && <div style={{ fontSize: 10, color: GREEN, fontWeight: 600 }}>Semana actual</div>}
         </div>
         <button onClick={() => onChangeWeek(addWeeks(week, 1))} style={{ background: GREEN_LIGHT, border: "none", borderRadius: 6, padding: "5px 12px", cursor: "pointer", color: GREEN_DARK, fontSize: 14, fontWeight: 700 }}>▶</button>
-        {week !== getWeekStart(new Date()) && (
+        {!isCurrentWeek && (
           <button onClick={() => onChangeWeek(getWeekStart(new Date()))} style={{ background: GREEN, color: "#fff", border: "none", borderRadius: 6, padding: "5px 10px", cursor: "pointer", fontSize: 11, fontWeight: 600 }}>Hoy</button>
         )}
       </div>
 
-      {/* Leyenda de turnos */}
+      {/* Leyenda de turnos rotativos */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
         {[1, 2, 3, 0].map(t => (
           <div key={t} style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 20, ...TURNO_COLORS[t], fontSize: 11 }}>
@@ -346,62 +453,78 @@ function HorariosTab({ empleados, asignaciones, week, onChangeWeek, onSaveAsigna
         ))}
       </div>
 
-      {/* Tabla de rotativos */}
+      {/* Tabla de todos los empleados */}
       <div style={{ background: "#fff", borderRadius: 12, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", marginBottom: 20 }}>
-        <div style={{ background: GREEN, padding: "8px 16px", display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: 8 }}>
-          {["Empleada", "Turno", "Horario"].map(h => (
+        <div style={{ background: GREEN, padding: "8px 16px", display: "grid", gridTemplateColumns: "1.2fr 0.8fr 2fr", gap: 8 }}>
+          {["Empleado/a", "Turno / selector", "Horario"].map(h => (
             <div key={h} style={{ fontSize: 9, fontWeight: 700, color: "#fff", textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</div>
           ))}
         </div>
-        {rotativos.map((emp, i) => {
-          const turno = getAsignacion(emp.id);
-          const colors = TURNO_COLORS[turno] ?? TURNO_COLORS[1];
+
+        {activos.map((emp, i) => {
+          const isRotativo = EMPLEADOS_ROTATIVOS.includes(emp.id);
+          const isEspecial = EMPLEADOS_ESPECIALES.includes(emp.id);
+          const turno      = isRotativo || isEspecial ? getAsignacion(emp.id) : -1;
+          const colors     = turno >= 0 ? (TURNO_COLORS[turno] ?? TURNO_COLORS[1]) : { bg: "#f9fafb", color: "#555" };
+          const horarioTxt = turno >= 0 ? TURNO_LABELS[turno] : (HORARIO_TEXTO[emp.id] ?? "—");
+
           return (
             <div key={emp.id} style={{
-              display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: 8,
-              padding: "12px 16px", alignItems: "center",
+              display: "grid", gridTemplateColumns: "1.2fr 0.8fr 2fr", gap: 8,
+              padding: "10px 16px", alignItems: "center",
               background: i % 2 === 0 ? "#fff" : "#f9fafb",
               borderBottom: "1px solid #f0f0f0",
             }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#2a2e2b" }}>{emp.nombre}</div>
-              <div>
-                <select
-                  value={turno}
-                  disabled={saving === emp.id}
-                  onChange={e => handleChangeTurno(emp.id, parseInt(e.target.value))}
-                  style={{
-                    border: `1px solid ${colors.color}`, borderRadius: 6,
-                    padding: "3px 8px", fontSize: 12, fontWeight: 700,
-                    background: colors.bg, color: colors.color, cursor: "pointer",
-                  }}
-                >
-                  {[1, 2, 3].map(t => (
-                    <option key={t} value={t}>{TURNO_SHORT[t]}</option>
-                  ))}
-                </select>
-                {saving === emp.id && <span style={{ fontSize: 10, color: "#888", marginLeft: 6 }}>…</span>}
+              {/* Nombre */}
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{
+                  width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
+                  background: emp.farmaceutico ? GREEN : "#9ca3af",
+                }} />
+                <span style={{ fontSize: 12, fontWeight: emp.farmaceutico ? 700 : 500, color: "#2a2e2b" }}>
+                  {emp.nombre}
+                </span>
+                {emp.empresa === "mirelus" && (
+                  <span style={{ fontSize: 8, color: "#9ca3af", background: "#f3f4f6", padding: "1px 4px", borderRadius: 4 }}>ext.</span>
+                )}
               </div>
-              <div style={{ fontSize: 11, color: "#555" }}>{TURNO_LABELS[turno]}</div>
+
+              {/* Selector de turno (rotativos) o badge fijo */}
+              <div>
+                {isRotativo && (
+                  <>
+                    <select
+                      value={turno}
+                      disabled={saving === emp.id}
+                      onChange={e => handleChangeTurno(emp.id, parseInt(e.target.value))}
+                      style={{
+                        border: `1px solid ${colors.color}`, borderRadius: 6,
+                        padding: "3px 8px", fontSize: 12, fontWeight: 700,
+                        background: colors.bg, color: colors.color, cursor: "pointer",
+                      }}
+                    >
+                      {[1, 2, 3].map(t => (
+                        <option key={t} value={t}>{TURNO_SHORT[t]}</option>
+                      ))}
+                    </select>
+                    {saving === emp.id && <span style={{ fontSize: 10, color: "#888", marginLeft: 6 }}>…</span>}
+                  </>
+                )}
+                {isEspecial && (
+                  <span style={{ ...TURNO_COLORS[0], padding: "3px 8px", borderRadius: 6, fontSize: 12, fontWeight: 700 }}>
+                    {TURNO_SHORT[0]}
+                  </span>
+                )}
+                {!isRotativo && !isEspecial && (
+                  <span style={{ fontSize: 10, color: "#9ca3af", fontStyle: "italic" }}>fijo</span>
+                )}
+              </div>
+
+              {/* Horario texto */}
+              <div style={{ ...inp }}>{horarioTxt}</div>
             </div>
           );
         })}
-        {/* Zuleica (especial) */}
-        {especiales.map((emp, i) => (
-          <div key={emp.id} style={{
-            display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: 8,
-            padding: "12px 16px", alignItems: "center",
-            background: (rotativos.length + i) % 2 === 0 ? "#fff" : "#f9fafb",
-            borderBottom: "1px solid #f0f0f0",
-          }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#2a2e2b" }}>{emp.nombre}</div>
-            <div>
-              <span style={{ ...TURNO_COLORS[0], padding: "3px 8px", borderRadius: 6, fontSize: 12, fontWeight: 700 }}>
-                {TURNO_SHORT[0]}
-              </span>
-            </div>
-            <div style={{ fontSize: 11, color: "#555" }}>{TURNO_LABELS[0]}</div>
-          </div>
-        ))}
       </div>
 
       {/* Info rotación */}
