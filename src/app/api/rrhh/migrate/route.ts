@@ -139,6 +139,8 @@ export async function POST() {
       `ALTER TABLE rrhh_guardia_slots ADD COLUMN hora_fin2 INTEGER`,
       `ALTER TABLE rrhh_guardia_defaults ADD COLUMN hora_inicio2 INTEGER`,
       `ALTER TABLE rrhh_guardia_defaults ADD COLUMN hora_fin2 INTEGER`,
+      // Ajuste manual del contador de guardias realizadas (nullable = usar valor calculado)
+      `ALTER TABLE rrhh_empleados ADD COLUMN guardias_manual INTEGER`,
     ];
     for (const sql of alterations) {
       try { await db.execute(sql); } catch { /* columna ya existe — ignorar */ }

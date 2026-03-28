@@ -58,7 +58,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const allowed = ["nombre", "categoria", "empresa", "farmaceutico", "hace_guardia",
-                     "complemento_eur", "h_lab_complemento", "activo", "orden"];
+                     "complemento_eur", "h_lab_complemento", "activo", "orden", "guardias_manual"];
     const updates = Object.entries(fields).filter(([k]) => allowed.includes(k));
 
     if (updates.length === 0) {

@@ -54,7 +54,8 @@ export interface Vacacion {
 export interface GuardiaStats {
   empleado_id: string;
   nombre: string;
-  guardias_hechas: number;
+  guardias_hechas: number;       // calculado: slots en fechas pasadas
+  guardias_manual: number | null; // override manual (null = usar calculado)
 }
 
 export interface HorarioAsignacion {

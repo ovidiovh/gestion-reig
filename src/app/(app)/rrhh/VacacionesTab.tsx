@@ -10,6 +10,7 @@ interface Props {
   onAddVacacion: (empId: string, desde: string, hasta: string, estado: string, tipo: string) => Promise<void>;
   onUpdateEstado: (id: number, estado: string) => Promise<void>;
   onDeleteVacacion: (id: number) => Promise<void>;
+  onUpdateGuardiasManual: (empId: string, value: number | null) => Promise<void>;
 }
 
 const STATUS_COLOR: Record<string, string> = { done: GREEN, conf: "#3b82f6", pend: "#f59e0b" };
@@ -30,14 +31,116 @@ function CompStats(vacs: Vacacion[], guardias: number) {
   return { guardias, earned: guardias, used: compUsed, balance: guardias - compUsed };
 }
 
-export default function VacacionesTab({ empleados, vacaciones, guardiaStats, onAddVacacion, onUpdateEstado, onDeleteVacacion }: Props) {
-  const [selEmp, setSelEmp] = useState<string | null>(null);
+/** Devuelve el número efectivo de guardias: manual si está fijado, calculado si no */
+function effectiveGuardias(stat: GuardiaStats | undefined): number {
+  if (!stat) return 0;
+  return stat.guardias_manual !== null && stat.guardias_manual !== undefined
+    ? stat.guardias_manual
+    : stat.guardias_hechas;
+}
+
+// ── Subcomponente: editor inline del contador de guardias ─────────────────────
+
+function GuardiasEditor({ stat, onSave }: {
+  stat: GuardiaStats | undefined;
+  onSave: (value: number | null) => Promise<void>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft]     = useState<string>("");
+  const [saving, setSaving]   = useState(false);
+
+  const computed  = stat?.guardias_hechas ?? 0;
+  const manual    = stat?.guardias_manual ?? null;
+  const effective = effectiveGuardias(stat);
+  const isOverride = manual !== null && manual !== undefined;
+
+  const startEdit = () => {
+    setDraft(String(effective));
+    setEditing(true);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    const parsed = parseInt(draft);
+    if (!isNaN(parsed) && parsed >= 0) {
+      await onSave(parsed);
+    }
+    setSaving(false);
+    setEditing(false);
+  };
+
+  const handleReset = async () => {
+    setSaving(true);
+    await onSave(null); // null = volver al calculado
+    setSaving(false);
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", background: "#fffbeb", borderRadius: 8, border: "1px solid #fde68a" }}>
+        <span style={{ fontSize: 11, color: "#555" }}>Guardias realizadas:</span>
+        <input
+          type="number"
+          min={0}
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          autoFocus
+          style={{ width: 56, border: "1px solid #ddd", borderRadius: 4, padding: "3px 8px", fontSize: 14, fontWeight: 700, textAlign: "center" }}
+        />
+        <button onClick={handleSave} disabled={saving} style={{ background: GREEN, color: "#fff", border: "none", borderRadius: 4, padding: "4px 12px", cursor: "pointer", fontSize: 11, fontWeight: 600 }}>
+          {saving ? "…" : "Guardar"}
+        </button>
+        {isOverride && (
+          <button onClick={handleReset} disabled={saving} style={{ background: "#f3f4f6", color: "#555", border: "none", borderRadius: 4, padding: "4px 10px", cursor: "pointer", fontSize: 11 }}
+            title="Volver al valor calculado automáticamente">
+            Restablecer
+          </button>
+        )}
+        <button onClick={() => setEditing(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#aaa" }}>×</button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ fontSize: 20, fontWeight: 700, color: "#333", fontFamily: "'JetBrains Mono', monospace" }}>
+        {effective}
+      </div>
+      {isOverride && (
+        <span style={{ fontSize: 9, background: "#fef3c7", color: "#92400e", padding: "1px 5px", borderRadius: 4, fontWeight: 600 }}>
+          manual
+        </span>
+      )}
+      {!isOverride && computed > 0 && (
+        <span style={{ fontSize: 9, background: "#f0fdf4", color: "#166534", padding: "1px 5px", borderRadius: 4 }}>
+          auto
+        </span>
+      )}
+      <button
+        onClick={startEdit}
+        title="Editar número de guardias realizadas"
+        style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 4, padding: "3px 8px", cursor: "pointer", fontSize: 10, color: "#555" }}
+      >
+        ✎ editar
+      </button>
+    </div>
+  );
+}
+
+// ── Componente principal ──────────────────────────────────────────────────────
+
+export default function VacacionesTab({
+  empleados, vacaciones, guardiaStats,
+  onAddVacacion, onUpdateEstado, onDeleteVacacion, onUpdateGuardiasManual,
+}: Props) {
+  const [selEmp, setSelEmp]   = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
-  const [desde, setDesde] = useState("");
-  const [hasta, setHasta] = useState("");
-  const [estado, setEstado] = useState("pend");
+  const [desde, setDesde]     = useState("");
+  const [hasta, setHasta]     = useState("");
+  const [estado, setEstado]   = useState("pend");
   const [tipoAdd, setTipoAdd] = useState<"vac" | "comp">("vac");
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving]   = useState(false);
 
   const pendientes = vacaciones.filter(v => v.estado === "pend" && v.tipo !== "comp");
 
@@ -53,7 +156,8 @@ export default function VacacionesTab({ empleados, vacaciones, guardiaStats, onA
     const emp = empleados.find(e => e.id === selEmp)!;
     const empVacs = vacaciones.filter(v => v.empleado_id === selEmp);
     const st = VacStats(empVacs);
-    const guardCount = guardiaStats.find(g => g.empleado_id === selEmp)?.guardias_hechas ?? 0;
+    const stat = guardiaStats.find(g => g.empleado_id === selEmp);
+    const guardCount = effectiveGuardias(stat);
     const comp = CompStats(empVacs, guardCount);
     const isFarma = emp.farmaceutico === 1;
 
@@ -74,10 +178,16 @@ export default function VacacionesTab({ empleados, vacaciones, guardiaStats, onA
           </span>
         </div>
 
-        {/* Contadores vacaciones ordinarias */}
+        {/* Vacaciones ordinarias */}
         <div style={{ fontSize: 10, fontWeight: 600, color: "#666", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Vacaciones ordinarias (30 días)</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6, marginBottom: 10 }}>
-          {([["Total", 30, "#333"], ["Disfrutados", st.done, GREEN], ["Confirmados", st.conf, "#3b82f6"], ["Pedidos", st.pend, "#f59e0b"], ["Disponibles", st.avail, st.avail <= 5 ? "#ef4444" : "#333"]] as [string, number, string][]).map(([l, v, c]) => (
+          {([
+            ["Total",       30,       "#333"],
+            ["Disfrutados", st.done,  GREEN],
+            ["Confirmados", st.conf,  "#3b82f6"],
+            ["Pedidos",     st.pend,  "#f59e0b"],
+            ["Disponibles", st.avail, st.avail <= 5 ? "#ef4444" : "#333"],
+          ] as [string, number, string][]).map(([l, v, c]) => (
             <div key={l} style={{ textAlign: "center", padding: "8px 4px", background: "#f9fafb", borderRadius: 8 }}>
               <div style={{ fontSize: 22, fontWeight: 700, color: c, fontFamily: "'JetBrains Mono', monospace" }}>{v}</div>
               <div style={{ fontSize: 8, color: "#999", marginTop: 2 }}>{l}</div>
@@ -85,25 +195,40 @@ export default function VacacionesTab({ empleados, vacaciones, guardiaStats, onA
           ))}
         </div>
 
-        {/* Barra progreso vacaciones */}
+        {/* Barra progreso */}
         <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden", background: "#eee", marginBottom: 16 }}>
           <div style={{ width: `${(st.done / 30) * 100}%`, background: GREEN }} />
           <div style={{ width: `${(st.conf / 30) * 100}%`, background: "#3b82f6" }} />
           <div style={{ width: `${(st.pend / 30) * 100}%`, background: "#f59e0b" }} />
         </div>
 
-        {/* Contador guardias — solo farmacéuticos */}
+        {/* Compensatorios — solo farmacéuticos */}
         {isFarma && (
-          <div style={{ padding: "12px 14px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0", marginBottom: 16 }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: GREEN_DARK, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>
+          <div style={{ padding: "14px 16px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0", marginBottom: 16 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: GREEN_DARK, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>
               Descansos compensatorios por guardia
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+
+            {/* Editor de guardias realizadas */}
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 10, color: "#6b7280", marginBottom: 4 }}>
+                Guardias realizadas
+                <span style={{ marginLeft: 6, color: "#9ca3af" }}>
+                  (calculado automáticamente desde guardias pasadas; editable si hay discrepancia)
+                </span>
+              </div>
+              <GuardiasEditor
+                stat={stat}
+                onSave={v => onUpdateGuardiasManual(selEmp, v)}
+              />
+            </div>
+
+            {/* Cuadrícula balance */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
               {([
-                ["Guardias hechas", comp.guardias, "#333"],
-                ["Días ganados", comp.earned, GREEN],
-                ["Días usados", comp.used, "#3b82f6"],
-                ["Balance", comp.balance, comp.balance < 0 ? "#ef4444" : comp.balance === 0 ? "#666" : GREEN],
+                ["Días ganados",  comp.earned,  GREEN],
+                ["Días usados",   comp.used,    "#3b82f6"],
+                ["Balance",       comp.balance, comp.balance < 0 ? "#ef4444" : comp.balance === 0 ? "#666" : GREEN],
               ] as [string, number, string][]).map(([l, v, c]) => (
                 <div key={l} style={{ textAlign: "center", padding: "8px 4px", background: "#fff", borderRadius: 8, border: "1px solid #d1fae5" }}>
                   <div style={{ fontSize: 20, fontWeight: 700, color: c, fontFamily: "'JetBrains Mono', monospace" }}>{v}</div>
@@ -178,7 +303,7 @@ export default function VacacionesTab({ empleados, vacaciones, guardiaStats, onA
           </div>
         )}
 
-        {/* Descansos compensatorios */}
+        {/* Compensatorios */}
         {isFarma && empVacs.filter(v => v.tipo === "comp").length > 0 && (
           <div>
             <div style={{ fontSize: 9, fontWeight: 600, color: "#999", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Compensatorios guardia</div>
@@ -191,17 +316,20 @@ export default function VacacionesTab({ empleados, vacaciones, guardiaStats, onA
     );
   }
 
-  // Vista general
+  // ── Vista general ──────────────────────────────────────────────────────────
   return (
     <div>
       <div style={{ fontSize: 16, fontWeight: 700, color: GREEN_DARK, marginBottom: 12 }}>Vacaciones 2026</div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8, marginBottom: 16 }}>
         {empleados.map(emp => {
-          const empVacs = vacaciones.filter(v => v.empleado_id === emp.id);
-          const st = VacStats(empVacs);
-          const guardCount = guardiaStats.find(g => g.empleado_id === emp.id)?.guardias_hechas ?? 0;
-          const comp = CompStats(empVacs, guardCount);
+          const empVacs  = vacaciones.filter(v => v.empleado_id === emp.id);
+          const st       = VacStats(empVacs);
+          const stat     = guardiaStats.find(g => g.empleado_id === emp.id);
+          const guardCount = effectiveGuardias(stat);
+          const comp     = CompStats(empVacs, guardCount);
+          const isManual = stat && stat.guardias_manual !== null && stat.guardias_manual !== undefined;
+
           return (
             <div
               key={emp.id}
@@ -213,7 +341,12 @@ export default function VacacionesTab({ empleados, vacaciones, guardiaStats, onA
               }}
             >
               <div style={{ fontWeight: 700, fontSize: 12, color: emp.farmaceutico ? GREEN_DARK : "#333", marginBottom: 4 }}>{emp.nombre}</div>
-              {([["Disfrut.", st.done, GREEN], ["Confirm.", st.conf, "#3b82f6"], ["Pend.", st.pend, "#f59e0b"], ["Disponib.", st.avail, st.avail <= 5 ? "#ef4444" : "#555"]] as [string, number, string][]).map(([l, v, c]) => (
+              {([
+                ["Disfrut.",  st.done,  GREEN],
+                ["Confirm.",  st.conf,  "#3b82f6"],
+                ["Pend.",     st.pend,  "#f59e0b"],
+                ["Disponib.", st.avail, st.avail <= 5 ? "#ef4444" : "#555"],
+              ] as [string, number, string][]).map(([l, v, c]) => (
                 <div key={l} style={{ display: "flex", justifyContent: "space-between", fontSize: 9, lineHeight: 1.6 }}>
                   <span style={{ color: "#888" }}>{l}</span>
                   <span style={{ fontWeight: 600, color: c }}>{v}</span>
@@ -222,11 +355,13 @@ export default function VacacionesTab({ empleados, vacaciones, guardiaStats, onA
               {emp.farmaceutico === 1 && guardCount > 0 && (
                 <div style={{ marginTop: 4, paddingTop: 4, borderTop: "1px dashed #d1fae5" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, lineHeight: 1.6 }}>
-                    <span style={{ color: "#6b7280" }}>Guard. noche</span>
+                    <span style={{ color: "#6b7280" }}>
+                      Guard. {isManual ? <span style={{ color: "#92400e" }}>✎</span> : ""}
+                    </span>
                     <span style={{ fontWeight: 600, color: GREEN }}>{guardCount}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, lineHeight: 1.6 }}>
-                    <span style={{ color: "#6b7280" }}>Comp. balance</span>
+                    <span style={{ color: "#6b7280" }}>Balance comp.</span>
                     <span style={{ fontWeight: 600, color: comp.balance < 0 ? "#ef4444" : "#555" }}>{comp.balance}</span>
                   </div>
                 </div>

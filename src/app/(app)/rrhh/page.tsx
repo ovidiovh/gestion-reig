@@ -374,6 +374,17 @@ export default function RRHHPage() {
     setVacaciones(prev => prev.filter(v => v.id !== id));
   };
 
+  const updateGuardiasManual = async (empId: string, value: number | null) => {
+    await fetch("/api/rrhh/empleados", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: empId, guardias_manual: value }),
+    });
+    // Recargar stats
+    const gs = await fetch("/api/rrhh/guardias/stats?year=2026").then(r => r.json());
+    if (gs.ok) setGuardiaStats(gs.stats);
+  };
+
   // ── Renderizador de celda ──────────────────────────────────────────────────
   const renderCell = (m: number, d: number, size: "full" | "sm" | "xs") => {
     const year   = 2026;
@@ -797,6 +808,7 @@ export default function RRHHPage() {
             onAddVacacion={addVacacion}
             onUpdateEstado={updateEstadoVac}
             onDeleteVacacion={deleteVacacion}
+            onUpdateGuardiasManual={updateGuardiasManual}
           />
         )}
       </div>
