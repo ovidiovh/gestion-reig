@@ -48,22 +48,35 @@ export interface Vacacion {
 }
 
 // Guardias precalculadas cada 19 días desde 4 abril 2026
+// Usa aritmética local (setDate) para evitar desplazamientos por DST/UTC en España (UTC+1/+2)
 export function calcGuardDates(): Set<string> {
   const set = new Set<string>();
-  const anchor = new Date(2026, 3, 4); // 4 abril 2026
 
-  // Hacia atrás
+  const localStr = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+  const addDays = (d: Date, n: number): Date => {
+    const r = new Date(d);
+    r.setDate(r.getDate() + n);
+    return r;
+  };
+
+  const anchor  = new Date(2026, 3, 4); // 4 abril 2026 (hora local)
+  const inicio  = new Date(2026, 0, 1);
+  const fin     = new Date(2026, 11, 31);
+
+  // Hacia atrás (incluyendo el ancla)
   let d = new Date(anchor);
-  while (d >= new Date(2026, 0, 1)) {
-    set.add(d.toISOString().split("T")[0]);
-    d = new Date(d.getTime() - 19 * 86400000);
+  while (d >= inicio) {
+    set.add(localStr(d));
+    d = addDays(d, -19);
   }
 
   // Hacia adelante
-  d = new Date(anchor.getTime() + 19 * 86400000);
-  while (d <= new Date(2026, 11, 31)) {
-    set.add(d.toISOString().split("T")[0]);
-    d = new Date(d.getTime() + 19 * 86400000);
+  d = addDays(anchor, 19);
+  while (d <= fin) {
+    set.add(localStr(d));
+    d = addDays(d, 19);
   }
 
   return set;
@@ -84,6 +97,7 @@ export function daysBetween(a: string, b: string): number {
   return Math.round((new Date(b + "T00:00:00").getTime() - new Date(a + "T00:00:00").getTime()) / 86400000) + 1;
 }
 
+// Devuelve fecha local YYYY-MM-DD (sin conversión UTC que desplaza 1 día en España)
 export function toDateStr(d: Date): string {
-  return d.toISOString().split("T")[0];
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }

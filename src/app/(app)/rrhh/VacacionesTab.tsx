@@ -29,8 +29,8 @@ export default function VacacionesTab({ empleados, vacaciones, onAddVacacion, on
   const [estado, setEstado] = useState("pend");
   const [saving, setSaving] = useState(false);
 
-  // Lista de empleados con guardia (los relevantes)
-  const empConGuardia = empleados.filter(e => e.hace_guardia || e.complemento_eur > 0 || ["ovidio","bea","maria","julio","celia"].includes(e.id));
+  // Todos los empleados activos (ordenados por orden)
+  const empConGuardia = empleados;
   const pendientes = vacaciones.filter(v => v.estado === "pend");
 
   const handleAdd = async () => {

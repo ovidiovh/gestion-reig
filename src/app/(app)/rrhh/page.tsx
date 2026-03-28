@@ -13,92 +13,102 @@ import VacacionesTab from "./VacacionesTab";
 // ── Guardias precalculadas (cliente) ─────────────────────────────────────────
 const GUARD_DATES = calcGuardDates();
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-type View = "cal" | "guard" | "vac";
+// ── Tipos de vista ────────────────────────────────────────────────────────────
+type MainView = "cal" | "guard" | "vac";
+type CalView  = "mes" | "trimestre" | "anual";
+
+// ── Helpers de estilo ────────────────────────────────────────────────────────
+const btnBase: React.CSSProperties = {
+  background: GREEN_LIGHT, border: "none", borderRadius: 6,
+  padding: "5px 12px", cursor: "pointer", color: GREEN_DARK,
+  fontSize: 14, fontWeight: 700,
+};
 
 export default function RRHHPage() {
-  const [view, setView] = useState<View>("cal");
-  const [month, setMonth] = useState(new Date().getMonth());
-  const [empleados, setEmpleados] = useState<Empleado[]>([]);
-  const [festivos, setFestivos] = useState<Festivo[]>([]);
-  const [guardias, setGuardias] = useState<Guardia[]>([]);
-  const [vacaciones, setVacaciones] = useState<Vacacion[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [view, setView]         = useState<MainView>("cal");
+  const [calView, setCalView]   = useState<CalView>("mes");
+  const [month, setMonth]       = useState(new Date().getMonth());
+  const [quarter, setQuarter]   = useState(() => Math.floor(new Date().getMonth() / 3));
 
-  // Guardia activa en panel
-  const [activeGuardia, setActiveGuardia] = useState<{ guardia: Guardia; slots: GuardiaSlot[] } | null>(null);
+  const [empleados,  setEmpleados]  = useState<Empleado[]>([]);
+  const [festivos,   setFestivos]   = useState<Festivo[]>([]);
+  const [guardias,   setGuardias]   = useState<Guardia[]>([]);
+  const [vacaciones, setVacaciones] = useState<Vacacion[]>([]);
+
+  const [loading,        setLoading]        = useState(true);
+  const [error,          setError]          = useState<string | null>(null);
+  const [activeGuardia,  setActiveGuardia]  = useState<{ guardia: Guardia; slots: GuardiaSlot[] } | null>(null);
   const [loadingGuardia, setLoadingGuardia] = useState(false);
 
-  // ── Carga inicial ──────────────────────────────────────────────────────────
+  // ── Carga inicial con auto-migración ──────────────────────────────────────
+  const loadAll = useCallback(async () => {
+    const [e, f, g, v] = await Promise.all([
+      fetch("/api/rrhh/empleados").then(r => r.json()),
+      fetch("/api/rrhh/festivos?year=2026").then(r => r.json()),
+      fetch("/api/rrhh/guardias?year=2026").then(r => r.json()),
+      fetch("/api/rrhh/vacaciones?year=2026").then(r => r.json()),
+    ]);
+    if (e.ok) setEmpleados(e.empleados);
+    if (f.ok) setFestivos(f.festivos);
+    if (g.ok) setGuardias(g.guardias);
+    if (v.ok) setVacaciones(v.vacaciones);
+    return e.ok;
+  }, []);
+
   const loadData = useCallback(async () => {
     try {
-      const [empRes, festRes, guardRes, vacRes] = await Promise.all([
-        fetch("/api/rrhh/empleados"),
-        fetch("/api/rrhh/festivos?year=2026"),
-        fetch("/api/rrhh/guardias?year=2026"),
-        fetch("/api/rrhh/vacaciones?year=2026"),
-      ]);
-      const [empData, festData, guardData, vacData] = await Promise.all([
-        empRes.json(), festRes.json(), guardRes.json(), vacRes.json(),
-      ]);
-
-      if (empData.ok)   setEmpleados(empData.empleados);
-      if (festData.ok)  setFestivos(festData.festivos);
-      if (guardData.ok) setGuardias(guardData.guardias);
-      if (vacData.ok)   setVacaciones(vacData.vacaciones);
+      const ok = await loadAll();
+      // Si empleados falló → tablas no existen todavía → auto-migrar y reintentar
+      if (!ok) {
+        await fetch("/api/rrhh/migrate", { method: "POST" });
+        await loadAll();
+      }
     } catch (e) {
       setError("Error cargando datos: " + String(e));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadAll]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // ── Sets para lookup rápido ────────────────────────────────────────────────
+  // ── Lookups rápidos ────────────────────────────────────────────────────────
   const festivoSet = new Set(festivos.map(f => f.fecha));
   const guardiaMap = new Map(guardias.map(g => [g.fecha, g]));
+  const vacsOnDay  = (ds: string) =>
+    vacaciones.filter(v => ds >= v.fecha_inicio && ds <= v.fecha_fin);
 
-  // Vacaciones por día
-  const vacsOnDay = (dateStr: string) =>
-    vacaciones.filter(v => dateStr >= v.fecha_inicio && dateStr <= v.fecha_fin);
-
-  // ── Abrir guardia ──────────────────────────────────────────────────────────
+  // ── Abrir / crear guardia ──────────────────────────────────────────────────
   const openGuardia = async (fecha: string) => {
     setLoadingGuardia(true);
     try {
       let guardia = guardiaMap.get(fecha);
 
-      // Si no existe en BD, crearla
       if (!guardia) {
-        const res = await fetch("/api/rrhh/guardias", {
+        const res  = await fetch("/api/rrhh/guardias", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ fecha }),
         });
         const data = await res.json();
-        if (!data.ok) throw new Error(data.error);
+        if (!data.ok) throw new Error(data.error ?? "No se pudo crear la guardia");
 
-        // Recargar guardias
-        const newGuardRes = await fetch("/api/rrhh/guardias?year=2026");
-        const newGuardData = await newGuardRes.json();
-        if (newGuardData.ok) setGuardias(newGuardData.guardias);
-
-        guardia = newGuardData.guardias.find((g: Guardia) => g.fecha === fecha);
+        const gRes  = await fetch("/api/rrhh/guardias?year=2026");
+        const gData = await gRes.json();
+        if (gData.ok) setGuardias(gData.guardias);
+        guardia = gData.guardias.find((g: Guardia) => g.fecha === fecha);
       }
 
-      if (!guardia) throw new Error("No se pudo crear la guardia");
+      if (!guardia) throw new Error("Guardia no encontrada tras crearla");
 
-      // Cargar slots
-      const detRes = await fetch(`/api/rrhh/guardias/${guardia.id}`);
+      const detRes  = await fetch(`/api/rrhh/guardias/${guardia.id}`);
       const detData = await detRes.json();
       if (!detData.ok) throw new Error(detData.error);
 
       setActiveGuardia({ guardia: detData.guardia, slots: detData.slots });
       setView("guard");
     } catch (e) {
-      alert("Error: " + String(e));
+      alert("Error al abrir guardia: " + String(e));
     } finally {
       setLoadingGuardia(false);
     }
@@ -106,35 +116,35 @@ export default function RRHHPage() {
 
   const saveGuardia = async (slots: GuardiaSlot[], tipo: string, publicada: number) => {
     if (!activeGuardia) return;
-    const { guardia } = activeGuardia;
-    await fetch(`/api/rrhh/guardias/${guardia.id}`, {
+    await fetch(`/api/rrhh/guardias/${activeGuardia.guardia.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        tipo,
-        publicada,
-        slots: slots.map(s => ({ empleado_id: s.empleado_id, hora_inicio: s.hora_inicio, hora_fin: s.hora_fin })),
+        tipo, publicada,
+        slots: slots.map(s => ({
+          empleado_id: s.empleado_id,
+          hora_inicio: s.hora_inicio,
+          hora_fin:    s.hora_fin,
+        })),
       }),
     });
-    // Refrescar guardias
-    const res = await fetch("/api/rrhh/guardias?year=2026");
+    const res  = await fetch("/api/rrhh/guardias?year=2026");
     const data = await res.json();
     if (data.ok) setGuardias(data.guardias);
-    setActiveGuardia(prev => prev ? { ...prev, guardia: { ...prev.guardia, tipo: tipo as "lab" | "fest", publicada } } : null);
+    setActiveGuardia(prev =>
+      prev ? { ...prev, guardia: { ...prev.guardia, tipo: tipo as "lab" | "fest", publicada } } : null
+    );
   };
 
   // ── Vacaciones handlers ────────────────────────────────────────────────────
   const addVacacion = async (empId: string, desde: string, hasta: string, estado: string) => {
-    const res = await fetch("/api/rrhh/vacaciones", {
+    await fetch("/api/rrhh/vacaciones", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ empleado_id: empId, fecha_inicio: desde, fecha_fin: hasta, estado }),
     });
-    if (res.ok) {
-      const newRes = await fetch("/api/rrhh/vacaciones?year=2026");
-      const d = await newRes.json();
-      if (d.ok) setVacaciones(d.vacaciones);
-    }
+    const d = await fetch("/api/rrhh/vacaciones?year=2026").then(r => r.json());
+    if (d.ok) setVacaciones(d.vacaciones);
   };
 
   const updateEstadoVac = async (id: number, estado: string) => {
@@ -143,8 +153,7 @@ export default function RRHHPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ estado }),
     });
-    const res = await fetch("/api/rrhh/vacaciones?year=2026");
-    const d = await res.json();
+    const d = await fetch("/api/rrhh/vacaciones?year=2026").then(r => r.json());
     if (d.ok) setVacaciones(d.vacaciones);
   };
 
@@ -153,95 +162,293 @@ export default function RRHHPage() {
     setVacaciones(prev => prev.filter(v => v.id !== id));
   };
 
-  // ── Render calendario mensual ──────────────────────────────────────────────
-  const renderCalendar = () => {
-    const year = 2026;
-    const dim = new Date(year, month + 1, 0).getDate();
-    const startDow = (new Date(year, month, 1).getDay() + 6) % 7; // 0=Lunes
+  // ── Renderizador de celda (compartido por las 3 vistas) ────────────────────
+  // size: "full" (mensual) | "sm" (trimestral) | "xs" (anual)
+  const renderCell = (m: number, d: number, size: "full" | "sm" | "xs") => {
+    const year   = 2026;
+    const ds     = `${year}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const dt     = new Date(year, m, d);
+    const dow    = dt.getDay();
+    const isWE   = dow === 0 || dow === 6;
+    const isG    = GUARD_DATES.has(ds);
+    const isF    = festivoSet.has(ds);
+    const gdb    = guardiaMap.get(ds);
+    const vacsH  = vacsOnDay(ds);
+    const isToday = toDateStr(new Date()) === ds;
 
-    const days = [];
+    const cellH  = size === "xs" ? 20 : size === "sm" ? 34 : 64;
+    const fSize  = size === "xs" ? 7  : size === "sm" ? 9  : 12;
+    const bw     = size === "xs" ? 1  : 2;
 
-    // Vacíos iniciales
-    for (let i = 0; i < startDow; i++) {
-      days.push(<div key={`e${i}`} />);
-    }
+    const handleClick = () => {
+      if (size === "xs") {
+        setMonth(m);
+        setCalView("mes");
+      } else if (isG) {
+        openGuardia(ds);
+      }
+    };
 
-    for (let d = 1; d <= dim; d++) {
-      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-      const dt = new Date(year, month, d);
-      const dow = dt.getDay(); // 0=dom, 6=sab
-      const isWeekend = dow === 0 || dow === 6;
-      const isGuard = GUARD_DATES.has(dateStr);
-      const isFestivo = festivoSet.has(dateStr);
-      const guardia = guardiaMap.get(dateStr);
-      const vacsHoy = vacsOnDay(dateStr);
-      const isToday = toDateStr(new Date()) === dateStr;
+    return (
+      <div
+        key={`${m}-${d}`}
+        onClick={handleClick}
+        style={{
+          minHeight: cellH,
+          borderRadius: size === "xs" ? 2 : 4,
+          padding: size === "xs" ? "1px 2px" : size === "sm" ? "2px 3px" : "4px 5px",
+          cursor: size === "xs" ? "pointer" : (isG ? "pointer" : "default"),
+          background: isG ? GREEN_LIGHT : isF ? "#fff0f0" : isWE ? "#f8f8f8" : "#fff",
+          border: isG
+            ? `${bw}px solid ${GREEN}`
+            : isToday
+            ? `${bw}px solid #3b82f6`
+            : "1px solid #eee",
+          position: "relative" as const,
+          overflow: "hidden",
+        }}
+      >
+        {/* Número de día */}
+        <div style={{
+          fontWeight: 700, fontSize: fSize,
+          color: isF ? "#c0392b" : isG ? GREEN_DARK : isWE ? "#888" : "#2a2e2b",
+        }}>
+          {d}
+        </div>
 
-      days.push(
-        <div
-          key={d}
-          onClick={() => isGuard ? openGuardia(dateStr) : null}
+        {/* ─── FULL (mensual) ─── */}
+        {size === "full" && isG && (
+          <div style={{
+            background: gdb?.publicada ? GREEN : "#a0d9b4",
+            color: "#fff", fontSize: 7, fontWeight: 700,
+            padding: "1px 4px", borderRadius: 3,
+            display: "inline-block", marginTop: 1,
+          }}>
+            {loadingGuardia ? "…" : gdb?.publicada ? "GUARDIA ✓" : "GUARDIA"}
+          </div>
+        )}
+        {size === "full" && isF && !isG && (
+          <div style={{ fontSize: 7, color: "#c0392b", fontWeight: 600, marginTop: 2 }}>
+            {festivos.find(f => f.fecha === ds)?.nombre.split(" ").slice(0, 2).join(" ")}
+          </div>
+        )}
+        {size === "full" && vacsH.slice(0, 2).map(v => {
+          const emp = empleados.find(e => e.id === v.empleado_id);
+          if (!emp) return null;
+          return (
+            <div key={v.id} style={{
+              fontSize: 7, marginTop: 1, padding: "1px 3px", borderRadius: 3,
+              background: emp.farmaceutico ? "#fdecea" : "#dbeafe",
+              color: emp.farmaceutico ? "#c0392b" : "#1d4ed8",
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const,
+            }}>
+              {emp.nombre}
+            </div>
+          );
+        })}
+        {size === "full" && vacsH.length > 2 && (
+          <div style={{ fontSize: 7, color: "#aaa" }}>+{vacsH.length - 2}</div>
+        )}
+
+        {/* ─── SM (trimestral) ─── */}
+        {size === "sm" && isG && (
+          <div style={{
+            width: "100%", height: 2, borderRadius: 1, marginTop: 2,
+            background: gdb?.publicada ? GREEN : "#a0d9b4",
+          }} />
+        )}
+        {size === "sm" && isF && !isG && (
+          <div style={{ width: "100%", height: 2, borderRadius: 1, marginTop: 2, background: "#fca5a5" }} />
+        )}
+        {size === "sm" && vacsH.length > 0 && (
+          <div style={{ display: "flex", gap: 1, marginTop: 2, flexWrap: "wrap" as const }}>
+            {vacsH.slice(0, 4).map(v => {
+              const emp = empleados.find(e => e.id === v.empleado_id);
+              if (!emp) return null;
+              return (
+                <div key={v.id} style={{
+                  width: 5, height: 5, borderRadius: "50%",
+                  background: emp.farmaceutico ? "#c0392b" : "#1d4ed8",
+                }} />
+              );
+            })}
+          </div>
+        )}
+
+        {/* ─── XS (anual) — punto vacaciones ─── */}
+        {size === "xs" && vacsH.length > 0 && (
+          <div style={{
+            position: "absolute" as const, bottom: 1, right: 1,
+            width: 3, height: 3, borderRadius: "50%",
+            background: (() => {
+              const emp = empleados.find(e => e.id === vacsH[0]?.empleado_id);
+              return emp?.farmaceutico ? "#c0392b" : "#1d4ed8";
+            })(),
+          }} />
+        )}
+      </div>
+    );
+  };
+
+  // ── Generador de celdas para un mes completo ──────────────────────────────
+  const cellsForMonth = (m: number, size: "full" | "sm" | "xs") => {
+    const year     = 2026;
+    const dim      = new Date(year, m + 1, 0).getDate();
+    const startDow = (new Date(year, m, 1).getDay() + 6) % 7;
+    const cells: React.ReactNode[] = [];
+    for (let i = 0; i < startDow; i++) cells.push(<div key={`e${i}`} />);
+    for (let d = 1; d <= dim; d++)     cells.push(renderCell(m, d, size));
+    return cells;
+  };
+
+  // ── Sub-nav de vistas de calendario ──────────────────────────────────────
+  const calViewNav = (
+    <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
+      {(["mes", "trimestre", "anual"] as CalView[]).map(cv => (
+        <button
+          key={cv}
+          onClick={() => setCalView(cv)}
           style={{
-            minHeight: 64,
-            borderRadius: 6,
-            padding: "4px 5px",
-            cursor: isGuard ? "pointer" : "default",
-            background: isGuard ? GREEN_LIGHT : isFestivo ? "#fff0f0" : isWeekend ? "#f8f8f8" : "#fff",
-            border: isGuard
-              ? `2px solid ${GREEN}`
-              : isToday
-              ? "2px solid #3b82f6"
-              : "1px solid #eee",
-            position: "relative" as const,
+            padding: "4px 12px", borderRadius: 20, border: "none",
+            cursor: "pointer", fontSize: 11, fontWeight: calView === cv ? 700 : 400,
+            background: calView === cv ? GREEN : GREEN_LIGHT,
+            color: calView === cv ? "#fff" : GREEN_DARK,
           }}
         >
-          <div style={{
-            fontWeight: 700, fontSize: 12,
-            color: isFestivo ? "#c0392b" : isGuard ? GREEN_DARK : isWeekend ? "#888" : "#2a2e2b",
-          }}>
-            {d}
-          </div>
+          {cv === "mes" ? "Mes" : cv === "trimestre" ? "Trimestre" : "Año"}
+        </button>
+      ))}
+    </div>
+  );
 
-          {isGuard && (
-            <div style={{
-              background: guardia?.publicada ? GREEN : "#a0d9b4",
-              color: "#fff", fontSize: 7, fontWeight: 700,
-              padding: "1px 4px", borderRadius: 3, display: "inline-block", marginTop: 1,
-            }}>
-              {loadingGuardia ? "…" : guardia?.publicada ? "GUARDIA ✓" : "GUARDIA"}
-            </div>
-          )}
+  // ── VISTA MENSUAL ─────────────────────────────────────────────────────────
+  const renderMes = () => (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <button onClick={() => setMonth(m => Math.max(0, m - 1))} style={btnBase}>◀</button>
+        <span style={{ fontSize: 17, fontWeight: 700, color: GREEN_DARK, fontFamily: "'DM Serif Display', serif" }}>
+          {MESES[month]} 2026
+        </span>
+        <button onClick={() => setMonth(m => Math.min(11, m + 1))} style={btnBase}>▶</button>
+      </div>
 
-          {isFestivo && !isGuard && (
-            <div style={{ fontSize: 7, color: "#c0392b", fontWeight: 600, marginTop: 2 }}>
-              {festivos.find(f => f.fecha === dateStr)?.nombre.split(" ").slice(0, 2).join(" ")}
-            </div>
-          )}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginBottom: 4 }}>
+        {DIAS_SEMANA.map(d => (
+          <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 700, color: "#aaa", padding: "2px 0" }}>{d}</div>
+        ))}
+      </div>
 
-          {vacsHoy.slice(0, 2).map(v => {
-            const emp = empleados.find(e => e.id === v.empleado_id);
-            if (!emp) return null;
-            return (
-              <div key={v.id} style={{
-                fontSize: 7, marginTop: 1, padding: "1px 3px", borderRadius: 3,
-                background: emp.farmaceutico ? "#fdecea" : "#dbeafe",
-                color: emp.farmaceutico ? "#c0392b" : "#1d4ed8",
-                fontWeight: emp.farmaceutico ? 700 : 400,
-                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const,
-              }}>
-                {emp.nombre}
-              </div>
-            );
-          })}
-          {vacsHoy.length > 2 && (
-            <div style={{ fontSize: 7, color: "#aaa" }}>+{vacsHoy.length - 2} más</div>
-          )}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
+        {cellsForMonth(month, "full")}
+      </div>
+
+      <div style={{ display: "flex", gap: 12, marginTop: 10, fontSize: 9, color: "#888", flexWrap: "wrap" as const }}>
+        <span><span style={{ background: GREEN,      color: "#fff", padding: "0 4px", borderRadius: 3 }}>■</span> Guardia publicada</span>
+        <span><span style={{ background: "#a0d9b4",  padding: "0 4px", borderRadius: 3 }}>■</span> Guardia pendiente</span>
+        <span style={{ color: "#c0392b" }}>■ Festivo / Farm. vac.</span>
+        <span style={{ color: "#1d4ed8" }}>■ Aux. vacaciones</span>
+      </div>
+    </div>
+  );
+
+  // ── VISTA TRIMESTRAL ──────────────────────────────────────────────────────
+  const renderTrimestre = () => {
+    const startM  = quarter * 3;
+    const months  = [startM, startM + 1, startM + 2];
+
+    return (
+      <div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <button
+            onClick={() => setQuarter(q => Math.max(0, q - 1))}
+            disabled={quarter === 0}
+            style={{ ...btnBase, opacity: quarter === 0 ? 0.35 : 1, cursor: quarter === 0 ? "not-allowed" : "pointer" }}
+          >◀</button>
+          <span style={{ fontSize: 15, fontWeight: 700, color: GREEN_DARK, fontFamily: "'DM Serif Display', serif" }}>
+            T{quarter + 1} · {MESES[startM]} – {MESES[startM + 2]} 2026
+          </span>
+          <button
+            onClick={() => setQuarter(q => Math.min(3, q + 1))}
+            disabled={quarter === 3}
+            style={{ ...btnBase, opacity: quarter === 3 ? 0.35 : 1, cursor: quarter === 3 ? "not-allowed" : "pointer" }}
+          >▶</button>
         </div>
-      );
-    }
 
-    return days;
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+          {months.map(m => (
+            <div key={m}>
+              <div
+                onClick={() => { setMonth(m); setCalView("mes"); }}
+                style={{
+                  textAlign: "center", fontSize: 12, fontWeight: 700, color: GREEN_DARK,
+                  marginBottom: 5, fontFamily: "'DM Serif Display', serif",
+                  cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2,
+                }}
+              >
+                {MESES[m]}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, marginBottom: 2 }}>
+                {DIAS_SEMANA.map(d => (
+                  <div key={d} style={{ textAlign: "center", fontSize: 7, fontWeight: 700, color: "#bbb" }}>{d}</div>
+                ))}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
+                {cellsForMonth(m, "sm")}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", gap: 10, marginTop: 10, fontSize: 9, color: "#888", flexWrap: "wrap" as const }}>
+          <span><span style={{ background: GREEN, color: "#fff", padding: "0 3px", borderRadius: 2 }}>■</span> Guardia</span>
+          <span style={{ color: "#c0392b" }}>— Festivo / Farm.vac.</span>
+          <span style={{ color: "#1d4ed8" }}>● Aux.vac.</span>
+          <span style={{ color: GREEN, fontSize: 8 }}>Clic en nombre de mes → vista mensual</span>
+        </div>
+      </div>
+    );
   };
+
+  // ── VISTA ANUAL ───────────────────────────────────────────────────────────
+  const renderAnual = () => (
+    <div>
+      <div style={{
+        textAlign: "center", fontSize: 16, fontWeight: 700, color: GREEN_DARK,
+        marginBottom: 14, fontFamily: "'DM Serif Display', serif",
+      }}>
+        2026 — Vista anual
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
+        {Array.from({ length: 12 }, (_, m) => (
+          <div key={m}>
+            <div
+              onClick={() => { setMonth(m); setCalView("mes"); }}
+              style={{
+                textAlign: "center", fontSize: 10, fontWeight: 700, color: GREEN_DARK,
+                marginBottom: 3, cursor: "pointer",
+                textDecoration: "underline", textUnderlineOffset: 2,
+              }}
+            >
+              {MESES[m]}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 1, marginBottom: 1 }}>
+              {DIAS_SEMANA.map(d => (
+                <div key={d} style={{ textAlign: "center", fontSize: 5, color: "#ccc" }}>{d.charAt(0)}</div>
+              ))}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 1 }}>
+              {cellsForMonth(m, "xs")}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ fontSize: 9, color: "#888", textAlign: "center", marginTop: 10 }}>
+        Clic en el nombre del mes para abrir vista mensual
+      </div>
+    </div>
+  );
 
   // ── Loading / Error ────────────────────────────────────────────────────────
   if (loading) {
@@ -256,34 +463,33 @@ export default function RRHHPage() {
     return (
       <div style={{ padding: 20, background: "#fef2f2", borderRadius: 8, color: "#c0392b" }}>
         <strong>Error:</strong> {error}
-        <p style={{ fontSize: 11, marginTop: 8 }}>
-          ¿Has ejecutado la migración? Llama a <code>POST /api/rrhh/migrate</code> primero.
-        </p>
       </div>
     );
   }
 
   // ── Layout principal ───────────────────────────────────────────────────────
   return (
-    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", maxWidth: 900, margin: "0 auto" }}>
+    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", maxWidth: 960, margin: "0 auto" }}>
       {/* Título */}
       <div style={{ marginBottom: 16 }}>
         <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 24, color: GREEN_DARK, margin: 0 }}>
           RRHH — Farmacia Reig
         </h1>
-        <p style={{ fontSize: 11, color: "#888", margin: "4px 0 0" }}>Guardias · Vacaciones · Planificación 2026</p>
+        <p style={{ fontSize: 11, color: "#888", margin: "4px 0 0" }}>
+          Guardias · Vacaciones · Planificación 2026
+        </p>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs principales */}
       <div style={{
         display: "flex", background: GREEN_DARK, borderRadius: 10,
         overflow: "hidden", marginBottom: 16,
       }}>
         {([
-          ["cal", "📅", "Calendario"],
+          ["cal",   "📅", "Calendario"],
           ["guard", "🏥", "Guardia"],
-          ["vac", "🌴", "Vacaciones"],
-        ] as [View, string, string][]).map(([k, ic, l]) => (
+          ["vac",   "🌴", "Vacaciones"],
+        ] as [MainView, string, string][]).map(([k, ic, l]) => (
           <button
             key={k}
             onClick={() => setView(k)}
@@ -307,49 +513,25 @@ export default function RRHHPage() {
         {/* ── CALENDARIO ── */}
         {view === "cal" && (
           <div>
-            {/* Navegación mes */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-              <button
-                onClick={() => setMonth(m => Math.max(0, m - 1))}
-                style={{ background: GREEN_LIGHT, border: "none", borderRadius: 6, padding: "5px 12px", cursor: "pointer", color: GREEN_DARK, fontSize: 14, fontWeight: 700 }}
-              >◀</button>
-              <span style={{ fontSize: 17, fontWeight: 700, color: GREEN_DARK, fontFamily: "'DM Serif Display', serif" }}>
-                {MESES[month]} 2026
-              </span>
-              <button
-                onClick={() => setMonth(m => Math.min(11, m + 1))}
-                style={{ background: GREEN_LIGHT, border: "none", borderRadius: 6, padding: "5px 12px", cursor: "pointer", color: GREEN_DARK, fontSize: 14, fontWeight: 700 }}
-              >▶</button>
-            </div>
-
-            {/* Cabecera días */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginBottom: 4 }}>
-              {DIAS_SEMANA.map(d => (
-                <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 700, color: "#aaa", padding: "2px 0" }}>{d}</div>
-              ))}
-            </div>
-
-            {/* Grid días */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
-              {renderCalendar()}
-            </div>
-
-            {/* Leyenda */}
-            <div style={{ display: "flex", gap: 12, marginTop: 10, fontSize: 9, color: "#888", flexWrap: "wrap" as const }}>
-              <span><span style={{ background: GREEN, color: "#fff", padding: "0 4px", borderRadius: 3 }}>■</span> Guardia publicada</span>
-              <span><span style={{ background: "#a0d9b4", padding: "0 4px", borderRadius: 3 }}>■</span> Guardia pendiente</span>
-              <span style={{ color: "#c0392b" }}>■ Festivo</span>
-              <span style={{ color: "#c0392b" }}>■ Farm. vacaciones</span>
-              <span style={{ color: "#1d4ed8" }}>■ Aux. vacaciones</span>
-            </div>
+            {calViewNav}
+            {calView === "mes"       && renderMes()}
+            {calView === "trimestre" && renderTrimestre()}
+            {calView === "anual"     && renderAnual()}
           </div>
         )}
 
-        {/* ── GUARDIA ── */}
+        {/* ── GUARDIA (lista próximas) ── */}
         {view === "guard" && !activeGuardia && (
           <div>
             <p style={{ color: "#888", fontSize: 13 }}>
-              Haz clic en un día de guardia en el <button onClick={() => setView("cal")} style={{ background: "none", border: "none", color: GREEN, cursor: "pointer", fontWeight: 700, fontSize: 13, padding: 0 }}>calendario</button> para abrir la plantilla.
+              Haz clic en un día de guardia en el{" "}
+              <button
+                onClick={() => setView("cal")}
+                style={{ background: "none", border: "none", color: GREEN, cursor: "pointer", fontWeight: 700, fontSize: 13, padding: 0 }}
+              >
+                calendario
+              </button>
+              {" "}para abrir la plantilla.
             </p>
 
             <div style={{ marginTop: 16 }}>
@@ -357,10 +539,12 @@ export default function RRHHPage() {
               {Array.from(GUARD_DATES)
                 .filter(d => d >= toDateStr(new Date()))
                 .sort()
-                .slice(0, 6)
+                .slice(0, 8)
                 .map(fecha => {
-                  const g = guardiaMap.get(fecha);
-                  const dow = new Date(fecha + "T00:00:00").toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
+                  const g   = guardiaMap.get(fecha);
+                  const dow = new Date(fecha + "T00:00:00").toLocaleDateString("es-ES", {
+                    weekday: "long", day: "numeric", month: "long",
+                  });
                   return (
                     <div
                       key={fecha}
@@ -374,7 +558,7 @@ export default function RRHHPage() {
                       <span style={{ fontSize: 12, fontWeight: 600, color: GREEN_DARK, textTransform: "capitalize" }}>{dow}</span>
                       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                         {g?.publicada ? (
-                          <span style={{ fontSize: 10, background: GREEN, color: "#fff", padding: "2px 6px", borderRadius: 4 }}>Publicada</span>
+                          <span style={{ fontSize: 10, background: GREEN,      color: "#fff", padding: "2px 6px", borderRadius: 4 }}>Publicada</span>
                         ) : g ? (
                           <span style={{ fontSize: 10, background: "#f59e0b", color: "#fff", padding: "2px 6px", borderRadius: 4 }}>Borrador</span>
                         ) : (
@@ -401,13 +585,13 @@ export default function RRHHPage() {
         )}
       </div>
 
-      {/* Panel guardia (modal) */}
+      {/* Panel guardia (overlay) */}
       {activeGuardia && (
         <GuardiaPanel
           guardia={activeGuardia.guardia}
           slots={activeGuardia.slots}
           vacaciones={vacaciones}
-          onClose={() => { setActiveGuardia(null); }}
+          onClose={() => setActiveGuardia(null)}
           onSave={saveGuardia}
         />
       )}
