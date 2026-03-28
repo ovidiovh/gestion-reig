@@ -19,38 +19,39 @@ const FESTIVOS_2026 = [
 ];
 
 const EMPLEADOS = [
-  { id: "ovidio",  nombre: "Ovidio",        categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_eur: 0,   h_lab_complemento: 0,  orden: 1 },
-  { id: "bea",     nombre: "Bea",           categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 2 },
-  { id: "maria",   nombre: "María N.",      categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_eur: 180, h_lab_complemento: 0,  orden: 3 },
-  { id: "julio",   nombre: "Julio",         categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_eur: 280, h_lab_complemento: 19, orden: 4 },
-  { id: "celia",   nombre: "Celia",         categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_eur: 280, h_lab_complemento: 19, orden: 5 },
-  { id: "ani",     nombre: "Ani",           categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_eur: 30,  h_lab_complemento: 9,  orden: 6 },
-  { id: "noelia",  nombre: "Noelia",        categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_eur: 30,  h_lab_complemento: 9,  orden: 7 },
-  { id: "dulce",   nombre: "Dulce",         categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_eur: 30,  h_lab_complemento: 9,  orden: 8 },
-  { id: "leti",    nombre: "Leti",          categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_eur: 30,  h_lab_complemento: 9,  orden: 9 },
-  { id: "yoli",    nombre: "Yoli",          categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 10 },
-  { id: "zuleica", nombre: "Zuleica",       categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 11 },
-  { id: "javier",  nombre: "Javier M.",     categoria: "mantenimiento",empresa: "mirelus", farmaceutico: 0, hace_guardia: 1, complemento_eur: 60,  h_lab_complemento: 9,  orden: 12 },
-  { id: "teresa",  nombre: "M. Teresa",     categoria: "limpieza",     empresa: "mirelus", farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 13 },
-  { id: "luisa",   nombre: "Luisa",         categoria: "otro",         empresa: "mirelus", farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 14 },
+  { id: "ovidio",  nombre: "Ovidio",    categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_eur: 0,   h_lab_complemento: 0,  orden: 1 },
+  { id: "bea",     nombre: "Bea",       categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 2 },
+  { id: "maria",   nombre: "María N.",  categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_eur: 180, h_lab_complemento: 0,  orden: 3 },
+  { id: "julio",   nombre: "Julio",     categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_eur: 280, h_lab_complemento: 19, orden: 4 },
+  { id: "celia",   nombre: "Celia",     categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_eur: 280, h_lab_complemento: 19, orden: 5 },
+  { id: "ani",     nombre: "Ani",       categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_eur: 30,  h_lab_complemento: 9,  orden: 6 },
+  { id: "noelia",  nombre: "Noelia",    categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_eur: 30,  h_lab_complemento: 9,  orden: 7 },
+  { id: "dulce",   nombre: "Dulce",     categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_eur: 30,  h_lab_complemento: 9,  orden: 8 },
+  { id: "leti",    nombre: "Leti",      categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_eur: 30,  h_lab_complemento: 9,  orden: 9 },
+  { id: "yoli",    nombre: "Yoli",      categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 10 },
+  { id: "zuleica", nombre: "Zuleica",   categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 11 },
+  { id: "javier",  nombre: "Javier M.", categoria: "mantenimiento",empresa: "mirelus", farmaceutico: 0, hace_guardia: 1, complemento_eur: 60,  h_lab_complemento: 9,  orden: 12 },
+  { id: "teresa",  nombre: "M. Teresa", categoria: "limpieza",     empresa: "mirelus", farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 13 },
+  { id: "luisa",   nombre: "Luisa",     categoria: "otro",         empresa: "mirelus", farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 14 },
 ];
 
 // Slots de guardia por defecto
+// Javier: turno partido 9:00-14:00 y 20:00-23:00 (hora_inicio2 / hora_fin2)
 const GUARD_DEFAULTS = [
-  { empleado_id: "ani",    hora_inicio: 9,  hora_fin: 14 },
-  { empleado_id: "dulce",  hora_inicio: 10, hora_fin: 14 },
-  { empleado_id: "ovidio", hora_inicio: 9,  hora_fin: 16 },
-  { empleado_id: "noelia", hora_inicio: 14, hora_fin: 18 },
-  { empleado_id: "leti",   hora_inicio: 16, hora_fin: 21 },
-  { empleado_id: "celia",  hora_inicio: 16, hora_fin: 20 },
-  { empleado_id: "julio",  hora_inicio: 19, hora_fin: 21 },
-  { empleado_id: "javier", hora_inicio: 18, hora_fin: 23 },
-  { empleado_id: "maria",  hora_inicio: 21, hora_fin: 33 }, // 33 = 09:00+1
+  { empleado_id: "ani",    hora_inicio: 9,  hora_fin: 14, hora_inicio2: null, hora_fin2: null },
+  { empleado_id: "dulce",  hora_inicio: 10, hora_fin: 14, hora_inicio2: null, hora_fin2: null },
+  { empleado_id: "ovidio", hora_inicio: 9,  hora_fin: 16, hora_inicio2: null, hora_fin2: null },
+  { empleado_id: "noelia", hora_inicio: 14, hora_fin: 18, hora_inicio2: null, hora_fin2: null },
+  { empleado_id: "leti",   hora_inicio: 16, hora_fin: 21, hora_inicio2: null, hora_fin2: null },
+  { empleado_id: "celia",  hora_inicio: 16, hora_fin: 20, hora_inicio2: null, hora_fin2: null },
+  { empleado_id: "julio",  hora_inicio: 19, hora_fin: 21, hora_inicio2: null, hora_fin2: null },
+  { empleado_id: "javier", hora_inicio: 9,  hora_fin: 14, hora_inicio2: 20,   hora_fin2: 23   },
+  { empleado_id: "maria",  hora_inicio: 21, hora_fin: 33, hora_inicio2: null, hora_fin2: null },
 ];
 
 export async function POST() {
   try {
-    // 1. Crear tablas
+    // 1. Crear tablas base
     await db.executeMultiple(`
       CREATE TABLE IF NOT EXISTS rrhh_empleados (
         id                  TEXT PRIMARY KEY,
@@ -88,6 +89,8 @@ export async function POST() {
         empleado_id  TEXT NOT NULL REFERENCES rrhh_empleados(id),
         hora_inicio  INTEGER NOT NULL DEFAULT 9,
         hora_fin     INTEGER NOT NULL DEFAULT 14,
+        hora_inicio2 INTEGER,
+        hora_fin2    INTEGER,
         UNIQUE(guardia_id, empleado_id)
       );
 
@@ -95,7 +98,9 @@ export async function POST() {
         id           INTEGER PRIMARY KEY AUTOINCREMENT,
         empleado_id  TEXT NOT NULL UNIQUE REFERENCES rrhh_empleados(id),
         hora_inicio  INTEGER NOT NULL DEFAULT 9,
-        hora_fin     INTEGER NOT NULL DEFAULT 14
+        hora_fin     INTEGER NOT NULL DEFAULT 14,
+        hora_inicio2 INTEGER,
+        hora_fin2    INTEGER
       );
 
       CREATE TABLE IF NOT EXISTS rrhh_vacaciones (
@@ -104,6 +109,7 @@ export async function POST() {
         fecha_inicio TEXT NOT NULL,
         fecha_fin    TEXT NOT NULL,
         estado       TEXT NOT NULL DEFAULT 'pend',
+        tipo         TEXT NOT NULL DEFAULT 'vac',
         created_at   TEXT NOT NULL DEFAULT (datetime('now'))
       );
 
@@ -115,13 +121,27 @@ export async function POST() {
         nota         TEXT,
         created_at   TEXT NOT NULL DEFAULT (datetime('now'))
       );
+
+      CREATE TABLE IF NOT EXISTS rrhh_horarios_asignacion (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        week_start   TEXT NOT NULL,
+        empleado_id  TEXT NOT NULL REFERENCES rrhh_empleados(id),
+        turno        INTEGER NOT NULL DEFAULT 1,
+        notas        TEXT,
+        UNIQUE(week_start, empleado_id)
+      );
     `);
 
-    // 1b. Añadir columna tipo a rrhh_vacaciones si no existe (idempotente)
-    try {
-      await db.execute(`ALTER TABLE rrhh_vacaciones ADD COLUMN tipo TEXT NOT NULL DEFAULT 'vac'`);
-    } catch {
-      // La columna ya existe — ignorar
+    // 1b. Migraciones idempotentes (añadir columnas si no existen)
+    const alterations = [
+      `ALTER TABLE rrhh_vacaciones ADD COLUMN tipo TEXT NOT NULL DEFAULT 'vac'`,
+      `ALTER TABLE rrhh_guardia_slots ADD COLUMN hora_inicio2 INTEGER`,
+      `ALTER TABLE rrhh_guardia_slots ADD COLUMN hora_fin2 INTEGER`,
+      `ALTER TABLE rrhh_guardia_defaults ADD COLUMN hora_inicio2 INTEGER`,
+      `ALTER TABLE rrhh_guardia_defaults ADD COLUMN hora_fin2 INTEGER`,
+    ];
+    for (const sql of alterations) {
+      try { await db.execute(sql); } catch { /* columna ya existe — ignorar */ }
     }
 
     // 2. Seed empleados (INSERT OR IGNORE)
@@ -142,18 +162,28 @@ export async function POST() {
       });
     }
 
-    // 4. Seed guardia defaults
+    // 4. Seed guardia defaults (upsert)
     for (const g of GUARD_DEFAULTS) {
       await db.execute({
-        sql: `INSERT OR IGNORE INTO rrhh_guardia_defaults (empleado_id, hora_inicio, hora_fin) VALUES (?, ?, ?)`,
-        args: [g.empleado_id, g.hora_inicio, g.hora_fin],
+        sql: `INSERT INTO rrhh_guardia_defaults (empleado_id, hora_inicio, hora_fin, hora_inicio2, hora_fin2)
+              VALUES (?, ?, ?, ?, ?)
+              ON CONFLICT(empleado_id) DO UPDATE SET
+                hora_inicio  = excluded.hora_inicio,
+                hora_fin     = excluded.hora_fin,
+                hora_inicio2 = excluded.hora_inicio2,
+                hora_fin2    = excluded.hora_fin2`,
+        args: [g.empleado_id, g.hora_inicio, g.hora_fin, g.hora_inicio2, g.hora_fin2],
       });
     }
 
     return NextResponse.json({
       ok: true,
       message: "Tablas RRHH creadas y datos precargados correctamente",
-      tablas: ["rrhh_empleados", "rrhh_festivos", "rrhh_guardias", "rrhh_guardia_slots", "rrhh_guardia_defaults", "rrhh_vacaciones", "rrhh_ausencias"],
+      tablas: [
+        "rrhh_empleados", "rrhh_festivos", "rrhh_guardias",
+        "rrhh_guardia_slots", "rrhh_guardia_defaults",
+        "rrhh_vacaciones", "rrhh_ausencias", "rrhh_horarios_asignacion",
+      ],
       empleados: EMPLEADOS.length,
       festivos: FESTIVOS_2026.length,
     });

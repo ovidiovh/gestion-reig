@@ -35,13 +35,20 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
       .map(v => v.empleado_id)
   );
 
-  const updateSlot = (empId: string, field: "hora_inicio" | "hora_fin", val: number) => {
+  const updateSlot = (empId: string, field: "hora_inicio" | "hora_fin" | "hora_inicio2" | "hora_fin2", val: number | null) => {
     setSlots(prev => prev.map(s => s.empleado_id === empId ? { ...s, [field]: val } : s));
   };
 
-  // Cobertura por hora
+  // Cobertura por hora (incluye turno partido)
   const cobertura = HORAS_GRID.map(h =>
-    slots.filter(s => !vacIds.has(s.empleado_id) && h >= s.hora_inicio && h < Math.min(s.hora_fin, 24)).length
+    slots.filter(s => {
+      if (vacIds.has(s.empleado_id)) return false;
+      const inPeriod1 = h >= s.hora_inicio && h < Math.min(s.hora_fin, 24);
+      const inPeriod2 = s.hora_inicio2 != null && s.hora_fin2 != null
+        ? h >= s.hora_inicio2 && h < Math.min(s.hora_fin2, 24)
+        : false;
+      return inPeriod1 || inPeriod2;
+    }).length
   );
   const maxCob = Math.max(...cobertura, 1);
 
@@ -63,7 +70,7 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
     }}>
       <div style={{
         background: "#fff", borderRadius: 14, padding: 20,
-        maxWidth: 700, width: "100%", maxHeight: "90vh", overflowY: "auto",
+        maxWidth: 720, width: "100%", maxHeight: "90vh", overflowY: "auto",
         boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
       }}>
         {/* Header */}
@@ -99,82 +106,99 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
           </div>
 
           {slots.map(slot => {
-            const isVac = vacIds.has(slot.empleado_id);
-            const isFarma = slot.farmaceutico === 1;
-            const totalH = slot.hora_fin - slot.hora_inicio;
+            const isVac    = vacIds.has(slot.empleado_id);
+            const isFarma  = slot.farmaceutico === 1;
+            const hasSplit = slot.hora_inicio2 != null && slot.hora_fin2 != null;
+            const totalH   = (slot.hora_fin - slot.hora_inicio) + (hasSplit ? (slot.hora_fin2! - slot.hora_inicio2!) : 0);
 
             return (
-              <div key={slot.empleado_id} style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "4px 0", borderBottom: "1px solid #f5f5f5",
-                opacity: isVac ? 0.5 : 1,
-              }}>
-                {/* Nombre */}
-                <div style={{
-                  width: 72, fontSize: 10, fontWeight: isFarma ? 700 : 400,
-                  color: isVac ? "#ccc" : isFarma ? GREEN_DARK : "#333",
-                  textDecoration: isVac ? "line-through" : "none",
-                  flexShrink: 0,
-                }}>
-                  {slot.nombre}
-                  {isVac && <span style={{ color: "#ef4444", fontSize: 7, marginLeft: 2 }}>VAC</span>}
-                  {slot.empresa === "mirelus" && (
-                    <span style={{ fontSize: 7, background: "#a9d18e", padding: "0 3px", borderRadius: 2, marginLeft: 3 }}>M</span>
+              <div key={slot.empleado_id} style={{ borderBottom: "1px solid #f5f5f5", padding: "4px 0", opacity: isVac ? 0.5 : 1 }}>
+                {/* Fila principal */}
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  {/* Nombre */}
+                  <div style={{
+                    width: 72, fontSize: 10, fontWeight: isFarma ? 700 : 400,
+                    color: isVac ? "#ccc" : isFarma ? GREEN_DARK : "#333",
+                    textDecoration: isVac ? "line-through" : "none",
+                    flexShrink: 0,
+                  }}>
+                    {slot.nombre}
+                    {isVac && <span style={{ color: "#ef4444", fontSize: 7, marginLeft: 2 }}>VAC</span>}
+                    {slot.empresa === "mirelus" && (
+                      <span style={{ fontSize: 7, background: "#a9d18e", padding: "0 3px", borderRadius: 2, marginLeft: 3 }}>M</span>
+                    )}
+                  </div>
+
+                  {/* Hora inicio (T1) */}
+                  <select
+                    value={slot.hora_inicio}
+                    onChange={e => updateSlot(slot.empleado_id, "hora_inicio", parseInt(e.target.value))}
+                    disabled={isVac}
+                    style={{ width: 52, border: "1px solid #ddd", borderRadius: 4, fontSize: 9, padding: "2px 0", textAlign: "center", background: isVac ? "#f5f5f5" : "#fff", color: isVac ? "#ccc" : "#333", flexShrink: 0 }}
+                  >
+                    {HRS24.map(h => <option key={h} value={h}>{fmtHora(h)}</option>)}
+                  </select>
+                  <span style={{ color: "#ccc", fontSize: 9, flexShrink: 0 }}>→</span>
+                  <select
+                    value={slot.hora_fin}
+                    onChange={e => updateSlot(slot.empleado_id, "hora_fin", parseInt(e.target.value))}
+                    disabled={isVac}
+                    style={{ width: 60, border: "1px solid #ddd", borderRadius: 4, fontSize: 9, padding: "2px 0", textAlign: "center", background: isVac ? "#f5f5f5" : "#fff", color: isVac ? "#ccc" : "#333", flexShrink: 0 }}
+                  >
+                    {HRS34.map(h => <option key={h} value={h}>{fmtHora(h)}</option>)}
+                  </select>
+
+                  {/* Turno partido (T2) si existe */}
+                  {hasSplit && !isVac && (
+                    <>
+                      <span style={{ fontSize: 9, color: "#888", flexShrink: 0, marginLeft: 4 }}>+</span>
+                      <select
+                        value={slot.hora_inicio2!}
+                        onChange={e => updateSlot(slot.empleado_id, "hora_inicio2", parseInt(e.target.value))}
+                        style={{ width: 52, border: "1px solid #ddd", borderRadius: 4, fontSize: 9, padding: "2px 0", textAlign: "center", background: "#fff4e6", color: "#7c3aed", flexShrink: 0 }}
+                      >
+                        {HRS24.map(h => <option key={h} value={h}>{fmtHora(h)}</option>)}
+                      </select>
+                      <span style={{ color: "#ccc", fontSize: 9, flexShrink: 0 }}>→</span>
+                      <select
+                        value={slot.hora_fin2!}
+                        onChange={e => updateSlot(slot.empleado_id, "hora_fin2", parseInt(e.target.value))}
+                        style={{ width: 60, border: "1px solid #ddd", borderRadius: 4, fontSize: 9, padding: "2px 0", textAlign: "center", background: "#fff4e6", color: "#7c3aed", flexShrink: 0 }}
+                      >
+                        {HRS34.map(h => <option key={h} value={h}>{fmtHora(h)}</option>)}
+                      </select>
+                    </>
                   )}
-                </div>
 
-                {/* Hora inicio */}
-                <select
-                  value={slot.hora_inicio}
-                  onChange={e => updateSlot(slot.empleado_id, "hora_inicio", parseInt(e.target.value))}
-                  disabled={isVac}
-                  style={{
-                    width: 52, border: "1px solid #ddd", borderRadius: 4,
-                    fontSize: 9, padding: "2px 0", textAlign: "center",
-                    background: isVac ? "#f5f5f5" : "#fff",
-                    color: isVac ? "#ccc" : "#333",
-                    flexShrink: 0,
-                  }}
-                >
-                  {HRS24.map(h => <option key={h} value={h}>{fmtHora(h)}</option>)}
-                </select>
+                  {/* Barra visual */}
+                  <div style={{ display: "flex", flex: 1, gap: 1 }}>
+                    {HORAS_GRID.map(h => {
+                      const active1 = h >= slot.hora_inicio && h < Math.min(slot.hora_fin, 24);
+                      const active2 = hasSplit && slot.hora_inicio2 != null && slot.hora_fin2 != null
+                        ? h >= slot.hora_inicio2 && h < Math.min(slot.hora_fin2, 24)
+                        : false;
+                      const active = active1 || active2;
+                      return (
+                        <div key={h} style={{
+                          flex: 1, height: 16, borderRadius: 2,
+                          background: isVac
+                            ? "#f0f0f0"
+                            : active2
+                            ? "#c4b5fd"
+                            : active
+                            ? (h >= 22 ? GREEN_DARK : GREEN)
+                            : "#f0f0f0",
+                          border: isFarma && active && !isVac ? `2px solid #0a4a1e` : "none",
+                          boxSizing: "border-box" as const,
+                        }} />
+                      );
+                    })}
+                  </div>
 
-                <span style={{ color: "#ccc", fontSize: 9, flexShrink: 0 }}>→</span>
-
-                {/* Hora fin */}
-                <select
-                  value={slot.hora_fin}
-                  onChange={e => updateSlot(slot.empleado_id, "hora_fin", parseInt(e.target.value))}
-                  disabled={isVac}
-                  style={{
-                    width: 60, border: "1px solid #ddd", borderRadius: 4,
-                    fontSize: 9, padding: "2px 0", textAlign: "center",
-                    background: isVac ? "#f5f5f5" : "#fff",
-                    color: isVac ? "#ccc" : "#333",
-                    flexShrink: 0,
-                  }}
-                >
-                  {HRS34.map(h => <option key={h} value={h}>{fmtHora(h)}</option>)}
-                </select>
-
-                {/* Barra visual */}
-                <div style={{ display: "flex", flex: 1, gap: 1 }}>
-                  {HORAS_GRID.map(h => {
-                    const active = h >= slot.hora_inicio && h < Math.min(slot.hora_fin, 24);
-                    return (
-                      <div key={h} style={{
-                        flex: 1, height: 16, borderRadius: 2,
-                        background: isVac ? "#f0f0f0" : active ? (h >= 22 ? GREEN_DARK : GREEN) : "#f0f0f0",
-                        border: isFarma && active && !isVac ? `2px solid #0a4a1e` : "none",
-                        boxSizing: "border-box" as const,
-                      }} />
-                    );
-                  })}
-                </div>
-
-                {/* Horas totales */}
-                <div style={{ width: 24, textAlign: "center", fontSize: 11, fontWeight: 600, color: isVac ? "#ddd" : "#333", flexShrink: 0 }}>
-                  {isVac ? "—" : totalH}
+                  {/* Horas totales */}
+                  <div style={{ width: 24, textAlign: "center", fontSize: 11, fontWeight: 600, color: isVac ? "#ddd" : "#333", flexShrink: 0 }}>
+                    {isVac ? "—" : totalH}
+                  </div>
                 </div>
               </div>
             );
@@ -219,10 +243,7 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
           <button
             onClick={() => handleSave(guardia.publicada)}
             disabled={saving}
-            style={{
-              background: GREEN, color: "#fff", border: "none", borderRadius: 8,
-              padding: "8px 16px", cursor: "pointer", fontSize: 12, fontWeight: 600,
-            }}
+            style={{ background: GREEN, color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontSize: 12, fontWeight: 600 }}
           >
             {saving ? "Guardando…" : "Guardar cambios"}
           </button>
@@ -241,11 +262,7 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
           </button>
           <button
             onClick={onClose}
-            style={{
-              background: "#f5f5f5", color: "#666", border: "none",
-              borderRadius: 8, padding: "8px 16px", cursor: "pointer",
-              fontSize: 12, fontWeight: 600, marginLeft: "auto",
-            }}
+            style={{ background: "#f5f5f5", color: "#666", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontSize: 12, fontWeight: 600, marginLeft: "auto" }}
           >
             Cerrar
           </button>

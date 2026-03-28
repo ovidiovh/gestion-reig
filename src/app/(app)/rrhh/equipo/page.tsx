@@ -1,7 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Empleado, GREEN, GREEN_DARK, GREEN_LIGHT } from "../types";
+import { useState, useEffect, useCallback } from "react";
+import {
+  Empleado, HorarioAsignacion,
+  GREEN, GREEN_DARK, GREEN_LIGHT,
+  TURNO_LABELS, TURNO_SHORT, TURNO_COLORS,
+  EMPLEADOS_ROTATIVOS, EMPLEADOS_ESPECIALES,
+  ANCHOR_WEEK, getWeekStart, getTurnoForWeek,
+} from "../types";
 
 // ── Mapas de display ──────────────────────────────────────────────────────────
 
@@ -13,135 +19,397 @@ const CATEGORIA_LABEL: Record<string, string> = {
   otro:          "Otros",
 };
 
-// Jornada según convenio farmacia (Las Palmas / Gran Canaria)
 const CATEGORIA_JORNADA: Record<string, string> = {
   farmaceutico:  "40h / sem.",
-  auxiliar:      "37,5h / sem.",
+  auxiliar:      "40h / sem.",
   mantenimiento: "Parcial",
   limpieza:      "Parcial",
   otro:          "—",
 };
 
-// ── Sub-componente: bloque por empresa ───────────────────────────────────────
+// Zuleica es auxiliar con jornada especial — se sobreescribe por id
+const JORNADA_ESPECIAL: Record<string, string> = {
+  zuleica: "24h / sem.",
+};
 
-interface SeccionProps {
-  titulo: string;
-  empleados: Empleado[];
-  accentColor?: string;
+type TabEquipo = "personal" | "horarios";
+
+// ── Utilidad: fecha YYYY-MM-DD para una fecha ─────────────────────────────────
+function addWeeks(weekStart: string, n: number): string {
+  const d = new Date(weekStart + "T00:00:00");
+  d.setDate(d.getDate() + n * 7);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function SeccionEmpresa({ titulo, empleados, accentColor = GREEN }: SeccionProps) {
-  if (empleados.length === 0) return null;
+function fmtWeek(weekStart: string): string {
+  const d = new Date(weekStart + "T00:00:00");
+  const end = new Date(d);
+  end.setDate(end.getDate() + 6);
+  return `${d.getDate()} – ${end.getDate()} ${end.toLocaleDateString("es-ES", { month: "long" })} ${end.getFullYear()}`;
+}
+
+// ── Componente modal de alta de empleado ─────────────────────────────────────
+
+function NuevoEmpleadoModal({ onSave, onClose }: {
+  onSave: (data: Partial<Empleado> & { id: string; nombre: string }) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [form, setForm] = useState<{ id: string; nombre: string; categoria: string; empresa: "reig" | "mirelus"; farmaceutico: number; hace_guardia: number; complemento_eur: number; h_lab_complemento: number }>({
+    id: "", nombre: "", categoria: "auxiliar", empresa: "reig",
+    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0, h_lab_complemento: 0,
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async () => {
+    if (!form.id.trim() || !form.nombre.trim()) {
+      setError("ID y nombre son obligatorios");
+      return;
+    }
+    if (!/^[a-z0-9_]+$/.test(form.id)) {
+      setError("El ID solo puede contener letras minúsculas, números y guiones bajos");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      await onSave(form);
+      onClose();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inp: React.CSSProperties = {
+    width: "100%", border: "1px solid #ddd", borderRadius: 6,
+    padding: "6px 10px", fontSize: 13, background: "#fff",
+  };
+  const lbl: React.CSSProperties = { fontSize: 11, color: "#555", marginBottom: 3, display: "block" };
 
   return (
-    <div style={{ marginBottom: 28 }}>
-      <h2 style={{
-        fontSize: 11, fontWeight: 700, color: accentColor,
-        letterSpacing: "0.07em", textTransform: "uppercase",
-        margin: "0 0 10px 0", paddingBottom: 6,
-        borderBottom: `2px solid ${accentColor}33`,
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.45)",
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+    }}>
+      <div style={{
+        background: "#fff", borderRadius: 14, padding: 24,
+        maxWidth: 460, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
       }}>
-        {titulo} · {empleados.length} personas
-      </h2>
-
-      <div style={{ background: "#fff", borderRadius: 12, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
-        {/* Cabecera */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "1.5fr 1.8fr 0.9fr 0.65fr 0.75fr 0.75fr",
-          background: accentColor, padding: "8px 16px",
-        }}>
-          {["Nombre", "Categoría", "Jornada", "Guardia", "Compl. €", "h/Guardia"].map(h => (
-            <div key={h} style={{ fontSize: 9, fontWeight: 700, color: "#fff", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              {h}
-            </div>
-          ))}
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: GREEN_DARK }}>Alta de empleado</h2>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "#999" }}>×</button>
         </div>
 
-        {/* Filas */}
-        {empleados.map((emp, i) => (
-          <div
-            key={emp.id}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1.5fr 1.8fr 0.9fr 0.65fr 0.75fr 0.75fr",
-              padding: "10px 16px", alignItems: "center",
-              background: i % 2 === 0 ? "#fff" : "#f9fafb",
-              borderBottom: "1px solid #f0f0f0",
-            }}
-          >
-            {/* Nombre */}
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={{
-                width: 28, height: 28, borderRadius: "50%",
-                background: emp.farmaceutico ? GREEN_LIGHT : "#f0f0f0",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 11, fontWeight: 700, color: emp.farmaceutico ? GREEN_DARK : "#888",
-                flexShrink: 0,
-              }}>
-                {emp.nombre.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <div style={{
-                  fontSize: 12, fontWeight: emp.farmaceutico ? 700 : 500,
-                  color: emp.farmaceutico ? GREEN_DARK : "#2a2e2b",
-                }}>
-                  {emp.nombre}
-                </div>
-                {emp.farmaceutico ? (
-                  <div style={{ fontSize: 8, color: GREEN, fontWeight: 700 }}>Farm.</div>
-                ) : null}
-              </div>
-            </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ gridColumn: "span 2" }}>
+            <label style={lbl}>Nombre *</label>
+            <input style={inp} value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))} placeholder="Ej: Ana García" />
+          </div>
+          <div style={{ gridColumn: "span 2" }}>
+            <label style={lbl}>ID único * (sin espacios, minúsculas)</label>
+            <input style={inp} value={form.id} onChange={e => setForm(f => ({ ...f, id: e.target.value.toLowerCase().replace(/\s/g, "_") }))} placeholder="Ej: ana_garcia" />
+          </div>
+          <div>
+            <label style={lbl}>Categoría</label>
+            <select style={inp} value={form.categoria} onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))}>
+              <option value="farmaceutico">Farmacéutico/a</option>
+              <option value="auxiliar">Auxiliar</option>
+              <option value="mantenimiento">Mantenimiento</option>
+              <option value="limpieza">Limpieza</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+          <div>
+            <label style={lbl}>Empresa</label>
+            <select style={inp} value={form.empresa} onChange={e => setForm(f => ({ ...f, empresa: e.target.value as "reig" | "mirelus" }))}>
+              <option value="reig">Farmacia Reig</option>
+              <option value="mirelus">Mirelus</option>
+            </select>
+          </div>
+          <div>
+            <label style={lbl}>Complemento guardia (€)</label>
+            <input type="number" style={inp} value={form.complemento_eur} onChange={e => setForm(f => ({ ...f, complemento_eur: parseInt(e.target.value) || 0 }))} />
+          </div>
+          <div>
+            <label style={lbl}>Horas/guardia convenio</label>
+            <input type="number" style={inp} value={form.h_lab_complemento} onChange={e => setForm(f => ({ ...f, h_lab_complemento: parseInt(e.target.value) || 0 }))} />
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <input type="checkbox" id="fma" checked={form.farmaceutico === 1} onChange={e => setForm(f => ({ ...f, farmaceutico: e.target.checked ? 1 : 0 }))} />
+            <label htmlFor="fma" style={{ ...lbl, margin: 0 }}>Es farmacéutico/a</label>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <input type="checkbox" id="hg" checked={form.hace_guardia === 1} onChange={e => setForm(f => ({ ...f, hace_guardia: e.target.checked ? 1 : 0 }))} />
+            <label htmlFor="hg" style={{ ...lbl, margin: 0 }}>Hace guardia</label>
+          </div>
+        </div>
 
-            {/* Categoría */}
-            <div style={{ fontSize: 11, color: "#555" }}>
-              {CATEGORIA_LABEL[emp.categoria] ?? emp.categoria}
-            </div>
+        {error && (
+          <div style={{ background: "#fef2f2", color: "#c0392b", padding: "8px 12px", borderRadius: 6, fontSize: 12, marginTop: 12 }}>{error}</div>
+        )}
 
-            {/* Jornada */}
-            <div style={{
-              fontSize: 11, color: "#555",
-              fontFamily: "'JetBrains Mono', monospace",
-            }}>
-              {CATEGORIA_JORNADA[emp.categoria] ?? "—"}
-            </div>
+        <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "flex-end" }}>
+          <button onClick={onClose} style={{ background: "#f5f5f5", color: "#555", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontSize: 13 }}>Cancelar</button>
+          <button onClick={handleSubmit} disabled={saving} style={{ background: GREEN, color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
+            {saving ? "Guardando…" : "Dar de alta"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-            {/* Guardia */}
-            <div>
-              {emp.hace_guardia ? (
-                <span style={{
-                  background: GREEN_LIGHT, color: GREEN,
-                  fontWeight: 700, fontSize: 9,
-                  padding: "2px 7px", borderRadius: 10,
-                }}>
-                  ✓ Sí
-                </span>
-              ) : (
-                <span style={{ color: "#ccc", fontSize: 10 }}>—</span>
-              )}
-            </div>
+// ── Fila de empleado con edición inline ──────────────────────────────────────
 
-            {/* Complemento € */}
-            <div style={{
-              fontSize: 12,
-              fontFamily: "'JetBrains Mono', monospace",
-              fontWeight: emp.complemento_eur > 0 ? 700 : 400,
-              color: emp.complemento_eur > 0 ? GREEN_DARK : "#ccc",
-            }}>
-              {emp.complemento_eur > 0 ? `${emp.complemento_eur}€` : "—"}
-            </div>
+function EmpleadoRow({
+  emp, index, onUpdate, onBaja,
+}: {
+  emp: Empleado;
+  index: number;
+  onUpdate: (id: string, fields: Partial<Empleado>) => Promise<void>;
+  onBaja: (id: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState({ complemento_eur: emp.complemento_eur, h_lab_complemento: emp.h_lab_complemento });
+  const [saving, setSaving] = useState(false);
 
-            {/* h/Guardia */}
-            <div style={{
-              fontSize: 12,
-              fontFamily: "'JetBrains Mono', monospace",
-              color: emp.h_lab_complemento > 0 ? "#555" : "#ccc",
-            }}>
-              {emp.h_lab_complemento > 0 ? `${emp.h_lab_complemento}h` : "—"}
-            </div>
+  const handleSave = async () => {
+    setSaving(true);
+    await onUpdate(emp.id, draft);
+    setSaving(false);
+    setEditing(false);
+  };
+
+  const jornada = JORNADA_ESPECIAL[emp.id] ?? (CATEGORIA_JORNADA[emp.categoria] ?? "—");
+
+  return (
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "1.5fr 1.8fr 0.9fr 0.6fr 0.8fr 0.8fr 0.7fr",
+      padding: "10px 16px", alignItems: "center",
+      background: index % 2 === 0 ? "#fff" : "#f9fafb",
+      borderBottom: "1px solid #f0f0f0",
+    }}>
+      {/* Nombre */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{
+          width: 28, height: 28, borderRadius: "50%",
+          background: emp.farmaceutico ? GREEN_LIGHT : "#f0f0f0",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 11, fontWeight: 700,
+          color: emp.farmaceutico ? GREEN_DARK : "#888", flexShrink: 0,
+        }}>
+          {emp.nombre.charAt(0).toUpperCase()}
+        </div>
+        <div>
+          <div style={{ fontSize: 12, fontWeight: emp.farmaceutico ? 700 : 500, color: emp.farmaceutico ? GREEN_DARK : "#2a2e2b" }}>
+            {emp.nombre}
+          </div>
+          {emp.farmaceutico ? <div style={{ fontSize: 8, color: GREEN, fontWeight: 700 }}>Farm.</div> : null}
+        </div>
+      </div>
+
+      {/* Categoría */}
+      <div style={{ fontSize: 11, color: "#555" }}>{CATEGORIA_LABEL[emp.categoria] ?? emp.categoria}</div>
+
+      {/* Jornada */}
+      <div style={{ fontSize: 11, color: "#555", fontFamily: "'JetBrains Mono', monospace" }}>{jornada}</div>
+
+      {/* Guardia */}
+      <div>
+        {emp.hace_guardia ? (
+          <span style={{ background: GREEN_LIGHT, color: GREEN, fontWeight: 700, fontSize: 9, padding: "2px 7px", borderRadius: 10 }}>✓ Sí</span>
+        ) : (
+          <span style={{ color: "#ccc", fontSize: 10 }}>—</span>
+        )}
+      </div>
+
+      {/* Complemento € — editable */}
+      <div>
+        {editing ? (
+          <input
+            type="number"
+            value={draft.complemento_eur}
+            onChange={e => setDraft(d => ({ ...d, complemento_eur: parseInt(e.target.value) || 0 }))}
+            style={{ width: 64, border: "1px solid #ddd", borderRadius: 4, fontSize: 11, padding: "2px 6px" }}
+          />
+        ) : (
+          <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", fontWeight: emp.complemento_eur > 0 ? 700 : 400, color: emp.complemento_eur > 0 ? GREEN_DARK : "#ccc" }}>
+            {emp.complemento_eur > 0 ? `${emp.complemento_eur}€` : "—"}
+          </span>
+        )}
+      </div>
+
+      {/* h/Guardia — editable */}
+      <div>
+        {editing ? (
+          <input
+            type="number"
+            value={draft.h_lab_complemento}
+            onChange={e => setDraft(d => ({ ...d, h_lab_complemento: parseInt(e.target.value) || 0 }))}
+            style={{ width: 48, border: "1px solid #ddd", borderRadius: 4, fontSize: 11, padding: "2px 6px" }}
+          />
+        ) : (
+          <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: emp.h_lab_complemento > 0 ? "#555" : "#ccc" }}>
+            {emp.h_lab_complemento > 0 ? `${emp.h_lab_complemento}h` : "—"}
+          </span>
+        )}
+      </div>
+
+      {/* Acciones */}
+      <div style={{ display: "flex", gap: 4 }}>
+        {editing ? (
+          <>
+            <button onClick={handleSave} disabled={saving} style={{ background: GREEN, color: "#fff", border: "none", borderRadius: 4, padding: "3px 8px", cursor: "pointer", fontSize: 10, fontWeight: 600 }}>
+              {saving ? "…" : "✓"}
+            </button>
+            <button onClick={() => setEditing(false)} style={{ background: "#f5f5f5", color: "#555", border: "none", borderRadius: 4, padding: "3px 8px", cursor: "pointer", fontSize: 10 }}>
+              ✕
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={() => setEditing(true)}
+              title="Editar complementos"
+              style={{ background: GREEN_LIGHT, color: GREEN_DARK, border: "none", borderRadius: 4, padding: "3px 8px", cursor: "pointer", fontSize: 10 }}
+            >
+              ✎
+            </button>
+            <button
+              onClick={() => onBaja(emp.id)}
+              title="Dar de baja"
+              style={{ background: "#fef2f2", color: "#c0392b", border: "none", borderRadius: 4, padding: "3px 8px", cursor: "pointer", fontSize: 10 }}
+            >
+              ✗
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Vista de horarios rotativos ───────────────────────────────────────────────
+
+function HorariosTab({ empleados, asignaciones, week, onChangeWeek, onSaveAsignacion }: {
+  empleados: Empleado[];
+  asignaciones: HorarioAsignacion[];
+  week: string;
+  onChangeWeek: (w: string) => void;
+  onSaveAsignacion: (empId: string, turno: number) => Promise<void>;
+}) {
+  // Empleados rotativos activos
+  const rotativos = empleados.filter(e => EMPLEADOS_ROTATIVOS.includes(e.id));
+  const especiales = empleados.filter(e => EMPLEADOS_ESPECIALES.includes(e.id));
+
+  const getAsignacion = (empId: string): number => {
+    const override = asignaciones.find(a => a.empleado_id === empId && a.week_start === week);
+    if (override) return override.turno;
+    if (EMPLEADOS_ESPECIALES.includes(empId)) return 0;
+    return getTurnoForWeek(empId, week);
+  };
+
+  const [saving, setSaving] = useState<string | null>(null);
+
+  const handleChangeTurno = async (empId: string, turno: number) => {
+    setSaving(empId);
+    await onSaveAsignacion(empId, turno);
+    setSaving(null);
+  };
+
+  const isCurrentWeek = week === getWeekStart(new Date());
+
+  return (
+    <div>
+      {/* Navegación de semana */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+        <button onClick={() => onChangeWeek(addWeeks(week, -1))} style={{ background: GREEN_LIGHT, border: "none", borderRadius: 6, padding: "5px 12px", cursor: "pointer", color: GREEN_DARK, fontSize: 14, fontWeight: 700 }}>◀</button>
+        <div style={{ flex: 1, textAlign: "center" }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: GREEN_DARK }}>{fmtWeek(week)}</div>
+          {isCurrentWeek && <div style={{ fontSize: 10, color: GREEN, fontWeight: 600 }}>Semana actual</div>}
+        </div>
+        <button onClick={() => onChangeWeek(addWeeks(week, 1))} style={{ background: GREEN_LIGHT, border: "none", borderRadius: 6, padding: "5px 12px", cursor: "pointer", color: GREEN_DARK, fontSize: 14, fontWeight: 700 }}>▶</button>
+        {week !== getWeekStart(new Date()) && (
+          <button onClick={() => onChangeWeek(getWeekStart(new Date()))} style={{ background: GREEN, color: "#fff", border: "none", borderRadius: 6, padding: "5px 10px", cursor: "pointer", fontSize: 11, fontWeight: 600 }}>Hoy</button>
+        )}
+      </div>
+
+      {/* Leyenda de turnos */}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+        {[1, 2, 3, 0].map(t => (
+          <div key={t} style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 20, ...TURNO_COLORS[t], fontSize: 11 }}>
+            <strong>{TURNO_SHORT[t]}</strong> — {TURNO_LABELS[t]}
           </div>
         ))}
+      </div>
+
+      {/* Tabla de rotativos */}
+      <div style={{ background: "#fff", borderRadius: 12, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", marginBottom: 20 }}>
+        <div style={{ background: GREEN, padding: "8px 16px", display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: 8 }}>
+          {["Empleada", "Turno", "Horario"].map(h => (
+            <div key={h} style={{ fontSize: 9, fontWeight: 700, color: "#fff", textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</div>
+          ))}
+        </div>
+        {rotativos.map((emp, i) => {
+          const turno = getAsignacion(emp.id);
+          const colors = TURNO_COLORS[turno] ?? TURNO_COLORS[1];
+          return (
+            <div key={emp.id} style={{
+              display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: 8,
+              padding: "12px 16px", alignItems: "center",
+              background: i % 2 === 0 ? "#fff" : "#f9fafb",
+              borderBottom: "1px solid #f0f0f0",
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#2a2e2b" }}>{emp.nombre}</div>
+              <div>
+                <select
+                  value={turno}
+                  disabled={saving === emp.id}
+                  onChange={e => handleChangeTurno(emp.id, parseInt(e.target.value))}
+                  style={{
+                    border: `1px solid ${colors.color}`, borderRadius: 6,
+                    padding: "3px 8px", fontSize: 12, fontWeight: 700,
+                    background: colors.bg, color: colors.color, cursor: "pointer",
+                  }}
+                >
+                  {[1, 2, 3].map(t => (
+                    <option key={t} value={t}>{TURNO_SHORT[t]}</option>
+                  ))}
+                </select>
+                {saving === emp.id && <span style={{ fontSize: 10, color: "#888", marginLeft: 6 }}>…</span>}
+              </div>
+              <div style={{ fontSize: 11, color: "#555" }}>{TURNO_LABELS[turno]}</div>
+            </div>
+          );
+        })}
+        {/* Zuleica (especial) */}
+        {especiales.map((emp, i) => (
+          <div key={emp.id} style={{
+            display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: 8,
+            padding: "12px 16px", alignItems: "center",
+            background: (rotativos.length + i) % 2 === 0 ? "#fff" : "#f9fafb",
+            borderBottom: "1px solid #f0f0f0",
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#2a2e2b" }}>{emp.nombre}</div>
+            <div>
+              <span style={{ ...TURNO_COLORS[0], padding: "3px 8px", borderRadius: 6, fontSize: 12, fontWeight: 700 }}>
+                {TURNO_SHORT[0]}
+              </span>
+            </div>
+            <div style={{ fontSize: 11, color: "#555" }}>{TURNO_LABELS[0]}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Info rotación */}
+      <div style={{ padding: "10px 14px", background: "#f9fafb", borderRadius: 8, fontSize: 10, color: "#888" }}>
+        <strong>Rotación:</strong> T1 → T2 → T3 → T1 (ciclo de 3 semanas) · Semana ancla: {ANCHOR_WEEK}
+        <br />
+        Cambiar el selector sobreescribe la rotación automática para esa semana.
+        Los valores sin cambios siguen la rotación calculada.
       </div>
     </div>
   );
@@ -150,20 +418,79 @@ function SeccionEmpresa({ titulo, empleados, accentColor = GREEN }: SeccionProps
 // ── Página principal ──────────────────────────────────────────────────────────
 
 export default function EquipoPage() {
+  const [tab, setTab]             = useState<TabEquipo>("personal");
   const [empleados, setEmpleados] = useState<Empleado[]>([]);
+  const [asignaciones, setAsignaciones] = useState<HorarioAsignacion[]>([]);
+  const [mostrarInactivos, setMostrarInactivos] = useState(false);
+  const [showNuevo, setShowNuevo] = useState(false);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState<string | null>(null);
+  const [week, setWeek]           = useState(() => getWeekStart(new Date()));
+
+  const loadEmpleados = useCallback(async (inactivos = mostrarInactivos) => {
+    const r = await fetch(`/api/rrhh/empleados${inactivos ? "?incluir_inactivos=1" : ""}`).then(r => r.json());
+    if (r.ok) setEmpleados(r.empleados);
+    else setError(r.error);
+  }, [mostrarInactivos]);
+
+  const loadHorarios = useCallback(async (w: string) => {
+    const r = await fetch(`/api/rrhh/horarios?week=${w}&weeks=1`).then(r => r.json());
+    if (r.ok) setAsignaciones(r.asignaciones);
+  }, []);
 
   useEffect(() => {
-    fetch("/api/rrhh/empleados")
-      .then(r => r.json())
-      .then(data => {
-        if (data.ok) setEmpleados(data.empleados);
-        else setError(data.error);
-      })
-      .catch(e => setError(String(e)))
-      .finally(() => setLoading(false));
+    Promise.all([
+      loadEmpleados(),
+      loadHorarios(week),
+    ]).finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleChangeWeek = async (newWeek: string) => {
+    setWeek(newWeek);
+    await loadHorarios(newWeek);
+  };
+
+  const handleUpdate = async (id: string, fields: Partial<Empleado>) => {
+    await fetch("/api/rrhh/empleados", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...fields }),
+    });
+    await loadEmpleados();
+  };
+
+  const handleBaja = async (id: string) => {
+    const emp = empleados.find(e => e.id === id);
+    if (!emp) return;
+    if (!confirm(`¿Dar de baja a ${emp.nombre}? No se borrará su historial.`)) return;
+    await fetch("/api/rrhh/empleados", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, activo: 0 }),
+    });
+    await loadEmpleados();
+  };
+
+  const handleAlta = async (data: Partial<Empleado> & { id: string; nombre: string }) => {
+    const res = await fetch("/api/rrhh/empleados", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error ?? "Error al crear empleado");
+    await loadEmpleados();
+  };
+
+  const handleSaveAsignacion = async (empId: string, turno: number) => {
+    await fetch("/api/rrhh/horarios", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ week_start: week, empleado_id: empId, turno }),
+    });
+    await loadHorarios(week);
+  };
 
   if (loading) {
     return (
@@ -184,79 +511,161 @@ export default function EquipoPage() {
     );
   }
 
-  // ── Estadísticas ────────────────────────────────────────────────────────────
-  const total      = empleados.length;
-  const farmas     = empleados.filter(e => e.farmaceutico === 1).length;
-  const auxiliares = empleados.filter(e => !e.farmaceutico && e.empresa === "reig").length;
-  const conGuardia = empleados.filter(e => e.hace_guardia === 1).length;
+  const activos   = empleados.filter(e => e.activo !== 0);
+  const inactivos = empleados.filter(e => e.activo === 0);
+  const reigActivos   = activos.filter(e => e.empresa === "reig");
+  const miRelusActivos = activos.filter(e => e.empresa === "mirelus");
 
-  const reigEmps    = empleados.filter(e => e.empresa === "reig");
-  const miRelusEmps = empleados.filter(e => e.empresa === "mirelus");
+  const total      = activos.length;
+  const farmas     = activos.filter(e => e.farmaceutico === 1).length;
+  const auxiliares = activos.filter(e => e.categoria === "auxiliar").length;
+  const conGuardia = activos.filter(e => e.hace_guardia === 1).length;
 
   return (
-    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", maxWidth: 900, margin: "0 auto" }}>
+    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", maxWidth: 960, margin: "0 auto" }}>
       {/* Título */}
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 24, color: GREEN_DARK, margin: 0 }}>
           Equipo — Farmacia Reig
         </h1>
         <p style={{ fontSize: 11, color: "#888", margin: "4px 0 0" }}>
-          Personal activo · Categorías · Guardias · 2026
+          Personal activo · Categorías · Guardias · Horarios rotativos · 2026
         </p>
       </div>
 
       {/* Tarjetas KPI */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(4, 1fr)",
-        gap: 10,
-        marginBottom: 28,
-      }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 24 }}>
         {([
           ["Total personal",  total,      "#2a2e2b", "#f9fafb"],
           ["Farmacéuticos",   farmas,     GREEN_DARK, GREEN_LIGHT],
           ["Auxiliares",      auxiliares, "#1d4ed8",  "#eff6ff"],
           ["Hacen guardia",   conGuardia, GREEN,      GREEN_LIGHT],
         ] as [string, number, string, string][]).map(([label, value, color, bg]) => (
-          <div key={label} style={{
-            background: bg, borderRadius: 10, padding: "14px 16px",
-            borderLeft: `4px solid ${color}`,
-          }}>
-            <div style={{
-              fontSize: 28, fontWeight: 700, color,
-              fontFamily: "'JetBrains Mono', monospace", lineHeight: 1,
-            }}>
-              {value}
-            </div>
+          <div key={label} style={{ background: bg, borderRadius: 10, padding: "14px 16px", borderLeft: `4px solid ${color}` }}>
+            <div style={{ fontSize: 28, fontWeight: 700, color, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1 }}>{value}</div>
             <div style={{ fontSize: 10, color: "#888", marginTop: 4 }}>{label}</div>
           </div>
         ))}
       </div>
 
-      {/* Sección Farmacia Reig */}
-      <SeccionEmpresa
-        titulo="Farmacia Reig"
-        empleados={reigEmps}
-        accentColor={GREEN}
-      />
-
-      {/* Sección Mirelus */}
-      <SeccionEmpresa
-        titulo="Mirelus · Servicios externos"
-        empleados={miRelusEmps}
-        accentColor="#6b7280"
-      />
-
-      {/* Leyenda */}
-      <div style={{
-        marginTop: 8, padding: "10px 14px", background: "#f9fafb",
-        borderRadius: 8, fontSize: 10, color: "#888",
-        display: "flex", gap: 16, flexWrap: "wrap",
-      }}>
-        <span><strong>Compl. €</strong> = Complemento salarial por guardia</span>
-        <span><strong>h/Guardia</strong> = Horas de convenio por guardia laborable</span>
-        <span>Jornada basada en Convenio Colectivo Farmacias Las Palmas</span>
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 16 }}>
+        {(["personal", "horarios"] as TabEquipo[]).map(t => (
+          <button key={t} onClick={() => setTab(t)} style={{
+            padding: "7px 18px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13,
+            fontWeight: tab === t ? 700 : 400,
+            background: tab === t ? GREEN : GREEN_LIGHT,
+            color: tab === t ? "#fff" : GREEN_DARK,
+          }}>
+            {t === "personal" ? "👥 Personal" : "📅 Horarios"}
+          </button>
+        ))}
       </div>
+
+      {/* ── TAB PERSONAL ── */}
+      {tab === "personal" && (
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <div style={{ fontSize: 11, color: "#888" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={mostrarInactivos}
+                  onChange={async e => {
+                    setMostrarInactivos(e.target.checked);
+                    await loadEmpleados(e.target.checked);
+                  }}
+                />
+                Mostrar empleados de baja
+              </label>
+            </div>
+            <button
+              onClick={() => setShowNuevo(true)}
+              style={{ background: GREEN, color: "#fff", border: "none", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontSize: 12, fontWeight: 600 }}
+            >
+              + Alta empleado
+            </button>
+          </div>
+
+          {/* Cabecera tabla */}
+          <div style={{ background: "#fff", borderRadius: 12, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", marginBottom: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1.8fr 0.9fr 0.6fr 0.8fr 0.8fr 0.7fr", background: GREEN, padding: "8px 16px" }}>
+              {["Nombre", "Categoría", "Jornada", "Guardia", "Compl. €", "h/Guardia", ""].map(h => (
+                <div key={h} style={{ fontSize: 9, fontWeight: 700, color: "#fff", textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</div>
+              ))}
+            </div>
+
+            <div style={{ marginBottom: 4 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: GREEN, padding: "6px 16px 2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Farmacia Reig</div>
+              {reigActivos.map((emp, i) => (
+                <EmpleadoRow key={emp.id} emp={emp} index={i} onUpdate={handleUpdate} onBaja={handleBaja} />
+              ))}
+            </div>
+
+            {miRelusActivos.length > 0 && (
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#6b7280", padding: "6px 16px 2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Mirelus · Servicios externos</div>
+                {miRelusActivos.map((emp, i) => (
+                  <EmpleadoRow key={emp.id} emp={emp} index={i} onUpdate={handleUpdate} onBaja={handleBaja} />
+                ))}
+              </div>
+            )}
+
+            {mostrarInactivos && inactivos.length > 0 && (
+              <div style={{ borderTop: "2px solid #f0f0f0", opacity: 0.65 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#c0392b", padding: "6px 16px 2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Baja / Inactivos</div>
+                {inactivos.map((emp, i) => (
+                  <div key={emp.id} style={{
+                    display: "grid",
+                    gridTemplateColumns: "1.5fr 1.8fr 0.9fr 0.6fr 0.8fr 0.8fr 0.7fr",
+                    padding: "8px 16px", alignItems: "center",
+                    background: i % 2 === 0 ? "#fff" : "#f9fafb",
+                    borderBottom: "1px solid #f0f0f0",
+                  }}>
+                    <div style={{ fontSize: 12, color: "#aaa", textDecoration: "line-through" }}>{emp.nombre}</div>
+                    <div style={{ fontSize: 11, color: "#ccc" }}>{CATEGORIA_LABEL[emp.categoria] ?? emp.categoria}</div>
+                    <div style={{ fontSize: 11, color: "#ccc" }}>{JORNADA_ESPECIAL[emp.id] ?? (CATEGORIA_JORNADA[emp.categoria] ?? "—")}</div>
+                    <div />
+                    <div style={{ fontSize: 11, color: "#ccc" }}>—</div>
+                    <div style={{ fontSize: 11, color: "#ccc" }}>—</div>
+                    <button
+                      onClick={() => handleUpdate(emp.id, { activo: 1 })}
+                      style={{ background: GREEN_LIGHT, color: GREEN, border: "none", borderRadius: 4, padding: "3px 8px", cursor: "pointer", fontSize: 10 }}
+                    >
+                      Reactivar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Leyenda */}
+          <div style={{ padding: "10px 14px", background: "#f9fafb", borderRadius: 8, fontSize: 10, color: "#888", display: "flex", gap: 16, flexWrap: "wrap" }}>
+            <span><strong>Compl. €</strong> = Complemento salarial por guardia</span>
+            <span><strong>h/Guardia</strong> = Horas de convenio por guardia laborable</span>
+            <span>Auxiliares: 40h/sem · Zuleica: 4h/día + 4h extra viernes</span>
+            <span>Clic en ✎ para editar complementos · ✗ para dar de baja</span>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB HORARIOS ── */}
+      {tab === "horarios" && (
+        <HorariosTab
+          empleados={empleados.filter(e => e.activo !== 0 && e.empresa === "reig"
+            && (EMPLEADOS_ROTATIVOS.includes(e.id) || EMPLEADOS_ESPECIALES.includes(e.id)))}
+          asignaciones={asignaciones}
+          week={week}
+          onChangeWeek={handleChangeWeek}
+          onSaveAsignacion={handleSaveAsignacion}
+        />
+      )}
+
+      {/* Modal alta */}
+      {showNuevo && (
+        <NuevoEmpleadoModal onSave={handleAlta} onClose={() => setShowNuevo(false)} />
+      )}
     </div>
   );
 }

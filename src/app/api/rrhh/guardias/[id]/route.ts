@@ -47,7 +47,7 @@ export async function PUT(
       tipo?: string;
       publicada?: number;
       notas?: string;
-      slots?: Array<{ empleado_id: string; hora_inicio: number; hora_fin: number }>;
+      slots?: Array<{ empleado_id: string; hora_inicio: number; hora_fin: number; hora_inicio2?: number | null; hora_fin2?: number | null }>;
     };
 
     // Actualizar guardia
@@ -67,10 +67,15 @@ export async function PUT(
     if (slots && slots.length > 0) {
       for (const slot of slots) {
         await db.execute({
-          sql: `INSERT INTO rrhh_guardia_slots (guardia_id, empleado_id, hora_inicio, hora_fin)
-                VALUES (?, ?, ?, ?)
-                ON CONFLICT(guardia_id, empleado_id) DO UPDATE SET hora_inicio = excluded.hora_inicio, hora_fin = excluded.hora_fin`,
-          args: [id, slot.empleado_id, slot.hora_inicio, slot.hora_fin],
+          sql: `INSERT INTO rrhh_guardia_slots (guardia_id, empleado_id, hora_inicio, hora_fin, hora_inicio2, hora_fin2)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(guardia_id, empleado_id) DO UPDATE SET
+                  hora_inicio  = excluded.hora_inicio,
+                  hora_fin     = excluded.hora_fin,
+                  hora_inicio2 = excluded.hora_inicio2,
+                  hora_fin2    = excluded.hora_fin2`,
+          args: [id, slot.empleado_id, slot.hora_inicio, slot.hora_fin,
+                 slot.hora_inicio2 ?? null, slot.hora_fin2 ?? null],
         });
       }
     }

@@ -3,9 +3,12 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Empleado, Festivo, Guardia, GuardiaSlot, Vacacion, GuardiaStats,
+  HorarioAsignacion,
   calcGuardDates, MESES, DIAS_SEMANA,
   GREEN, GREEN_DARK, GREEN_LIGHT,
-  toDateStr,
+  toDateStr, getWeekStart, getTurnoForWeek,
+  EMPLEADOS_ROTATIVOS, EMPLEADOS_ESPECIALES,
+  TURNO_LABELS, TURNO_SHORT, TURNO_COLORS,
 } from "./types";
 import GuardiaPanel from "./GuardiaPanel";
 import VacacionesTab from "./VacacionesTab";
@@ -24,6 +27,194 @@ const btnBase: React.CSSProperties = {
   fontSize: 14, fontWeight: 700,
 };
 
+// ── Panel vista diaria ────────────────────────────────────────────────────────
+
+function DayViewPanel({
+  fecha,
+  empleados,
+  festivos,
+  vacaciones,
+  asignaciones,
+  isGuardia,
+  loadingGuardia,
+  onOpenGuardia,
+  onGoToVac,
+  onClose,
+}: {
+  fecha: string;
+  empleados: Empleado[];
+  festivos: Festivo[];
+  vacaciones: Vacacion[];
+  asignaciones: HorarioAsignacion[];
+  isGuardia: boolean;
+  loadingGuardia: boolean;
+  onOpenGuardia: () => void;
+  onGoToVac: () => void;
+  onClose: () => void;
+}) {
+  const dt = new Date(fecha + "T00:00:00");
+  const festivo = festivos.find(f => f.fecha === fecha);
+  const vacsHoy = vacaciones.filter(v => fecha >= v.fecha_inicio && fecha <= v.fecha_fin);
+  const weekStart = getWeekStart(dt);
+
+  // Trabajadores de turno hoy (auxiliares + Zuleica)
+  const rotativosHoy = empleados.filter(e =>
+    (EMPLEADOS_ROTATIVOS.includes(e.id) || EMPLEADOS_ESPECIALES.includes(e.id)) && e.activo !== 0
+  );
+
+  const getTurno = (empId: string): number => {
+    const override = asignaciones.find(a => a.empleado_id === empId && a.week_start === weekStart);
+    if (override) return override.turno;
+    if (EMPLEADOS_ESPECIALES.includes(empId)) return 0;
+    return getTurnoForWeek(empId, weekStart);
+  };
+
+  const fechaLabel = dt.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const dow = dt.getDay();
+  const isWeekend = dow === 0 || dow === 6;
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 50,
+      background: "rgba(0,0,0,0.45)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "16px",
+    }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={{
+        background: "#fff", borderRadius: 14, padding: 20,
+        maxWidth: 440, width: "100%", maxHeight: "90vh", overflowY: "auto",
+        boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+      }}>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: GREEN_DARK, textTransform: "capitalize" }}>
+              {fechaLabel}
+            </div>
+            <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+              {festivo && (
+                <span style={{ fontSize: 10, background: "#fdecea", color: "#c0392b", padding: "2px 8px", borderRadius: 10, fontWeight: 700 }}>
+                  🎉 {festivo.nombre}
+                </span>
+              )}
+              {isGuardia && (
+                <span style={{ fontSize: 10, background: GREEN_LIGHT, color: GREEN_DARK, padding: "2px 8px", borderRadius: 10, fontWeight: 700 }}>
+                  🏥 DÍA DE GUARDIA
+                </span>
+              )}
+              {isWeekend && !festivo && (
+                <span style={{ fontSize: 10, background: "#f3f4f6", color: "#6b7280", padding: "2px 8px", borderRadius: 10 }}>
+                  Fin de semana
+                </span>
+              )}
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: "#aaa", lineHeight: 1 }}>×</button>
+        </div>
+
+        {/* Turnos del día */}
+        {!isWeekend && rotativosHoy.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+              Turnos hoy
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {rotativosHoy.map(emp => {
+                const turno = getTurno(emp.id);
+                const colors = TURNO_COLORS[turno] ?? { bg: "#f9fafb", color: "#555" };
+                const isOnVac = vacsHoy.some(v => v.empleado_id === emp.id);
+                return (
+                  <div key={emp.id} style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "8px 12px", borderRadius: 8,
+                    background: isOnVac ? "#f9fafb" : colors.bg,
+                    opacity: isOnVac ? 0.5 : 1,
+                    border: `1px solid ${isOnVac ? "#e5e7eb" : colors.color + "40"}`,
+                  }}>
+                    <div style={{
+                      width: 26, height: 26, borderRadius: "50%",
+                      background: isOnVac ? "#e5e7eb" : colors.color,
+                      color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 11, fontWeight: 700, flexShrink: 0,
+                    }}>
+                      {emp.nombre.charAt(0)}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: isOnVac ? "#aaa" : "#2a2e2b" }}>
+                        {emp.nombre}
+                        {isOnVac && <span style={{ fontSize: 10, color: "#c0392b", marginLeft: 6 }}>🌴 Vacaciones</span>}
+                      </div>
+                      {!isOnVac && (
+                        <div style={{ fontSize: 10, color: colors.color, fontWeight: 600 }}>
+                          {TURNO_SHORT[turno]} · {TURNO_LABELS[turno]}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Vacaciones hoy */}
+        {vacsHoy.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+              De vacaciones / ausencia
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {vacsHoy.map(v => {
+                const emp = empleados.find(e => e.id === v.empleado_id);
+                return (
+                  <button
+                    key={v.id}
+                    onClick={() => { onClose(); onGoToVac(); }}
+                    style={{
+                      background: emp?.farmaceutico ? "#fdecea" : "#dbeafe",
+                      color: emp?.farmaceutico ? "#c0392b" : "#1d4ed8",
+                      border: "none", borderRadius: 20, padding: "4px 12px",
+                      fontSize: 12, fontWeight: 600, cursor: "pointer",
+                    }}
+                    title="Ver en pestaña Vacaciones"
+                  >
+                    {v.nombre} →
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Botón guardia */}
+        {isGuardia && (
+          <button
+            onClick={() => { onClose(); onOpenGuardia(); }}
+            disabled={loadingGuardia}
+            style={{
+              width: "100%", background: GREEN, color: "#fff",
+              border: "none", borderRadius: 8, padding: "10px",
+              cursor: "pointer", fontSize: 13, fontWeight: 700,
+              marginTop: 4,
+            }}
+          >
+            {loadingGuardia ? "Cargando…" : "🏥 Abrir plantilla de guardia"}
+          </button>
+        )}
+
+        {/* Si no hay nada especial */}
+        {!isGuardia && !festivo && vacsHoy.length === 0 && isWeekend && (
+          <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "20px 0" }}>
+            Día libre
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Componente principal ───────────────────────────────────────────────────────
+
 export default function RRHHPage() {
   const [view, setView]         = useState<MainView>("cal");
   const [calView, setCalView]   = useState<CalView>("mes");
@@ -35,11 +226,13 @@ export default function RRHHPage() {
   const [guardias,      setGuardias]      = useState<Guardia[]>([]);
   const [vacaciones,    setVacaciones]    = useState<Vacacion[]>([]);
   const [guardiaStats,  setGuardiaStats]  = useState<GuardiaStats[]>([]);
+  const [asignaciones,  setAsignaciones]  = useState<HorarioAsignacion[]>([]);
 
   const [loading,        setLoading]        = useState(true);
   const [error,          setError]          = useState<string | null>(null);
   const [activeGuardia,  setActiveGuardia]  = useState<{ guardia: Guardia; slots: GuardiaSlot[] } | null>(null);
   const [loadingGuardia, setLoadingGuardia] = useState(false);
+  const [dayView,        setDayView]        = useState<string | null>(null); // fecha YYYY-MM-DD
 
   // ── Carga inicial con auto-migración ──────────────────────────────────────
   const loadAll = useCallback(async () => {
@@ -58,20 +251,33 @@ export default function RRHHPage() {
     return e.ok;
   }, []);
 
+  // Cargar asignaciones de horarios (semana actual + próximas 12)
+  const loadAsignaciones = useCallback(async () => {
+    const weekStart = getWeekStart(new Date());
+    const r = await fetch(`/api/rrhh/horarios?week=${weekStart}&weeks=52`).then(r => r.json());
+    if (r.ok) setAsignaciones(r.asignaciones);
+  }, []);
+
   const loadData = useCallback(async () => {
     try {
       const ok = await loadAll();
-      // Si empleados falló → tablas no existen todavía → auto-migrar y reintentar
       if (!ok) {
         await fetch("/api/rrhh/migrate", { method: "POST" });
         await loadAll();
       }
+      // Auto-generar guardias del año (idempotente)
+      await fetch("/api/rrhh/guardias/auto-generar", { method: "POST" });
+      // Recargar guardias tras auto-generar
+      const g = await fetch("/api/rrhh/guardias?year=2026").then(r => r.json());
+      if (g.ok) setGuardias(g.guardias);
+      // Cargar asignaciones horarias
+      await loadAsignaciones();
     } catch (e) {
       setError("Error cargando datos: " + String(e));
     } finally {
       setLoading(false);
     }
-  }, [loadAll]);
+  }, [loadAll, loadAsignaciones]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -82,7 +288,7 @@ export default function RRHHPage() {
     vacaciones.filter(v => ds >= v.fecha_inicio && ds <= v.fecha_fin);
 
   // ── Abrir / crear guardia ──────────────────────────────────────────────────
-  const openGuardia = async (fecha: string) => {
+  const openGuardia = useCallback(async (fecha: string) => {
     setLoadingGuardia(true);
     try {
       let guardia = guardiaMap.get(fecha);
@@ -115,7 +321,8 @@ export default function RRHHPage() {
     } finally {
       setLoadingGuardia(false);
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guardiaMap]);
 
   const saveGuardia = async (slots: GuardiaSlot[], tipo: string, publicada: number) => {
     if (!activeGuardia) return;
@@ -128,6 +335,8 @@ export default function RRHHPage() {
           empleado_id: s.empleado_id,
           hora_inicio: s.hora_inicio,
           hora_fin:    s.hora_fin,
+          hora_inicio2: s.hora_inicio2 ?? null,
+          hora_fin2:    s.hora_fin2    ?? null,
         })),
       }),
     });
@@ -165,8 +374,7 @@ export default function RRHHPage() {
     setVacaciones(prev => prev.filter(v => v.id !== id));
   };
 
-  // ── Renderizador de celda (compartido por las 3 vistas) ────────────────────
-  // size: "full" (mensual) | "sm" (trimestral) | "xs" (anual)
+  // ── Renderizador de celda ──────────────────────────────────────────────────
   const renderCell = (m: number, d: number, size: "full" | "sm" | "xs") => {
     const year   = 2026;
     const ds     = `${year}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -187,7 +395,10 @@ export default function RRHHPage() {
       if (size === "xs") {
         setMonth(m);
         setCalView("mes");
-      } else if (isG) {
+      } else if (size === "full") {
+        // En vista mensual: click en cualquier día abre la vista diaria
+        setDayView(ds);
+      } else if (size === "sm" && isG) {
         openGuardia(ds);
       }
     };
@@ -200,7 +411,7 @@ export default function RRHHPage() {
           minHeight: cellH,
           borderRadius: size === "xs" ? 2 : 4,
           padding: size === "xs" ? "1px 2px" : size === "sm" ? "2px 3px" : "4px 5px",
-          cursor: size === "xs" ? "pointer" : (isG ? "pointer" : "default"),
+          cursor: size === "xs" ? "pointer" : "pointer",
           background: isG ? GREEN_LIGHT : isF ? "#fff0f0" : isWE ? "#f8f8f8" : "#fff",
           border: isG
             ? `${bw}px solid ${GREEN}`
@@ -227,7 +438,7 @@ export default function RRHHPage() {
             padding: "1px 4px", borderRadius: 3,
             display: "inline-block", marginTop: 1,
           }}>
-            {loadingGuardia ? "…" : gdb?.publicada ? "GUARDIA ✓" : "GUARDIA"}
+            {gdb?.publicada ? "GUARDIA ✓" : "GUARDIA"}
           </div>
         )}
         {size === "full" && isF && !isG && (
@@ -346,10 +557,11 @@ export default function RRHHPage() {
       </div>
 
       <div style={{ display: "flex", gap: 12, marginTop: 10, fontSize: 9, color: "#888", flexWrap: "wrap" as const }}>
-        <span><span style={{ background: GREEN,      color: "#fff", padding: "0 4px", borderRadius: 3 }}>■</span> Guardia publicada</span>
-        <span><span style={{ background: "#a0d9b4",  padding: "0 4px", borderRadius: 3 }}>■</span> Guardia pendiente</span>
+        <span><span style={{ background: GREEN, color: "#fff", padding: "0 4px", borderRadius: 3 }}>■</span> Guardia publicada</span>
+        <span><span style={{ background: "#a0d9b4", padding: "0 4px", borderRadius: 3 }}>■</span> Guardia pendiente</span>
         <span style={{ color: "#c0392b" }}>■ Festivo / Farm. vac.</span>
         <span style={{ color: "#1d4ed8" }}>■ Aux. vacaciones</span>
+        <span style={{ color: GREEN, fontSize: 8 }}>Clic en cualquier día → vista diaria</span>
       </div>
     </div>
   );
@@ -406,7 +618,7 @@ export default function RRHHPage() {
           <span><span style={{ background: GREEN, color: "#fff", padding: "0 3px", borderRadius: 2 }}>■</span> Guardia</span>
           <span style={{ color: "#c0392b" }}>— Festivo / Farm.vac.</span>
           <span style={{ color: "#1d4ed8" }}>● Aux.vac.</span>
-          <span style={{ color: GREEN, fontSize: 8 }}>Clic en nombre de mes → vista mensual</span>
+          <span style={{ color: GREEN, fontSize: 8 }}>Clic en nombre de mes → vista mensual · Clic en guardia → abrir plantilla</span>
         </div>
       </div>
     );
@@ -597,6 +809,22 @@ export default function RRHHPage() {
           vacaciones={vacaciones}
           onClose={() => setActiveGuardia(null)}
           onSave={saveGuardia}
+        />
+      )}
+
+      {/* Vista diaria (overlay) */}
+      {dayView && (
+        <DayViewPanel
+          fecha={dayView}
+          empleados={empleados}
+          festivos={festivos}
+          vacaciones={vacaciones}
+          asignaciones={asignaciones}
+          isGuardia={GUARD_DATES.has(dayView)}
+          loadingGuardia={loadingGuardia}
+          onOpenGuardia={() => openGuardia(dayView)}
+          onGoToVac={() => { setView("vac"); }}
+          onClose={() => setDayView(null)}
         />
       )}
     </div>
