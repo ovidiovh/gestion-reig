@@ -133,15 +133,54 @@ export default function DayViewPanel({
     .filter(e => e.activo !== 0)
     .sort((a, b) => (a.orden ?? 99) - (b.orden ?? 99));
 
-  // Contar personas por franja (24 slots de 30 min)
-  const counts = Array.from({ length: GRID_COLS }, (_, i) => {
+  // Bloques según horario programado, ignorando vacaciones (para detectar huecos)
+  const getScheduledBlocks = (emp: Empleado): [number, number][] => {
+    if (isWeekend) return [];
+    if (isGuardia && guardiaSlots.length > 0) {
+      const gs = guardiaSlots.find(s => s.empleado_id === emp.id);
+      if (gs) {
+        const b: [number, number][] = [[gs.hora_inicio, gs.hora_fin]];
+        if (gs.hora_inicio2 != null && gs.hora_fin2 != null) b.push([gs.hora_inicio2, gs.hora_fin2]);
+        return b;
+      }
+    }
+    if (EMPLEADOS_ROTATIVOS.includes(emp.id) || EMPLEADOS_ESPECIALES.includes(emp.id)) {
+      const override = asignaciones.find(a => a.empleado_id === emp.id && a.week_start === weekStart);
+      const turno = override
+        ? override.turno
+        : EMPLEADOS_ESPECIALES.includes(emp.id) ? 0 : getTurnoForWeek(emp.id, weekStart);
+      const h = TURNO_HORARIO[turno];
+      if (!h) return [];
+      const b: [number, number][] = [[h[0], h[1]]];
+      if (h[2] != null && h[3] != null) b.push([h[2], h[3]]);
+      return b;
+    }
+    const hIa = emp.horario_inicio_a ?? HORARIO_DEFAULT[emp.id]?.[0] ?? null;
+    const hFa = emp.horario_fin_a   ?? HORARIO_DEFAULT[emp.id]?.[1] ?? null;
+    const hIb = emp.horario_inicio_b ?? HORARIO_DEFAULT[emp.id]?.[2] ?? null;
+    const hFb = emp.horario_fin_b   ?? HORARIO_DEFAULT[emp.id]?.[3] ?? null;
+    if (hIa == null || hFa == null) return [];
+    const b: [number, number][] = [[hIa, hFa]];
+    if (hIb != null && hFb != null) b.push([hIb, hFb]);
+    return b;
+  };
+
+  // Por franja: personas presentes y huecos por vacaciones
+  const slotData = Array.from({ length: GRID_COLS }, (_, i) => {
     const hh = GRID_START_HH + i;
-    return activos.reduce((sum, emp) => {
-      const blocks = getBlocks(emp);
-      return sum + (blocks.some(([a, b]) => a <= hh && hh < b) ? 1 : 0);
-    }, 0);
+    let present = 0;
+    let absent  = 0;
+    for (const emp of activos) {
+      const isVac = vacsHoy.some(v => v.empleado_id === emp.id);
+      const scheduled = getScheduledBlocks(emp);
+      if (scheduled.some(([a, b]) => a <= hh && hh < b)) {
+        if (isVac) absent++;
+        else present++;
+      }
+    }
+    return { present, absent };
   });
-  const maxCount = Math.max(...counts, 1);
+  const maxTotal = Math.max(...slotData.map(s => s.present + s.absent), 1);
 
   return (
     <div
@@ -327,36 +366,59 @@ export default function DayViewPanel({
                 );
               })}
 
-              {/* ── Fila de totales ── */}
-              <div style={{ display: "flex", marginTop: 4 }}>
+              {/* ── Fila de personas: recuadritos presentes + huecos vacaciones ── */}
+              <div style={{ display: "flex", marginTop: 6, alignItems: "flex-end" }}>
                 <div style={{
                   width: 90, flexShrink: 0,
                   fontSize: 8, color: "#888", fontWeight: 700, textAlign: "right", paddingRight: 6,
-                  display: "flex", alignItems: "flex-end",
+                  lineHeight: 1.2,
                 }}>
-                  personas
+                  personas<br />
+                  <span style={{ fontWeight: 400, color: "#bbb" }}>▣ ausente</span>
                 </div>
-                <div style={{ flex: 1, position: "relative", height: 28, display: "flex" }}>
-                  {counts.map((n, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        flex: 1,
-                        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end",
-                      }}
-                    >
-                      <div style={{
-                        width: "90%",
-                        height: `${(n / maxCount) * 24}px`,
-                        background: n === 0 ? "#f0f0f0" : n >= 6 ? "#14702e" : n >= 4 ? "#1a8c3a" : "#4ade80",
-                        borderRadius: "2px 2px 0 0",
-                        minHeight: n > 0 ? 2 : 0,
-                      }} />
-                      {n > 0 && (
-                        <div style={{ fontSize: 7, color: "#555", fontWeight: 600 }}>{n}</div>
-                      )}
-                    </div>
-                  ))}
+                <div style={{ flex: 1, display: "flex" }}>
+                  {slotData.map(({ present, absent }, i) => {
+                    const total = present + absent;
+                    const SQ = 5; // tamaño del cuadradito en px
+                    const GAP = 1;
+                    const rowH = Math.max(maxTotal, 1) * (SQ + GAP) + 10;
+                    return (
+                      <div
+                        key={i}
+                        style={{
+                          flex: 1,
+                          display: "flex", flexDirection: "column-reverse",
+                          alignItems: "center", gap: GAP,
+                          height: rowH, justifyContent: "flex-start", paddingTop: 2,
+                        }}
+                      >
+                        {/* Cuadraditos de personas presentes (abajo) */}
+                        {Array.from({ length: present }, (_, j) => (
+                          <div key={`p${j}`} style={{
+                            width: SQ, height: SQ, flexShrink: 0,
+                            background: present >= 7 ? "#14702e" : present >= 5 ? "#1a8c3a" : present >= 3 ? "#4ade80" : "#86efac",
+                            borderRadius: 1,
+                          }} />
+                        ))}
+                        {/* Cuadraditos de huecos por vacaciones (arriba, sombreados) */}
+                        {Array.from({ length: absent }, (_, j) => (
+                          <div key={`a${j}`} style={{
+                            width: SQ, height: SQ, flexShrink: 0,
+                            background: "#e5e7eb",
+                            border: "1px dashed #9ca3af",
+                            borderRadius: 1,
+                            boxSizing: "border-box",
+                          }} />
+                        ))}
+                        {/* Número total al pie */}
+                        {total > 0 && (
+                          <div style={{ fontSize: 6, color: absent > 0 ? "#ef4444" : "#555", fontWeight: 700, lineHeight: 1, marginTop: 1 }}>
+                            {absent > 0 ? `${present}+${absent}` : present}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
