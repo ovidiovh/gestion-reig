@@ -57,9 +57,10 @@ src/
 │           ├── festivos/route.ts       ← GET festivos por año
 │           ├── guardias/
 │           │   ├── route.ts            ← GET/POST guardias
-│           │   └── [id]/route.ts       ← GET/PUT guardia con slots
+│           │   ├── [id]/route.ts       ← GET/PUT guardia con slots
+│           │   └── stats/route.ts      ← GET guardias hechas por farmacéutico (descansos comp.)
 │           └── vacaciones/
-│               ├── route.ts            ← GET/POST vacaciones
+│               ├── route.ts            ← GET/POST vacaciones (campo tipo: vac|comp)
 │               └── [id]/route.ts       ← PUT/DELETE vacación
 ├── components/
 │   ├── AppShell.tsx            ← Layout responsive (hamburguesa móvil)

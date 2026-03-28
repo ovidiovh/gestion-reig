@@ -6,7 +6,8 @@ export async function GET(req: NextRequest) {
   try {
     const year = req.nextUrl.searchParams.get("year") || "2026";
     const vacaciones = await query(
-      `SELECT v.*, e.nombre, e.farmaceutico, e.empresa
+      `SELECT v.id, v.empleado_id, v.fecha_inicio, v.fecha_fin, v.estado,
+              COALESCE(v.tipo, 'vac') as tipo, e.nombre, e.farmaceutico, e.empresa
        FROM rrhh_vacaciones v
        JOIN rrhh_empleados e ON e.id = v.empleado_id
        WHERE v.fecha_inicio LIKE ? OR v.fecha_fin LIKE ?
@@ -23,11 +24,12 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { empleado_id, fecha_inicio, fecha_fin, estado } = body as {
+    const { empleado_id, fecha_inicio, fecha_fin, estado, tipo } = body as {
       empleado_id: string;
       fecha_inicio: string;
       fecha_fin: string;
       estado?: string;
+      tipo?: string;
     };
 
     if (!empleado_id || !fecha_inicio || !fecha_fin) {
@@ -35,8 +37,8 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await db.execute({
-      sql: `INSERT INTO rrhh_vacaciones (empleado_id, fecha_inicio, fecha_fin, estado) VALUES (?, ?, ?, ?)`,
-      args: [empleado_id, fecha_inicio, fecha_fin, estado || "pend"],
+      sql: `INSERT INTO rrhh_vacaciones (empleado_id, fecha_inicio, fecha_fin, estado, tipo) VALUES (?, ?, ?, ?, ?)`,
+      args: [empleado_id, fecha_inicio, fecha_fin, estado || "pend", tipo || "vac"],
     });
 
     return NextResponse.json({ ok: true, id: result.lastInsertRowid });

@@ -117,6 +117,13 @@ export async function POST() {
       );
     `);
 
+    // 1b. Añadir columna tipo a rrhh_vacaciones si no existe (idempotente)
+    try {
+      await db.execute(`ALTER TABLE rrhh_vacaciones ADD COLUMN tipo TEXT NOT NULL DEFAULT 'vac'`);
+    } catch {
+      // La columna ya existe — ignorar
+    }
+
     // 2. Seed empleados (INSERT OR IGNORE)
     for (const e of EMPLEADOS) {
       await db.execute({

@@ -194,6 +194,17 @@ Error:    { ok: false, error: "fecha requerida" } (400)
 
 Si no se pasa `tipo`, lo infiere del día de la semana (domingo → `fest`, resto → `lab`). Crea los slots desde `rrhh_guardia_defaults` para todos los empleados activos con `hace_guardia = 1`.
 
+### `GET /api/rrhh/guardias/stats?year=2026` — Guardias por farmacéutico
+
+```
+Response: {
+  ok: true,
+  stats: [{ empleado_id, nombre, guardias_hechas }]  // solo farmacéuticos con slots
+}
+```
+
+Cuenta slots en `rrhh_guardia_slots` JOIN `rrhh_guardias` donde `farmaceutico = 1`. Se usa para calcular descansos compensatorios ganados.
+
 ### `GET /api/rrhh/guardias/[id]` — Detalle guardia con slots
 
 ```
@@ -236,8 +247,9 @@ Response: {
 ### `POST /api/rrhh/vacaciones` — Crear período de vacaciones
 
 ```
-Request:  { empleado_id, fecha_inicio, fecha_fin, estado?: "pend" | "conf" | "done" }
+Request:  { empleado_id, fecha_inicio, fecha_fin, estado?: "pend" | "conf" | "done", tipo?: "vac" | "comp" }
 Response: { ok: true, id: number }
+// tipo "comp" = descanso compensatorio por guardia; default "vac"
 ```
 
 ### `PUT /api/rrhh/vacaciones/[id]` — Actualizar estado

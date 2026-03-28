@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  Empleado, Festivo, Guardia, GuardiaSlot, Vacacion,
+  Empleado, Festivo, Guardia, GuardiaSlot, Vacacion, GuardiaStats,
   calcGuardDates, MESES, DIAS_SEMANA,
   GREEN, GREEN_DARK, GREEN_LIGHT,
   toDateStr,
@@ -30,10 +30,11 @@ export default function RRHHPage() {
   const [month, setMonth]       = useState(new Date().getMonth());
   const [quarter, setQuarter]   = useState(() => Math.floor(new Date().getMonth() / 3));
 
-  const [empleados,  setEmpleados]  = useState<Empleado[]>([]);
-  const [festivos,   setFestivos]   = useState<Festivo[]>([]);
-  const [guardias,   setGuardias]   = useState<Guardia[]>([]);
-  const [vacaciones, setVacaciones] = useState<Vacacion[]>([]);
+  const [empleados,     setEmpleados]     = useState<Empleado[]>([]);
+  const [festivos,      setFestivos]      = useState<Festivo[]>([]);
+  const [guardias,      setGuardias]      = useState<Guardia[]>([]);
+  const [vacaciones,    setVacaciones]    = useState<Vacacion[]>([]);
+  const [guardiaStats,  setGuardiaStats]  = useState<GuardiaStats[]>([]);
 
   const [loading,        setLoading]        = useState(true);
   const [error,          setError]          = useState<string | null>(null);
@@ -42,16 +43,18 @@ export default function RRHHPage() {
 
   // ── Carga inicial con auto-migración ──────────────────────────────────────
   const loadAll = useCallback(async () => {
-    const [e, f, g, v] = await Promise.all([
+    const [e, f, g, v, gs] = await Promise.all([
       fetch("/api/rrhh/empleados").then(r => r.json()),
       fetch("/api/rrhh/festivos?year=2026").then(r => r.json()),
       fetch("/api/rrhh/guardias?year=2026").then(r => r.json()),
       fetch("/api/rrhh/vacaciones?year=2026").then(r => r.json()),
+      fetch("/api/rrhh/guardias/stats?year=2026").then(r => r.json()),
     ]);
     if (e.ok) setEmpleados(e.empleados);
     if (f.ok) setFestivos(f.festivos);
     if (g.ok) setGuardias(g.guardias);
     if (v.ok) setVacaciones(v.vacaciones);
+    if (gs.ok) setGuardiaStats(gs.stats);
     return e.ok;
   }, []);
 
@@ -137,11 +140,11 @@ export default function RRHHPage() {
   };
 
   // ── Vacaciones handlers ────────────────────────────────────────────────────
-  const addVacacion = async (empId: string, desde: string, hasta: string, estado: string) => {
+  const addVacacion = async (empId: string, desde: string, hasta: string, estado: string, tipo: string) => {
     await fetch("/api/rrhh/vacaciones", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ empleado_id: empId, fecha_inicio: desde, fecha_fin: hasta, estado }),
+      body: JSON.stringify({ empleado_id: empId, fecha_inicio: desde, fecha_fin: hasta, estado, tipo }),
     });
     const d = await fetch("/api/rrhh/vacaciones?year=2026").then(r => r.json());
     if (d.ok) setVacaciones(d.vacaciones);
@@ -578,6 +581,7 @@ export default function RRHHPage() {
           <VacacionesTab
             empleados={empleados}
             vacaciones={vacaciones}
+            guardiaStats={guardiaStats}
             onAddVacacion={addVacacion}
             onUpdateEstado={updateEstadoVac}
             onDeleteVacacion={deleteVacacion}

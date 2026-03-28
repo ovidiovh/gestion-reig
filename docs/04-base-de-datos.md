@@ -222,7 +222,10 @@ Las fechas se calculan cada 19 días desde el 4 de abril de 2026 (en ambas direc
 | `fecha_inicio` | TEXT NOT NULL | — | YYYY-MM-DD |
 | `fecha_fin` | TEXT NOT NULL | — | YYYY-MM-DD |
 | `estado` | TEXT NOT NULL | `'pend'` | `pend` \| `conf` \| `done` |
+| `tipo` | TEXT NOT NULL | `'vac'` | `vac` = vacaciones ordinarias · `comp` = descanso compensatorio por guardia |
 | `created_at` | TEXT NOT NULL | `datetime('now')` | — |
+
+**Nota:** la columna `tipo` se añade vía `ALTER TABLE` idempotente en `POST /api/rrhh/migrate`.
 
 ### Tabla: `rrhh_ausencias`
 

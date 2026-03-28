@@ -43,8 +43,15 @@ export interface Vacacion {
   fecha_inicio: string;
   fecha_fin: string;
   estado: "pend" | "conf" | "done";
+  tipo: "vac" | "comp";
   nombre: string;
   farmaceutico: number;
+}
+
+export interface GuardiaStats {
+  empleado_id: string;
+  nombre: string;
+  guardias_hechas: number;
 }
 
 // Guardias precalculadas cada 19 días desde 4 abril 2026

@@ -20,17 +20,31 @@ function formatEur(n: number) {
 }
 
 export default async function CrmPage() {
-  const [resumen, kpis, vendedores, porDia, porHora, ultimas, productos, tablas] =
-    await Promise.all([
-      getResumenBase(),
-      getClienteKpis(),
-      getTopVendedores(8),
-      getVentasPorDia(),
-      getVentasPorHora(),
-      getUltimasVentas(15),
-      getTopProductos(10),
-      getTablasInfo(),
-    ]);
+  let resumen: Awaited<ReturnType<typeof getResumenBase>> = undefined;
+  let kpis: Awaited<ReturnType<typeof getClienteKpis>> = [];
+  let vendedores: Awaited<ReturnType<typeof getTopVendedores>> = [];
+  let porDia: Awaited<ReturnType<typeof getVentasPorDia>> = [];
+  let porHora: Awaited<ReturnType<typeof getVentasPorHora>> = [];
+  let ultimas: Awaited<ReturnType<typeof getUltimasVentas>> = [];
+  let productos: Awaited<ReturnType<typeof getTopProductos>> = [];
+  let tablas: Awaited<ReturnType<typeof getTablasInfo>> = [];
+  let dataAvailable = true;
+
+  try {
+    [resumen, kpis, vendedores, porDia, porHora, ultimas, productos, tablas] =
+      await Promise.all([
+        getResumenBase(),
+        getClienteKpis(),
+        getTopVendedores(8),
+        getVentasPorDia(),
+        getVentasPorHora(),
+        getUltimasVentas(15),
+        getTopProductos(10),
+        getTablasInfo(),
+      ]);
+  } catch {
+    dataAvailable = false;
+  }
 
   const totalFacturacion = kpis.reduce((s, k) => s + k.facturacion, 0);
   const totalTickets = kpis.reduce((s, k) => s + k.tickets, 0);
@@ -49,6 +63,23 @@ export default async function CrmPage() {
           Datos en tiempo real desde Turso (libSQL cloud)
         </p>
       </div>
+
+      {/* Sin datos banner */}
+      {!dataAvailable && (
+        <div
+          className="rounded-xl p-5"
+          style={{ background: "#fffbeb", border: "1px solid #fde68a" }}
+        >
+          <p className="font-semibold text-sm" style={{ color: "#92400e" }}>
+            Datos no disponibles
+          </p>
+          <p className="text-sm mt-1" style={{ color: "#78350f" }}>
+            La tabla <code className="font-mono bg-amber-100 px-1 rounded">ventas</code> no está
+            sincronizada con Turso. Los datos de ventas viven en la base de datos local (reig.db)
+            y aún no han sido migrados a la nube.
+          </p>
+        </div>
+      )}
 
       {/* Database info banner */}
       <div

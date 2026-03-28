@@ -140,6 +140,19 @@ Cada empleado tiene un pool de **30 días de vacaciones** por año. El cómputo 
 
 Los días se calculan como `Math.round((fechaFin - fechaInicio) / 86400000) + 1` (inclusivo en ambos extremos).
 
+Solo se cuentan los registros con `tipo = 'vac'` para el pool de 30 días. Los registros `tipo = 'comp'` son descansos compensatorios por guardia y tienen su propio contador.
+
+## Regla RRHH-7: Descansos compensatorios por guardia (farmacéuticos)
+
+Los farmacéuticos que hacen guardia nocturna (María, Julio, Celia, Ovidio) generan **1 día de descanso compensatorio por guardia realizada**.
+
+- `guardias_hechas` = número de slots en `rrhh_guardia_slots` donde `farmaceutico = 1` para ese año (via `GET /api/rrhh/guardias/stats`)
+- `días_ganados = guardias_hechas`
+- `días_usados` = suma de días en `rrhh_vacaciones` donde `tipo = 'comp'`
+- `balance = ganados - usados`
+
+Los descansos compensatorios se registran en `rrhh_vacaciones` con `tipo = 'comp'` (siempre estado `done`). Se muestran separados de las vacaciones ordinarias en `VacacionesTab.tsx`.
+
 ## Regla RRHH-6: Empleados Mirelus — servicios externos
 
 Los empleados con `empresa = "mirelus"` son personal de **Mirelus** (empresa de servicios): mantenimiento (Javier M.), limpieza (M. Teresa), otros (Luisa). Se muestran separados en la vista equipo y se marcan con badge `M` en el panel de guardias.
