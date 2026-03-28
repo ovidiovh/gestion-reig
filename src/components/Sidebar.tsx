@@ -101,7 +101,7 @@ const sections: NavSection[] = [
     collapsible: false,
     items: [
       { label: "Inicio", href: "/", activo: true, icon: icons.home },
-      { label: "Horarios / Guardias", href: "/horarios", activo: false, icon: icons.calendar },
+      { label: "Horarios / Guardias", href: "/rrhh/horarios", activo: true, icon: icons.calendar },
     ],
   },
   {
@@ -128,7 +128,8 @@ const sections: NavSection[] = [
     title: "RRHH",
     collapsible: true,
     items: [
-      { label: "Equipo", href: "/equipo", activo: false, icon: icons.briefcase },
+      { label: "Guardias y Vacaciones", href: "/rrhh", activo: true, icon: icons.users },
+      { label: "Equipo", href: "/rrhh/equipo", activo: true, icon: icons.briefcase },
     ],
   },
   {

@@ -82,8 +82,8 @@ const sections: DashboardSection[] = [
   {
     title: "RRHH",
     items: [
-      { title: "Horarios / Guardias", description: "Cuadrantes, turnos y guardias del equipo", href: "/horarios", activo: false, icon: icons.calendar },
-      { title: "Equipo", description: "Gestion del personal de la farmacia", href: "/equipo", activo: false, icon: icons.briefcase },
+      { title: "Horarios / Guardias", description: "Cuadrantes, turnos y guardias del equipo", href: "/rrhh/horarios", activo: true, icon: icons.calendar },
+      { title: "Equipo", description: "Gestion del personal de la farmacia", href: "/rrhh/equipo", activo: true, icon: icons.briefcase },
     ],
   },
   {
