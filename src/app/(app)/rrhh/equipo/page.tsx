@@ -179,18 +179,27 @@ const DEPTO_OPTS = [
   { value: "otro",      label: "Otros" },
 ];
 
-function hhField(val: number | null, onChange: (v: number | null) => void, placeholder: string) {
-  const inp2: React.CSSProperties = { width: 44, border: "1px solid #ddd", borderRadius: 4, fontSize: 11, padding: "2px 4px" };
-  return (
-    <input
-      type="number"
-      min={0} max={48} step={1}
-      value={val ?? ""}
-      placeholder={placeholder}
-      onChange={e => onChange(e.target.value === "" ? null : parseInt(e.target.value))}
-      style={inp2}
-    />
-  );
+// ── Helpers horario ────────────────────────────────────────────────────────────
+
+function hhToTime(hh: number | null): string {
+  if (hh == null) return "";
+  const h = Math.floor(hh / 2);
+  const m = hh % 2 === 0 ? "00" : "30";
+  return `${h.toString().padStart(2, "0")}:${m}`;
+}
+
+function timeToHh(t: string): number | null {
+  if (!t) return null;
+  const [h, m] = t.split(":").map(Number);
+  if (isNaN(h)) return null;
+  return h * 2 + (m >= 30 ? 1 : 0);
+}
+
+function fmtHorario(ia: number | null, fa: number | null, ib?: number | null, fb?: number | null): string {
+  if (!ia || !fa) return "—";
+  const a = `${hhToTime(ia)}–${hhToTime(fa)}`;
+  if (ib && fb) return `${a} / ${hhToTime(ib)}–${hhToTime(fb)}`;
+  return a;
 }
 
 function EmpleadoRow({
@@ -220,160 +229,179 @@ function EmpleadoRow({
     setEditing(false);
   };
 
-  const jornada = JORNADA_ESPECIAL[emp.id] ?? (CATEGORIA_JORNADA[emp.categoria] ?? "—");
+  const deptLabel  = DEPTO_OPTS.find(d => d.value === (emp.departamento || "farmacia"))?.label ?? "—";
+  const horarioTxt = fmtHorario(emp.horario_inicio_a, emp.horario_fin_a, emp.horario_inicio_b, emp.horario_fin_b);
 
-  const deptoBadge = DEPTO_OPTS.find(d => d.value === (emp.departamento || "farmacia"))?.label ?? "—";
+  const fldStyle: React.CSSProperties = {
+    border: "1px solid #bbf7d0", borderRadius: 6, fontSize: 13,
+    padding: "6px 10px", background: "#fff", width: "100%", boxSizing: "border-box",
+  };
+  const lblStyle: React.CSSProperties = {
+    fontSize: 10, fontWeight: 700, color: "#166534",
+    textTransform: "uppercase", letterSpacing: "0.04em",
+    marginBottom: 4, display: "block",
+  };
 
   return (
-    <div style={{
-      background: index % 2 === 0 ? "#fff" : "#f9fafb",
-      borderBottom: "1px solid #f0f0f0",
-    }}>
+    <div style={{ background: index % 2 === 0 ? "#fff" : "#f9fafb", borderBottom: "1px solid #f0f0f0" }}>
+
       {/* ─ Fila principal ─ */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: "1.5fr 1.8fr 0.9fr 0.6fr 0.8fr 0.8fr 0.7fr",
-        padding: "10px 16px", alignItems: "center",
+        gridTemplateColumns: "1.8fr 1.4fr 1.4fr 0.5fr 0.6fr 0.6fr auto",
+        padding: "10px 16px", alignItems: "center", gap: 8,
       }}>
-        {/* Nombre */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+
+        {/* Nombre + depto */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{
-            width: 28, height: 28, borderRadius: "50%",
+            width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
             background: emp.farmaceutico ? GREEN_LIGHT : "#f0f0f0",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 11, fontWeight: 700,
-            color: emp.farmaceutico ? GREEN_DARK : "#888", flexShrink: 0,
+            fontSize: 13, fontWeight: 700, color: emp.farmaceutico ? GREEN_DARK : "#888",
           }}>
             {emp.nombre.charAt(0).toUpperCase()}
           </div>
           <div>
-            <div style={{ fontSize: 12, fontWeight: emp.farmaceutico ? 700 : 500, color: emp.farmaceutico ? GREEN_DARK : "#2a2e2b" }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: emp.farmaceutico ? GREEN_DARK : "#2a2e2b" }}>
               {emp.nombre}
             </div>
-            <div style={{ fontSize: 8, color: "#9ca3af" }}>{deptoBadge}</div>
+            <div style={{ fontSize: 9, color: "#9ca3af" }}>{deptLabel}</div>
           </div>
         </div>
 
         {/* Categoría */}
-        <div style={{ fontSize: 11, color: "#555" }}>{CATEGORIA_LABEL[emp.categoria] ?? emp.categoria}</div>
+        <div style={{ fontSize: 11, color: "#6b7280" }}>{CATEGORIA_LABEL[emp.categoria] ?? emp.categoria}</div>
 
-        {/* Jornada */}
-        <div style={{ fontSize: 11, color: "#555", fontFamily: "'JetBrains Mono', monospace" }}>{jornada}</div>
+        {/* Horario */}
+        <div style={{
+          fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
+          color: horarioTxt !== "—" ? GREEN_DARK : "#d1d5db", fontWeight: horarioTxt !== "—" ? 600 : 400,
+        }}>
+          {horarioTxt}
+        </div>
 
         {/* Guardia */}
         <div>
-          {emp.hace_guardia ? (
-            <span style={{ background: GREEN_LIGHT, color: GREEN, fontWeight: 700, fontSize: 9, padding: "2px 7px", borderRadius: 10 }}>✓ Sí</span>
-          ) : (
-            <span style={{ color: "#ccc", fontSize: 10 }}>—</span>
-          )}
+          {emp.hace_guardia
+            ? <span style={{ background: GREEN_LIGHT, color: GREEN, fontWeight: 700, fontSize: 9, padding: "2px 7px", borderRadius: 10 }}>✓ Sí</span>
+            : <span style={{ color: "#ccc", fontSize: 10 }}>—</span>}
         </div>
 
-        {/* Complemento € — editable */}
-        <div>
-          {editing ? (
-            <input
-              type="number"
-              value={draft.complemento_eur}
-              onChange={e => setDraft(d => ({ ...d, complemento_eur: parseInt(e.target.value) || 0 }))}
-              style={{ width: 64, border: "1px solid #ddd", borderRadius: 4, fontSize: 11, padding: "2px 6px" }}
-            />
-          ) : (
-            <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", fontWeight: emp.complemento_eur > 0 ? 700 : 400, color: emp.complemento_eur > 0 ? GREEN_DARK : "#ccc" }}>
-              {emp.complemento_eur > 0 ? `${emp.complemento_eur}€` : "—"}
-            </span>
-          )}
+        {/* Complemento */}
+        <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: emp.complemento_eur > 0 ? GREEN_DARK : "#ccc" }}>
+          {emp.complemento_eur > 0 ? `${emp.complemento_eur}€` : "—"}
         </div>
 
-        {/* h/Guardia — editable */}
-        <div>
-          {editing ? (
-            <input
-              type="number"
-              value={draft.h_lab_complemento}
-              onChange={e => setDraft(d => ({ ...d, h_lab_complemento: parseInt(e.target.value) || 0 }))}
-              style={{ width: 48, border: "1px solid #ddd", borderRadius: 4, fontSize: 11, padding: "2px 6px" }}
-            />
-          ) : (
-            <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: emp.h_lab_complemento > 0 ? "#555" : "#ccc" }}>
-              {emp.h_lab_complemento > 0 ? `${emp.h_lab_complemento}h` : "—"}
-            </span>
-          )}
+        {/* h/Guardia */}
+        <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: emp.h_lab_complemento > 0 ? "#555" : "#ccc" }}>
+          {emp.h_lab_complemento > 0 ? `${emp.h_lab_complemento}h` : "—"}
         </div>
 
-        {/* Acciones */}
+        {/* Botón Editar */}
         <div style={{ display: "flex", gap: 4 }}>
-          {editing ? (
-            <>
-              <button onClick={handleSave} disabled={saving} style={{ background: GREEN, color: "#fff", border: "none", borderRadius: 4, padding: "3px 8px", cursor: "pointer", fontSize: 10, fontWeight: 600 }}>
-                {saving ? "…" : "✓"}
-              </button>
-              <button onClick={() => setEditing(false)} style={{ background: "#f5f5f5", color: "#555", border: "none", borderRadius: 4, padding: "3px 8px", cursor: "pointer", fontSize: 10 }}>
-                ✕
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => setEditing(true)}
-                title="Editar datos"
-                style={{ background: GREEN_LIGHT, color: GREEN_DARK, border: "none", borderRadius: 4, padding: "3px 8px", cursor: "pointer", fontSize: 10 }}
-              >
-                ✎
-              </button>
-              <button
-                onClick={() => onBaja(emp.id)}
-                title="Dar de baja"
-                style={{ background: "#fef2f2", color: "#c0392b", border: "none", borderRadius: 4, padding: "3px 8px", cursor: "pointer", fontSize: 10 }}
-              >
-                ✗
-              </button>
-            </>
+          <button
+            onClick={() => setEditing(e => !e)}
+            style={{
+              background: editing ? "#f5f5f5" : GREEN,
+              color: editing ? "#555" : "#fff",
+              border: "none", borderRadius: 6, padding: "6px 14px",
+              cursor: "pointer", fontSize: 12, fontWeight: 600, whiteSpace: "nowrap",
+            }}
+          >
+            {editing ? "Cerrar" : "✎ Editar"}
+          </button>
+          {!editing && (
+            <button
+              onClick={() => onBaja(emp.id)}
+              title="Dar de baja"
+              style={{ background: "#fef2f2", color: "#c0392b", border: "1px solid #fecaca", borderRadius: 6, padding: "6px 8px", cursor: "pointer", fontSize: 11 }}
+            >
+              ✗
+            </button>
           )}
         </div>
       </div>
 
-      {/* ─ Panel de edición expandido ─ */}
+      {/* ─ Panel de edición ─ */}
       {editing && (
-        <div style={{
-          padding: "10px 16px 14px", background: "#f0fdf4",
-          borderTop: "1px solid #bbf7d0",
-          display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10,
-        }}>
-          {/* Departamento */}
-          <div>
-            <div style={{ fontSize: 9, color: "#555", fontWeight: 700, textTransform: "uppercase", marginBottom: 3 }}>Departamento</div>
-            <select
-              value={draft.departamento}
-              onChange={e => setDraft(d => ({ ...d, departamento: e.target.value }))}
-              style={{ width: "100%", border: "1px solid #ddd", borderRadius: 4, fontSize: 12, padding: "4px 6px" }}
-            >
-              {DEPTO_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+        <div style={{ padding: "20px 24px", background: "#f0fdf4", borderTop: "2px solid #4ade80" }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: GREEN_DARK, marginBottom: 16 }}>
+            Editar ficha · {emp.nombre}
           </div>
 
-          {/* Turno A */}
-          <div>
-            <div style={{ fontSize: 9, color: "#555", fontWeight: 700, textTransform: "uppercase", marginBottom: 3 }}>Turno A (media-horas)</div>
-            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-              {hhField(draft.horario_inicio_a, v => setDraft(d => ({ ...d, horario_inicio_a: v })), "inicio")}
-              <span style={{ fontSize: 10, color: "#aaa" }}>→</span>
-              {hhField(draft.horario_fin_a, v => setDraft(d => ({ ...d, horario_fin_a: v })), "fin")}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 14 }}>
+
+            <div>
+              <label style={lblStyle}>Departamento</label>
+              <select value={draft.departamento}
+                onChange={e => setDraft(d => ({ ...d, departamento: e.target.value }))}
+                style={fldStyle}>
+                {DEPTO_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
             </div>
-          </div>
 
-          {/* Turno B (opcional) */}
-          <div>
-            <div style={{ fontSize: 9, color: "#555", fontWeight: 700, textTransform: "uppercase", marginBottom: 3 }}>Turno B (opcional)</div>
-            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-              {hhField(draft.horario_inicio_b, v => setDraft(d => ({ ...d, horario_inicio_b: v })), "inicio")}
-              <span style={{ fontSize: 10, color: "#aaa" }}>→</span>
-              {hhField(draft.horario_fin_b, v => setDraft(d => ({ ...d, horario_fin_b: v })), "fin")}
+            <div>
+              <label style={lblStyle}>Complemento guardia (€)</label>
+              <input type="number" value={draft.complemento_eur}
+                onChange={e => setDraft(d => ({ ...d, complemento_eur: parseInt(e.target.value) || 0 }))}
+                style={fldStyle} />
             </div>
+
+            <div>
+              <label style={lblStyle}>Horas convenio / guardia</label>
+              <input type="number" value={draft.h_lab_complemento}
+                onChange={e => setDraft(d => ({ ...d, h_lab_complemento: parseInt(e.target.value) || 0 }))}
+                style={fldStyle} />
+            </div>
+
+            <div>
+              <label style={lblStyle}>Entrada turno A</label>
+              <input type="time" step={1800}
+                value={hhToTime(draft.horario_inicio_a)}
+                onChange={e => setDraft(d => ({ ...d, horario_inicio_a: timeToHh(e.target.value) }))}
+                style={fldStyle} />
+            </div>
+
+            <div>
+              <label style={lblStyle}>Salida turno A</label>
+              <input type="time" step={1800}
+                value={hhToTime(draft.horario_fin_a)}
+                onChange={e => setDraft(d => ({ ...d, horario_fin_a: timeToHh(e.target.value) }))}
+                style={fldStyle} />
+            </div>
+
+            <div>
+              <label style={lblStyle}>Entrada turno B (opcional)</label>
+              <input type="time" step={1800}
+                value={hhToTime(draft.horario_inicio_b)}
+                onChange={e => setDraft(d => ({ ...d, horario_inicio_b: timeToHh(e.target.value) }))}
+                style={fldStyle} />
+            </div>
+
+            <div>
+              <label style={lblStyle}>Salida turno B (opcional)</label>
+              <input type="time" step={1800}
+                value={hhToTime(draft.horario_fin_b)}
+                onChange={e => setDraft(d => ({ ...d, horario_fin_b: timeToHh(e.target.value) }))}
+                style={fldStyle} />
+            </div>
+
           </div>
 
-          <div style={{ fontSize: 9, color: "#888", alignSelf: "end", paddingBottom: 2 }}>
-            Ej: 9:00=18, 13:00=26, 14:00=28, 17:00=34, 20:30=41
+          <div style={{ display: "flex", gap: 8, marginTop: 18, alignItems: "center" }}>
+            <button onClick={handleSave} disabled={saving}
+              style={{ background: GREEN, color: "#fff", border: "none", borderRadius: 8, padding: "10px 28px", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>
+              {saving ? "Guardando…" : "✓ Guardar cambios"}
+            </button>
+            <button onClick={() => setEditing(false)}
+              style={{ background: "#f5f5f5", color: "#555", border: "none", borderRadius: 8, padding: "10px 18px", cursor: "pointer", fontSize: 13 }}>
+              Cancelar
+            </button>
+            <button onClick={() => onBaja(emp.id)}
+              style={{ marginLeft: "auto", background: "#fef2f2", color: "#c0392b", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", cursor: "pointer", fontSize: 12 }}>
+              Dar de baja
+            </button>
           </div>
         </div>
       )}
@@ -392,6 +420,7 @@ const HORARIO_TEXTO: Record<string, string> = {
   miriam:  "9:00 – 17:00",
   monica:  "9:00 – 17:00",
   javier:  "9:00 – 17:00 (guardia: 9–14 / 20–23)",
+  jenny:   "9:00 – 17:00",
   teresa:  "8:30 – 12:00",
   luisa:   "8:30 – 12:00",
 };
@@ -713,7 +742,7 @@ export default function EquipoPage() {
           {/* Cabecera tabla */}
           <div style={{ background: "#fff", borderRadius: 12, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", marginBottom: 20 }}>
             <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1.8fr 0.9fr 0.6fr 0.8fr 0.8fr 0.7fr", background: GREEN, padding: "8px 16px" }}>
-              {["Nombre", "Categoría", "Jornada", "Guardia", "Compl. €", "h/Guardia", ""].map(h => (
+              {["Nombre", "Categoría", "Horario", "Guardia", "Compl. €", "h/Guardia", ""].map(h => (
                 <div key={h} style={{ fontSize: 9, fontWeight: 700, color: "#fff", textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</div>
               ))}
             </div>

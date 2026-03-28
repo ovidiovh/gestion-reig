@@ -37,7 +37,7 @@ const EMPLEADOS = [
   { id: "luisa",   nombre: "Luisa",     categoria: "otro",         empresa: "mirelus", farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 14, departamento: "otro",     ia: 17, fa: 24, ib: null, fb: null },
   { id: "miriam",  nombre: "Miriam",    categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 15, departamento: "optica",    ia: 18, fa: 34, ib: null, fb: null },
   { id: "monica",  nombre: "Mónica",    categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 16, departamento: "ortopedia", ia: 18, fa: 34, ib: null, fb: null },
-  { id: "jenny",   nombre: "Jenny",     categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 17, departamento: "farmacia",  ia: null, fa: null, ib: null, fb: null },
+  { id: "jenny",   nombre: "Jenny",     categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 17, departamento: "farmacia",  ia: 18,   fa: 34,   ib: null, fb: null },
 ];
 
 // Slots de guardia por defecto
@@ -186,6 +186,9 @@ export async function POST() {
                e.ia, e.fa, e.ib, e.fb],
       });
     }
+
+    // 2b. Desactivar empleados que ya no trabajan en la farmacia
+    await db.execute({ sql: `UPDATE rrhh_empleados SET activo = 0 WHERE id = 'luisa'`, args: [] });
 
     // 3. Seed festivos 2026
     for (const f of FESTIVOS_2026) {

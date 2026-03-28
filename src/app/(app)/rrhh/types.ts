@@ -192,7 +192,8 @@ export const HORARIO_DEFAULT: Record<string, [number, number, number | null, num
   monica:  [18, 34, null, null],   // 9:00–17:00
   javier:  [18, 34, null, null],   // 9:00–17:00 (días sin guardia)
   teresa:  [17, 24, null, null],   // 8:30–12:00
-  luisa:   [17, 24, null, null],   // 8:30–12:00
+  luisa:   [17, 24, null, null],
+  jenny:   [18, 34, null, null],   // 9:00–17:00   // 8:30–12:00
 };
 
 /** Convierte media-hora (ej. 17=8:30, 26=13:00) a etiqueta "H:MM" */
