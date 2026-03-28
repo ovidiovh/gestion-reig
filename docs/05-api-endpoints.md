@@ -126,12 +126,129 @@ Marca `estado = "confirmada"`, guarda `confirmada_at` y opcionalmente el asunto 
 
 ---
 
-## Migración
+## Migración (Retiradas)
 
-### `POST /api/migrate` — Crear/actualizar esquema
+### `POST /api/migrate` — Crear/actualizar esquema retiradas
 
 ```
 Response: { ok: true, message: "Tablas creadas/actualizadas correctamente" }
 ```
 
 Idempotente. Crea las 4 tablas con `CREATE TABLE IF NOT EXISTS`. Incluye `ALTER TABLE ADD COLUMN remesa_id` con try/catch para ignorar si ya existe.
+
+---
+
+## RRHH
+
+### `POST /api/rrhh/migrate` — Crear tablas RRHH y seed inicial
+
+```
+Response: {
+  ok: true,
+  message: string,
+  tablas: string[],   // 7 tablas creadas
+  empleados: 14,
+  festivos: 14
+}
+```
+
+Idempotente. Crea 7 tablas (`CREATE TABLE IF NOT EXISTS`), seed 14 empleados, 14 festivos 2026 y defaults de guardia (todos con `INSERT OR IGNORE`).
+
+---
+
+### `GET /api/rrhh/empleados` — Listar empleados activos
+
+```
+Response: { ok: true, empleados: Empleado[] }
+```
+
+Devuelve empleados con `activo = 1`, ordenados por `orden ASC`.
+
+---
+
+### `GET /api/rrhh/festivos?year=2026` — Festivos del año
+
+```
+Response: { ok: true, festivos: Festivo[] }
+```
+
+Filtra por `fecha LIKE '2026%'`.
+
+---
+
+### `GET /api/rrhh/guardias?year=2026` — Guardias del año
+
+```
+Response: { ok: true, guardias: Guardia[] }
+```
+
+Devuelve guardias creadas en BD (no las calculadas). Filtrado por año.
+
+### `POST /api/rrhh/guardias` — Crear guardia con slots por defecto
+
+```
+Request:  { fecha: "YYYY-MM-DD", tipo?: "lab" | "fest" }
+Response: { ok: true, guardiaId: number, rowsAffected: number }
+Error:    { ok: false, error: "fecha requerida" } (400)
+```
+
+Si no se pasa `tipo`, lo infiere del día de la semana (domingo → `fest`, resto → `lab`). Crea los slots desde `rrhh_guardia_defaults` para todos los empleados activos con `hace_guardia = 1`.
+
+### `GET /api/rrhh/guardias/[id]` — Detalle guardia con slots
+
+```
+Response: {
+  ok: true,
+  guardia: Guardia,
+  slots: GuardiaSlot[]   // incluye nombre y farmaceutico del empleado
+}
+```
+
+### `PUT /api/rrhh/guardias/[id]` — Actualizar guardia y slots
+
+```
+Request: {
+  tipo?: "lab" | "fest",
+  publicada?: number,
+  notas?: string,
+  slots?: [{ empleado_id, hora_inicio, hora_fin }]
+}
+Response: { ok: true }
+```
+
+Actualiza la guardia y reemplaza todos sus slots (DELETE + INSERT).
+
+---
+
+### `GET /api/rrhh/vacaciones?year=2026` — Vacaciones del año
+
+```
+Response: {
+  ok: true,
+  vacaciones: [{
+    id, empleado_id, fecha_inicio, fecha_fin, estado, created_at,
+    nombre,        // JOIN con empleados
+    farmaceutico   // JOIN con empleados
+  }]
+}
+```
+
+### `POST /api/rrhh/vacaciones` — Crear período de vacaciones
+
+```
+Request:  { empleado_id, fecha_inicio, fecha_fin, estado?: "pend" | "conf" | "done" }
+Response: { ok: true, id: number }
+```
+
+### `PUT /api/rrhh/vacaciones/[id]` — Actualizar estado
+
+```
+Request:  { estado: "pend" | "conf" | "done" }
+Response: { ok: true }
+```
+
+### `DELETE /api/rrhh/vacaciones/[id]` — Eliminar período
+
+```
+Response: { ok: true }
+```

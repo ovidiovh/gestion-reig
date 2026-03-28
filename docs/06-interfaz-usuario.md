@@ -19,13 +19,18 @@
 
 ### Sidebar — Módulos
 
-| Módulo | Ruta | Estado |
-|--------|------|--------|
-| Inicio | `/` | Activo |
-| Nueva retirada | `/retiradas` | Activo |
-| Historial | `/retiradas/historial` | Activo |
-| Ventas | `/ventas` | Próximamente |
-| CRM | `/crm` | Próximamente |
+| Sección | Módulo | Ruta | Estado |
+|---------|--------|------|--------|
+| GENERAL | Inicio | `/` | Activo |
+| GENERAL | Horarios / Guardias | `/rrhh/horarios` | Activo |
+| FINANCIERO | Nueva retirada | `/retiradas` | Activo |
+| FINANCIERO | Historial | `/retiradas/historial` | Activo |
+| FINANCIERO | Ventas | `/ventas` | Próximamente |
+| MARKETING | CRM | `/crm` | Activo |
+| MARKETING | Fichas producto | `/fichas` | Próximamente |
+| RRHH | Guardias y Vacaciones | `/rrhh` | Activo |
+| RRHH | Equipo | `/rrhh/equipo` | Activo |
+| ADMINISTRACIÓN | Usuarios | `/admin/usuarios` | Próximamente (solo admin) |
 
 Los módulos no activos muestran badge "próx." y cursor `not-allowed`.
 
@@ -111,6 +116,65 @@ Flujo en 5 pasos:
   - Mensaje: "Esperando email de confirmación del Santander"
 - Sección "Confirmadas" (fondo verde)
   - Remesa #N, N retiradas, fecha confirmación, total, icono ✓
+
+---
+
+---
+
+## Módulo RRHH (`/rrhh`, `/rrhh/horarios`, `/rrhh/equipo`)
+
+### `/rrhh` y `/rrhh/horarios` — Calendario, guardias y vacaciones
+
+Página con 3 pestañas (tabs) en barra verde oscuro:
+
+**Pestaña Calendario (📅)**
+- Navegación mes a mes (◀ / ▶), año fijo 2026
+- Grid 7 columnas (L-D), una celda por día
+- Colores por tipo de día:
+  - Guardia publicada: fondo `#e8f5ec`, borde verde sólido, badge `GUARDIA ✓` verde
+  - Guardia pendiente: mismo fondo, badge `GUARDIA` verde claro
+  - Festivo: fondo `#fff0f0`, número en rojo, nombre del festivo (2 palabras)
+  - Fin de semana: fondo `#f8f8f8`
+  - Hoy: borde azul `#3b82f6`
+- Vacaciones del día: chips por empleado (rojo = farmacéutico, azul = auxiliar)
+- Clic en día de guardia → abre `GuardiaPanel`
+- Leyenda de colores al pie
+
+**Pestaña Guardia (🏥)**
+- Sin guardia seleccionada: lista de próximas 6 guardias con estado (publicada / borrador / sin crear)
+- Con guardia seleccionada: `GuardiaPanel` (ver más abajo)
+
+**Pestaña Vacaciones (🌴)** — `VacacionesTab`
+- Vista general: tarjetas por empleado con contadores (disfrutados/confirmados/pendientes/disponibles de 30)
+- Vista detalle por empleado:
+  - Contador 5 KPIs + barra de progreso coloreada
+  - Lista de períodos con estado, duración y botones confirmar/borrar
+  - Formulario añadir: fecha inicio + fecha fin + estado
+
+### GuardiaPanel (modal overlay)
+
+Abre sobre la página principal al clic en guardia.
+
+- Cabecera: fecha formateada + toggle LABORABLE/FESTIVO
+- Tabla de slots: una fila por empleado con guardia
+  - Nombre (negrita si farmacéutico, tachado si vacaciones ese día)
+  - Badge `M` (Mirelus), `VAC` si de vacaciones
+  - Selectores hora inicio (0-23) y hora fin (8-33, donde >23 = hora del día siguiente)
+  - Barra visual de cobertura por hora (8-23)
+  - Total de horas
+- Validación: badge verde ✓ / rojo ✗ según haya farmacéutico disponible
+- Gráfico barras de cobertura por hora (rojo <2 personas, ámbar 2, verde ≥3, verde oscuro ≥22h)
+- Botones: "Guardar cambios" + "Publicar" (deshabilitado sin farmacéutico) + "Cerrar"
+
+### `/rrhh/equipo` — Directorio del equipo
+
+- Header: "Equipo — Farmacia Reig"
+- KPIs: 4 tarjetas (Total personal, Farmacéuticos, Auxiliares, Hacen guardia)
+- Dos secciones separadas: Farmacia Reig y Mirelus
+- Tabla por sección con cabecera verde:
+  - Nombre (avatar inicial + badge Farm.), Categoría, Jornada (según convenio), Guardia, Complemento €, h/Guardia
+  - Filas alternas blanco/#f9fafb
+- Leyenda al pie explicando Compl.€ y h/Guardia
 
 ---
 
