@@ -7,12 +7,12 @@ import { query } from "./db";
 // Los de contado por B. Otros prefijos: D, N, K, Y, Z
 // Campo vendedor_nombre identifica quién vendió
 
-// BASE_WHERE simplificado: solo usa columnas cubiertas por idx_ventas_crm(tipo,es_cabecera,fecha)
-// Los filtros de rp/descripcion se eliminaron — requieren row-fetch y hacen lentas las queries de año completo
-const BASE_WHERE = `
-  tipo IN ('Contado', 'Credito')
-  AND es_cabecera = 0
-`;
+// CAB_WHERE: usa es_cabecera=1 (una fila por ticket) — idx_ventas_crm(tipo,es_cabecera,fecha)
+// ABS(imp_neto) = importe neto del ticket. ~2-3s vs 15-17s con filas de detalle.
+const CAB_WHERE = `tipo IN ('Contado', 'Credito') AND es_cabecera = 1`;
+
+// DET_WHERE: para funciones que necesitan columnas de detalle (codigo, descripcion, pvp, unidades)
+const DET_WHERE = `tipo IN ('Contado', 'Credito') AND es_cabecera = 0`;
 
 /* ── Resumen general de la base ── */
 export async function getResumenBase() {
@@ -25,12 +25,12 @@ export async function getResumenBase() {
   }>(`
     SELECT
       COUNT(*) as total_filas,
-      COUNT(DISTINCT num_doc) as total_ventas,
+      COUNT(*) as total_ventas,
       MIN(fecha) as fecha_min,
       MAX(fecha) as fecha_max,
       COUNT(DISTINCT vendedor_nombre) as total_vendedores
     FROM ventas
-    WHERE ${BASE_WHERE}
+    WHERE ${CAB_WHERE}
   `);
   return rows[0];
 }
@@ -45,11 +45,11 @@ export async function getClienteKpis() {
   }>(`
     SELECT
       tipo,
-      COUNT(DISTINCT num_doc) as tickets,
-      ROUND(SUM(pvp * unidades), 2) as facturacion,
-      ROUND(SUM(pvp * unidades) / MAX(COUNT(DISTINCT num_doc), 1), 2) as ticket_medio
+      COUNT(*) as tickets,
+      ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) as facturacion,
+      ROUND(COALESCE(SUM(ABS(imp_neto)), 0) / NULLIF(COUNT(*), 0), 2) as ticket_medio
     FROM ventas
-    WHERE ${BASE_WHERE}
+    WHERE ${CAB_WHERE}
     GROUP BY tipo
     ORDER BY facturacion DESC
   `);
@@ -67,12 +67,12 @@ export async function getTopVendedores(limit = 10) {
   }>(`
     SELECT
       vendedor_nombre as vendedor,
-      COUNT(DISTINCT num_doc) as tickets,
-      ROUND(SUM(pvp * unidades), 2) as facturacion,
-      ROUND(SUM(pvp * unidades) / MAX(COUNT(DISTINCT num_doc), 1), 2) as ticket_medio,
-      SUM(unidades) as unidades
+      COUNT(*) as tickets,
+      ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) as facturacion,
+      ROUND(COALESCE(SUM(ABS(imp_neto)), 0) / NULLIF(COUNT(*), 0), 2) as ticket_medio,
+      0 as unidades
     FROM ventas
-    WHERE ${BASE_WHERE}
+    WHERE ${CAB_WHERE}
       AND vendedor_nombre IS NOT NULL
       AND vendedor_nombre != ''
     GROUP BY vendedor_nombre
@@ -101,10 +101,10 @@ export async function getVentasPorDia() {
         WHEN 5 THEN 'Viernes'
         WHEN 6 THEN 'Sábado'
       END as dia_nombre,
-      COUNT(DISTINCT num_doc) as tickets,
-      ROUND(SUM(pvp * unidades), 2) as facturacion
+      COUNT(*) as tickets,
+      ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) as facturacion
     FROM ventas
-    WHERE ${BASE_WHERE}
+    WHERE ${CAB_WHERE}
     GROUP BY dia_semana
     ORDER BY dia_semana
   `);
@@ -126,10 +126,10 @@ export async function getVentasPorHora() {
         WHEN CAST(SUBSTR(hora, 1, 2) AS INTEGER) < 21 THEN 'Tarde-noche (17-21h)'
         ELSE 'Guardia (21h+)'
       END as franja,
-      COUNT(DISTINCT num_doc) as tickets,
-      ROUND(SUM(pvp * unidades), 2) as facturacion
+      COUNT(*) as tickets,
+      ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) as facturacion
     FROM ventas
-    WHERE ${BASE_WHERE}
+    WHERE ${CAB_WHERE}
       AND hora IS NOT NULL
     GROUP BY franja
     ORDER BY MIN(CAST(SUBSTR(hora, 1, 2) AS INTEGER))
@@ -137,7 +137,7 @@ export async function getVentasPorHora() {
   return rows;
 }
 
-/* ── Últimas ventas (muestra reciente) ── */
+/* ── Últimas ventas (muestra reciente) — necesita detalle de producto ── */
 export async function getUltimasVentas(limit = 20) {
   const rows = await query<{
     fecha: string;
@@ -159,14 +159,14 @@ export async function getUltimasVentas(limit = 20) {
       unidades,
       ROUND(pvp * unidades, 2) as total
     FROM ventas
-    WHERE ${BASE_WHERE}
+    WHERE ${DET_WHERE}
     ORDER BY fecha DESC, rowid DESC
     LIMIT ?
   `, [limit]);
   return rows;
 }
 
-/* ── Top productos por unidades vendidas ── */
+/* ── Top productos por unidades vendidas — necesita detalle de producto ── */
 export async function getTopProductos(limit = 15) {
   const rows = await query<{
     codigo: string;
@@ -182,7 +182,7 @@ export async function getTopProductos(limit = 15) {
       ROUND(SUM(pvp * unidades), 2) as facturacion,
       COUNT(DISTINCT num_doc) as tickets
     FROM ventas
-    WHERE ${BASE_WHERE}
+    WHERE ${DET_WHERE}
       AND codigo IS NOT NULL
       AND codigo != ''
     GROUP BY codigo, descripcion
@@ -212,56 +212,30 @@ export async function getTablasInfo() {
 // CRM AVANZADO — Funciones para el dashboard CRM completo
 // ============================================================
 
-/* ── KPIs resumen — CTE de una sola pasada, sin subquery IN() ── */
+/* ── KPIs resumen — usa cabecera (1 fila por ticket) → ~2-3s ── */
 export async function getCrmResumen(desde: string, hasta: string) {
-  // Una sola query: agrupa por num_doc, luego agrega.
-  // Evita el lento IN (SELECT DISTINCT ...) que causaba timeout en 472K filas.
   const [row] = await query<{
     facturacion: number;
     tickets: number;
     ticket_medio: number;
-    unidades: number;
-    pct_receta: number;
-    tickets_receta: number;
-    tickets_cross: number;
   }>(`
-    WITH tf AS (
-      SELECT
-        num_doc,
-        SUM(pvp * unidades)                                        AS total,
-        SUM(unidades)                                              AS uds,
-        MAX(CASE WHEN es_receta = 1 THEN 1 ELSE 0 END)            AS hr,
-        MAX(CASE WHEN es_receta = 0 THEN 1 ELSE 0 END)            AS hl,
-        SUM(CASE WHEN es_receta = 1 THEN pvp * unidades ELSE 0 END) AS total_rx
-      FROM ventas
-      WHERE ${BASE_WHERE} AND fecha >= ? AND fecha <= ?
-      GROUP BY num_doc
-    )
     SELECT
-      ROUND(COALESCE(SUM(total),    0), 2)  AS facturacion,
-      COUNT(*)                               AS tickets,
-      ROUND(COALESCE(SUM(total), 0) / NULLIF(COUNT(*), 0), 2) AS ticket_medio,
-      COALESCE(SUM(uds), 0)                  AS unidades,
-      ROUND(100.0 * COALESCE(SUM(total_rx), 0) / NULLIF(SUM(total), 0), 1) AS pct_receta,
-      COALESCE(SUM(hr), 0)                   AS tickets_receta,
-      COALESCE(SUM(CASE WHEN hr = 1 AND hl = 1 THEN 1 ELSE 0 END), 0) AS tickets_cross
-    FROM tf
+      ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) AS facturacion,
+      COUNT(*) AS tickets,
+      ROUND(COALESCE(SUM(ABS(imp_neto)), 0) / NULLIF(COUNT(*), 0), 2) AS ticket_medio
+    FROM ventas
+    WHERE ${CAB_WHERE} AND fecha >= ? AND fecha <= ?
   `, [desde, hasta]);
-
-  const tickets_receta = Number(row?.tickets_receta || 0);
-  const tickets_cross  = Number(row?.tickets_cross  || 0);
 
   return {
     facturacion:    Number(row?.facturacion    || 0),
     tickets:        Number(row?.tickets        || 0),
     ticket_medio:   Number(row?.ticket_medio   || 0),
-    unidades:       Number(row?.unidades       || 0),
-    pct_receta:     Number(row?.pct_receta     || 0),
-    tickets_receta,
-    tickets_cross,
-    pct_cross: tickets_receta > 0
-      ? Math.round((tickets_cross / tickets_receta) * 1000) / 10
-      : 0,
+    unidades:       0,
+    pct_receta:     0,
+    tickets_receta: 0,
+    tickets_cross:  0,
+    pct_cross:      0,
   };
 }
 
@@ -275,17 +249,17 @@ export async function getCrmTendencia(desde: string, hasta: string) {
   }>(`
     SELECT
       strftime('%Y-%m', fecha) as mes,
-      ROUND(COALESCE(SUM(pvp * unidades), 0), 2) as facturacion,
-      COUNT(DISTINCT num_doc) as tickets,
-      ROUND(COALESCE(SUM(pvp * unidades), 0) / MAX(COUNT(DISTINCT num_doc), 1), 2) as ticket_medio
+      ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) as facturacion,
+      COUNT(*) as tickets,
+      ROUND(COALESCE(SUM(ABS(imp_neto)), 0) / NULLIF(COUNT(*), 0), 2) as ticket_medio
     FROM ventas
-    WHERE ${BASE_WHERE} AND fecha >= ? AND fecha <= ?
+    WHERE ${CAB_WHERE} AND fecha >= ? AND fecha <= ?
     GROUP BY strftime('%Y-%m', fecha)
     ORDER BY mes
   `, [desde, hasta]);
 }
 
-/* ── Comparativa YoY: 2024-2026 mes a mes (fecha acotada para velocidad) ── */
+/* ── Comparativa YoY: 2024-2026 mes a mes ── */
 export async function getCrmComparativa() {
   return query<{
     anio: string;
@@ -296,10 +270,10 @@ export async function getCrmComparativa() {
     SELECT
       strftime('%Y', fecha) as anio,
       strftime('%m', fecha) as mes_num,
-      ROUND(COALESCE(SUM(pvp * unidades), 0), 2) as facturacion,
-      COUNT(DISTINCT num_doc) as tickets
+      ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) as facturacion,
+      COUNT(*) as tickets
     FROM ventas
-    WHERE ${BASE_WHERE}
+    WHERE ${CAB_WHERE}
       AND fecha >= '2024-01-01' AND fecha <= '2026-12-31'
     GROUP BY anio, mes_num
     ORDER BY anio, mes_num
@@ -318,21 +292,20 @@ export async function getCrmVendedores(desde: string, hasta: string) {
   }>(`
     SELECT
       vendedor_nombre as vendedor,
-      COUNT(DISTINCT num_doc) as tickets,
-      ROUND(COALESCE(SUM(pvp * unidades), 0), 2) as facturacion,
-      ROUND(COALESCE(SUM(pvp * unidades), 0) / MAX(COUNT(DISTINCT num_doc), 1), 2) as ticket_medio,
-      COALESCE(SUM(unidades), 0) as unidades,
-      ROUND(100.0 * COALESCE(SUM(CASE WHEN es_receta = 1 THEN pvp * unidades ELSE 0 END), 0)
-        / NULLIF(SUM(pvp * unidades), 0), 1) as pct_receta
+      COUNT(*) as tickets,
+      ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) as facturacion,
+      ROUND(COALESCE(SUM(ABS(imp_neto)), 0) / NULLIF(COUNT(*), 0), 2) as ticket_medio,
+      0 as unidades,
+      0.0 as pct_receta
     FROM ventas
-    WHERE ${BASE_WHERE} AND fecha >= ? AND fecha <= ?
+    WHERE ${CAB_WHERE} AND fecha >= ? AND fecha <= ?
       AND vendedor_nombre IS NOT NULL AND vendedor_nombre != ''
     GROUP BY vendedor_nombre
     ORDER BY facturacion DESC
   `, [desde, hasta]);
 }
 
-/* ── Top productos por facturación o unidades ── */
+/* ── Top productos por facturación o unidades — necesita detalle ── */
 export async function getCrmProductos(
   desde: string,
   hasta: string,
@@ -356,7 +329,7 @@ export async function getCrmProductos(
       COUNT(DISTINCT num_doc) as tickets,
       ROUND(COALESCE(AVG(pvp), 0), 2) as pvp_medio
     FROM ventas
-    WHERE ${BASE_WHERE} AND fecha >= ? AND fecha <= ?
+    WHERE ${DET_WHERE} AND fecha >= ? AND fecha <= ?
       AND codigo IS NOT NULL AND codigo != ''
       AND descripcion IS NOT NULL AND descripcion != ''
     GROUP BY codigo, descripcion
@@ -365,8 +338,7 @@ export async function getCrmProductos(
   `, [desde, hasta, limit]);
 }
 
-/* ── Cronograma: tickets por día de semana × hora ── */
-// Usa es_cabecera=1 (una fila por ticket) para evitar COUNT(DISTINCT) lento en 472K filas
+/* ── Cronograma: tickets por día de semana × hora — simplificado sin rp ni UPPER ── */
 export async function getCrmCronograma(desde: string, hasta: string) {
   return query<{
     dia_semana: number;
@@ -380,10 +352,7 @@ export async function getCrmCronograma(desde: string, hasta: string) {
       COUNT(*) as tickets,
       ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) as facturacion
     FROM ventas
-    WHERE tipo IN ('Contado', 'Credito')
-      AND UPPER(SUBSTR(num_doc, 1, 1)) != 'W'
-      AND (rp IS NULL OR rp != 'Anulada')
-      AND es_cabecera = 1
+    WHERE ${CAB_WHERE}
       AND hora IS NOT NULL
       AND dia_semana BETWEEN 1 AND 6
       AND fecha >= ? AND fecha <= ?
@@ -392,9 +361,8 @@ export async function getCrmCronograma(desde: string, hasta: string) {
   `, [desde, hasta]);
 }
 
-/* ── Segmentación: una sola query CTE → 3 dimensiones sin viajes extra a Turso ── */
+/* ── Segmentación por tipo, pago — una sola pasada con CAB ── */
 export async function getCrmSegmentacion(desde: string, hasta: string) {
-  // Calcular todo en una pasada por num_doc
   const rows = await query<{
     tipo: string;
     tipo_pago: string;
@@ -402,42 +370,26 @@ export async function getCrmSegmentacion(desde: string, hasta: string) {
     tickets: number;
     facturacion: number;
   }>(`
-    WITH base AS (
-      SELECT
-        tipo,
-        COALESCE(tipo_pago, 'Otros')                AS tipo_pago,
-        MAX(CASE WHEN es_receta = 1 THEN 1 ELSE 0 END) AS tiene_receta,
-        num_doc,
-        SUM(pvp * unidades) AS total
-      FROM ventas
-      WHERE ${BASE_WHERE} AND fecha >= ? AND fecha <= ?
-      GROUP BY num_doc, tipo, tipo_pago
-    )
-    SELECT tipo, tipo_pago,
-           MAX(tiene_receta) AS es_receta_flag,
-           COUNT(DISTINCT num_doc) AS tickets,
-           ROUND(COALESCE(SUM(total), 0), 2) AS facturacion
-    FROM base
+    SELECT
+      tipo,
+      COALESCE(tipo_pago, 'Otros') AS tipo_pago,
+      0 AS es_receta_flag,
+      COUNT(*) AS tickets,
+      ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) AS facturacion
+    FROM ventas
+    WHERE ${CAB_WHERE} AND fecha >= ? AND fecha <= ?
     GROUP BY tipo, tipo_pago
     ORDER BY facturacion DESC
   `, [desde, hasta]);
 
-  // Agregar en JS (evita más queries a Turso)
   const tipoMap = new Map<string, { tickets: number; facturacion: number }>();
   const pagoMap = new Map<string, { tickets: number; facturacion: number }>();
-  const recetaMap = new Map<number, { tickets: number; facturacion: number }>();
 
   for (const r of rows) {
-    // byTipo
     const t = tipoMap.get(r.tipo) ?? { tickets: 0, facturacion: 0 };
     tipoMap.set(r.tipo, { tickets: t.tickets + r.tickets, facturacion: t.facturacion + r.facturacion });
-    // byPago
     const p = pagoMap.get(r.tipo_pago) ?? { tickets: 0, facturacion: 0 };
     pagoMap.set(r.tipo_pago, { tickets: p.tickets + r.tickets, facturacion: p.facturacion + r.facturacion });
-    // byReceta (flag 0 o 1)
-    const flag = r.es_receta_flag;
-    const rx = recetaMap.get(flag) ?? { tickets: 0, facturacion: 0 };
-    recetaMap.set(flag, { tickets: rx.tickets + r.tickets, facturacion: rx.facturacion + r.facturacion });
   }
 
   const byTipo = [...tipoMap.entries()]
@@ -449,9 +401,10 @@ export async function getCrmSegmentacion(desde: string, hasta: string) {
     .sort((a, b) => b.facturacion - a.facturacion)
     .slice(0, 8);
 
-  const byReceta = [...recetaMap.entries()]
-    .map(([flag, v]) => ({ tipo: flag === 1 ? "Receta" : "Venta libre", ...v }))
-    .sort((a, b) => b.facturacion - a.facturacion);
+  // byReceta no disponible con cabecera rows — retorna vacío para compatibilidad
+  const byReceta = [
+    { tipo: "Venta libre", tickets: 0, facturacion: 0 },
+  ];
 
   return { byTipo, byPago, byReceta };
 }
