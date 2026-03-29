@@ -381,19 +381,28 @@ export default function CrmPage() {
     return periodoToRange(periodo);
   }, [periodo, customDesde, customHasta]);
 
-  // Helper seguro para fetch JSON
+  // Helper seguro para fetch JSON con timeout de 9s
   const safeFetch = useCallback(async <T,>(url: string, setter: (d: T) => void, setLoading: (v: boolean) => void) => {
     setLoading(true);
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 9000);
     try {
-      const r = await fetch(url);
-      const d = await r.json();
+      const r = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(t);
+      const text = await r.text();
+      let d: unknown;
+      try { d = JSON.parse(text); } catch { d = null; }
       if (!r.ok) {
-        setFetchError(`Error ${r.status}: ${d?.error ?? url}`);
+        setFetchError(`Error ${r.status}: ${(d as Record<string,string>)?.error ?? url}`);
         return;
       }
       setter(d as T);
     } catch (e) {
-      setFetchError(String(e));
+      clearTimeout(t);
+      const msg = e instanceof Error && e.name === "AbortError"
+        ? "Timeout: la consulta tardó demasiado. Recarga la página."
+        : String(e);
+      setFetchError(msg);
       console.error("[crm fetch]", url, e);
     } finally {
       setLoading(false);
