@@ -89,16 +89,16 @@ export async function getTopVendedores(limit = 10) {
       unidades: number;
     }>(`
       SELECT
-        vendedor,
+        vendedor_nombre AS vendedor,
         COUNT(*) as tickets,
         ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) as facturacion,
         ROUND(COALESCE(SUM(ABS(imp_neto)), 0) / NULLIF(COUNT(*), 0), 2) as ticket_medio,
         0 as unidades
       FROM ventas
       WHERE ${CAB_WHERE}
-        AND vendedor IS NOT NULL
-        AND vendedor != ''
-      GROUP BY vendedor
+        AND vendedor_nombre IS NOT NULL
+        AND vendedor_nombre != ''
+      GROUP BY vendedor_nombre
       ORDER BY facturacion DESC
       LIMIT ?
     `, [limit]));
@@ -161,11 +161,11 @@ export async function getUltimasVentas(limit = 20) {
       SELECT
         fecha,
         COALESCE(hash, '') as hash,
-        COALESCE(vendedor, '') as vendedor,
+        COALESCE(vendedor_nombre, '') as vendedor,
         COALESCE(descripcion, '') as descripcion,
         COALESCE(pvp, 0) as pvp,
-        COALESCE(cantidad, 0) as cantidad,
-        ROUND(COALESCE(pvp * cantidad, 0), 2) as total
+        COALESCE(unidades, 0) as cantidad,
+        ROUND(COALESCE(pvp * unidades, 0), 2) as total
       FROM ventas
       WHERE ${DET_WHERE}
       ORDER BY fecha DESC, rowid DESC
@@ -190,9 +190,9 @@ export async function getTopProductos(limit = 15) {
       SELECT
         codigo,
         descripcion,
-        COALESCE(SUM(cantidad), 0) as unidades,
-        ROUND(COALESCE(SUM(pvp * cantidad), 0), 2) as facturacion,
-        COUNT(DISTINCT hash) as tickets
+        COALESCE(SUM(unidades), 0) as unidades,
+        ROUND(COALESCE(SUM(pvp * unidades), 0), 2) as facturacion,
+        COUNT(DISTINCT hash_linea) as tickets
       FROM ventas
       WHERE ${DET_WHERE}
         AND codigo IS NOT NULL

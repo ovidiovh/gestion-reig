@@ -9,6 +9,10 @@ export const maxDuration = 300;
  * Crea y rellena las tablas resumen precalculadas desde la tabla ventas.
  * Ejecutar UNA VEZ tras cada carga masiva de datos.
  *
+ * Columnas reales en ventas:
+ *   fecha, hora, num_doc, vendedor_nombre, tipo, tipo_pago,
+ *   codigo, descripcion, unidades, pvp, imp_neto, es_cabecera, hash_linea
+ *
  * Tablas creadas:
  *   - crm_resumen_mensual       (una fila por mes)
  *   - crm_vendedores_mensual    (una fila por mes × vendedor)
@@ -82,7 +86,7 @@ export async function POST() {
     log.push(`[${elapsed(t0)}s] Tablas vaciadas`);
 
     // ── 3. crm_resumen_mensual ─────────────────────────────────────────────
-    // Una sola pasada sobre ventas para calcular métricas cab+det por mes
+    // Columnas reales: es_cabecera, imp_neto, unidades, vendedor_nombre
     await db.execute(`
       INSERT INTO crm_resumen_mensual (anio, mes, facturacion, tickets, unidades, ticket_medio)
       SELECT
@@ -94,7 +98,7 @@ export async function POST() {
         SUM(CASE WHEN es_cabecera = 1 THEN 1 ELSE 0 END)
                                                  AS tickets,
         COALESCE(
-          SUM(CASE WHEN es_cabecera = 0 THEN cantidad ELSE 0 END), 0
+          SUM(CASE WHEN es_cabecera = 0 THEN unidades ELSE 0 END), 0
         )                                        AS unidades,
         ROUND(
           SUM(CASE WHEN es_cabecera = 1 THEN ABS(imp_neto) ELSE 0 END) /
@@ -114,23 +118,23 @@ export async function POST() {
       INSERT INTO crm_vendedores_mensual
              (anio, mes, vendedor, tickets, facturacion, ticket_medio, unidades)
       SELECT
-        CAST(strftime('%Y', fecha) AS INTEGER)  AS anio,
-        CAST(strftime('%m', fecha) AS INTEGER)  AS mes,
-        COALESCE(vendedor, 'Sin asignar')        AS vendedor,
-        COUNT(*)                                 AS tickets,
+        CAST(strftime('%Y', fecha) AS INTEGER)    AS anio,
+        CAST(strftime('%m', fecha) AS INTEGER)    AS mes,
+        COALESCE(vendedor_nombre, 'Sin asignar')  AS vendedor,
+        COUNT(*)                                  AS tickets,
         ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) AS facturacion,
         ROUND(
           COALESCE(SUM(ABS(imp_neto)), 0) / NULLIF(COUNT(*), 0), 2
-        )                                        AS ticket_medio,
-        0                                        AS unidades
+        )                                         AS ticket_medio,
+        0                                         AS unidades
       FROM ventas
       WHERE es_cabecera = 1
-        AND vendedor IS NOT NULL
-        AND vendedor != ''
+        AND vendedor_nombre IS NOT NULL
+        AND vendedor_nombre != ''
       GROUP BY
         CAST(strftime('%Y', fecha) AS INTEGER),
         CAST(strftime('%m', fecha) AS INTEGER),
-        vendedor
+        vendedor_nombre
     `);
 
     const r2 = await db.execute(`SELECT COUNT(*) AS n FROM crm_vendedores_mensual`);
@@ -141,14 +145,14 @@ export async function POST() {
       INSERT INTO crm_productos_mensual
              (anio, mes, codigo, descripcion, unidades, facturacion, tickets, pvp_medio)
       SELECT
-        CAST(strftime('%Y', fecha) AS INTEGER)     AS anio,
-        CAST(strftime('%m', fecha) AS INTEGER)     AS mes,
+        CAST(strftime('%Y', fecha) AS INTEGER)        AS anio,
+        CAST(strftime('%m', fecha) AS INTEGER)        AS mes,
         codigo,
         COALESCE(MAX(descripcion), 'Sin descripción') AS descripcion,
-        COALESCE(SUM(cantidad), 0)                  AS unidades,
-        ROUND(COALESCE(SUM(pvp * cantidad), 0), 2)  AS facturacion,
-        COUNT(DISTINCT hash)                        AS tickets,
-        ROUND(COALESCE(AVG(pvp), 0), 2)             AS pvp_medio
+        COALESCE(SUM(unidades), 0)                    AS unidades,
+        ROUND(COALESCE(SUM(pvp * unidades), 0), 2)    AS facturacion,
+        COUNT(DISTINCT hash_linea)                    AS tickets,
+        ROUND(COALESCE(AVG(pvp), 0), 2)               AS pvp_medio
       FROM ventas
       WHERE es_cabecera = 0
         AND codigo      IS NOT NULL AND codigo      != ''
