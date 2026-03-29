@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/api-helpers";
 import { query } from "@/lib/db";
 
-// Ruta de diagnóstico temporal — ver columnas reales en Turso
+// Ruta de diagnóstico temporal — sin auth para depuración
 export async function GET() {
-  const { error } = await requireAuth();
-  if (error) return error;
-
   try {
     // 1. Tablas disponibles
     const tablas = await query<{ name: string }>(
