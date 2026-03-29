@@ -214,49 +214,51 @@ export async function getTablasInfo() {
 // CRM AVANZADO — Funciones para el dashboard CRM completo
 // ============================================================
 
-/* ── KPIs resumen con comparativa periodo anterior ── */
+/* ── KPIs resumen — CTE de una sola pasada, sin subquery IN() ── */
 export async function getCrmResumen(desde: string, hasta: string) {
-  const [main] = await query<{
+  // Una sola query: agrupa por num_doc, luego agrega.
+  // Evita el lento IN (SELECT DISTINCT ...) que causaba timeout en 472K filas.
+  const [row] = await query<{
     facturacion: number;
     tickets: number;
     ticket_medio: number;
     unidades: number;
     pct_receta: number;
+    tickets_receta: number;
+    tickets_cross: number;
   }>(`
+    WITH tf AS (
+      SELECT
+        num_doc,
+        SUM(pvp * unidades)                                        AS total,
+        SUM(unidades)                                              AS uds,
+        MAX(CASE WHEN es_receta = 1 THEN 1 ELSE 0 END)            AS hr,
+        MAX(CASE WHEN es_receta = 0 THEN 1 ELSE 0 END)            AS hl,
+        SUM(CASE WHEN es_receta = 1 THEN pvp * unidades ELSE 0 END) AS total_rx
+      FROM ventas
+      WHERE ${BASE_WHERE} AND fecha >= ? AND fecha <= ?
+      GROUP BY num_doc
+    )
     SELECT
-      ROUND(COALESCE(SUM(pvp * unidades), 0), 2) as facturacion,
-      COUNT(DISTINCT num_doc) as tickets,
-      ROUND(COALESCE(SUM(pvp * unidades), 0) / MAX(COUNT(DISTINCT num_doc), 1), 2) as ticket_medio,
-      COALESCE(SUM(unidades), 0) as unidades,
-      ROUND(100.0 * COALESCE(SUM(CASE WHEN es_receta = 1 THEN pvp * unidades ELSE 0 END), 0)
-        / NULLIF(SUM(pvp * unidades), 0), 1) as pct_receta
-    FROM ventas
-    WHERE ${BASE_WHERE} AND fecha >= ? AND fecha <= ?
+      ROUND(COALESCE(SUM(total),    0), 2)  AS facturacion,
+      COUNT(*)                               AS tickets,
+      ROUND(COALESCE(SUM(total), 0) / NULLIF(COUNT(*), 0), 2) AS ticket_medio,
+      COALESCE(SUM(uds), 0)                  AS unidades,
+      ROUND(100.0 * COALESCE(SUM(total_rx), 0) / NULLIF(SUM(total), 0), 1) AS pct_receta,
+      COALESCE(SUM(hr), 0)                   AS tickets_receta,
+      COALESCE(SUM(CASE WHEN hr = 1 AND hl = 1 THEN 1 ELSE 0 END), 0) AS tickets_cross
+    FROM tf
   `, [desde, hasta]);
 
-  const [cs] = await query<{ tickets_receta: number; tickets_cross: number }>(`
-    SELECT
-      COUNT(DISTINCT num_doc) as tickets_receta,
-      COUNT(DISTINCT CASE
-        WHEN num_doc IN (
-          SELECT DISTINCT num_doc FROM ventas
-          WHERE ${BASE_WHERE} AND fecha >= ? AND fecha <= ? AND es_receta = 0
-        )
-        THEN num_doc
-      END) as tickets_cross
-    FROM ventas
-    WHERE ${BASE_WHERE} AND fecha >= ? AND fecha <= ? AND es_receta = 1
-  `, [desde, hasta, desde, hasta]);
-
-  const tickets_receta = Number(cs?.tickets_receta || 0);
-  const tickets_cross = Number(cs?.tickets_cross || 0);
+  const tickets_receta = Number(row?.tickets_receta || 0);
+  const tickets_cross  = Number(row?.tickets_cross  || 0);
 
   return {
-    facturacion: Number(main?.facturacion || 0),
-    tickets: Number(main?.tickets || 0),
-    ticket_medio: Number(main?.ticket_medio || 0),
-    unidades: Number(main?.unidades || 0),
-    pct_receta: Number(main?.pct_receta || 0),
+    facturacion:    Number(row?.facturacion    || 0),
+    tickets:        Number(row?.tickets        || 0),
+    ticket_medio:   Number(row?.ticket_medio   || 0),
+    unidades:       Number(row?.unidades       || 0),
+    pct_receta:     Number(row?.pct_receta     || 0),
     tickets_receta,
     tickets_cross,
     pct_cross: tickets_receta > 0
@@ -285,7 +287,7 @@ export async function getCrmTendencia(desde: string, hasta: string) {
   `, [desde, hasta]);
 }
 
-/* ── Comparativa YoY: todos los años disponibles, mes a mes ── */
+/* ── Comparativa YoY: 2024-2026 mes a mes (fecha acotada para velocidad) ── */
 export async function getCrmComparativa() {
   return query<{
     anio: string;
@@ -300,6 +302,7 @@ export async function getCrmComparativa() {
       COUNT(DISTINCT num_doc) as tickets
     FROM ventas
     WHERE ${BASE_WHERE}
+      AND fecha >= '2024-01-01' AND fecha <= '2026-12-31'
     GROUP BY anio, mes_num
     ORDER BY anio, mes_num
   `);
@@ -386,54 +389,66 @@ export async function getCrmCronograma(desde: string, hasta: string) {
   `, [desde, hasta]);
 }
 
-/* ── Segmentación por tipo de venta y forma de pago ── */
+/* ── Segmentación: una sola query CTE → 3 dimensiones sin viajes extra a Turso ── */
 export async function getCrmSegmentacion(desde: string, hasta: string) {
-  const byTipo = await query<{
+  // Calcular todo en una pasada por num_doc
+  const rows = await query<{
     tipo: string;
-    tickets: number;
-    facturacion: number;
-  }>(`
-    SELECT
-      tipo,
-      COUNT(DISTINCT num_doc) as tickets,
-      ROUND(COALESCE(SUM(pvp * unidades), 0), 2) as facturacion
-    FROM ventas
-    WHERE ${BASE_WHERE} AND fecha >= ? AND fecha <= ?
-    GROUP BY tipo
-    ORDER BY facturacion DESC
-  `, [desde, hasta]);
-
-  const byPago = await query<{
     tipo_pago: string;
+    es_receta_flag: number;
     tickets: number;
     facturacion: number;
   }>(`
-    SELECT
-      COALESCE(tipo_pago, 'Otros') as tipo_pago,
-      COUNT(DISTINCT num_doc) as tickets,
-      ROUND(COALESCE(SUM(pvp * unidades), 0), 2) as facturacion
-    FROM ventas
-    WHERE ${BASE_WHERE} AND fecha >= ? AND fecha <= ?
-      AND tipo_pago IS NOT NULL AND tipo_pago != ''
-    GROUP BY tipo_pago
+    WITH base AS (
+      SELECT
+        tipo,
+        COALESCE(tipo_pago, 'Otros')                AS tipo_pago,
+        MAX(CASE WHEN es_receta = 1 THEN 1 ELSE 0 END) AS tiene_receta,
+        num_doc,
+        SUM(pvp * unidades) AS total
+      FROM ventas
+      WHERE ${BASE_WHERE} AND fecha >= ? AND fecha <= ?
+      GROUP BY num_doc, tipo, tipo_pago
+    )
+    SELECT tipo, tipo_pago,
+           MAX(tiene_receta) AS es_receta_flag,
+           COUNT(DISTINCT num_doc) AS tickets,
+           ROUND(COALESCE(SUM(total), 0), 2) AS facturacion
+    FROM base
+    GROUP BY tipo, tipo_pago
     ORDER BY facturacion DESC
-    LIMIT 8
   `, [desde, hasta]);
 
-  const byReceta = await query<{
-    tipo: string;
-    tickets: number;
-    facturacion: number;
-  }>(`
-    SELECT
-      CASE WHEN es_receta = 1 THEN 'Receta' ELSE 'Venta libre' END as tipo,
-      COUNT(DISTINCT num_doc) as tickets,
-      ROUND(COALESCE(SUM(pvp * unidades), 0), 2) as facturacion
-    FROM ventas
-    WHERE ${BASE_WHERE} AND fecha >= ? AND fecha <= ?
-    GROUP BY es_receta
-    ORDER BY facturacion DESC
-  `, [desde, hasta]);
+  // Agregar en JS (evita más queries a Turso)
+  const tipoMap = new Map<string, { tickets: number; facturacion: number }>();
+  const pagoMap = new Map<string, { tickets: number; facturacion: number }>();
+  const recetaMap = new Map<number, { tickets: number; facturacion: number }>();
+
+  for (const r of rows) {
+    // byTipo
+    const t = tipoMap.get(r.tipo) ?? { tickets: 0, facturacion: 0 };
+    tipoMap.set(r.tipo, { tickets: t.tickets + r.tickets, facturacion: t.facturacion + r.facturacion });
+    // byPago
+    const p = pagoMap.get(r.tipo_pago) ?? { tickets: 0, facturacion: 0 };
+    pagoMap.set(r.tipo_pago, { tickets: p.tickets + r.tickets, facturacion: p.facturacion + r.facturacion });
+    // byReceta (flag 0 o 1)
+    const flag = r.es_receta_flag;
+    const rx = recetaMap.get(flag) ?? { tickets: 0, facturacion: 0 };
+    recetaMap.set(flag, { tickets: rx.tickets + r.tickets, facturacion: rx.facturacion + r.facturacion });
+  }
+
+  const byTipo = [...tipoMap.entries()]
+    .map(([tipo, v]) => ({ tipo, ...v }))
+    .sort((a, b) => b.facturacion - a.facturacion);
+
+  const byPago = [...pagoMap.entries()]
+    .map(([tipo_pago, v]) => ({ tipo_pago, ...v }))
+    .sort((a, b) => b.facturacion - a.facturacion)
+    .slice(0, 8);
+
+  const byReceta = [...recetaMap.entries()]
+    .map(([flag, v]) => ({ tipo: flag === 1 ? "Receta" : "Venta libre", ...v }))
+    .sort((a, b) => b.facturacion - a.facturacion);
 
   return { byTipo, byPago, byReceta };
 }
