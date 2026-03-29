@@ -185,11 +185,7 @@ export async function POST() {
               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
               ON CONFLICT(id) DO UPDATE SET
                 nombre            = excluded.nombre,
-                departamento      = excluded.departamento,
-                horario_inicio_a  = excluded.horario_inicio_a,
-                horario_fin_a     = excluded.horario_fin_a,
-                horario_inicio_b  = excluded.horario_inicio_b,
-                horario_fin_b     = excluded.horario_fin_b`,
+                departamento      = excluded.departamento`,
         args: [e.id, e.nombre, e.categoria, e.empresa, e.farmaceutico, e.hace_guardia,
                e.complemento_eur, e.h_lab_complemento, e.orden, e.departamento,
                e.ia, e.fa, e.ib, e.fb],

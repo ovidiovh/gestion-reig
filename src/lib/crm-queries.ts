@@ -368,6 +368,7 @@ export async function getCrmProductos(
 }
 
 /* ── Cronograma: tickets por día de semana × hora ── */
+// Usa es_cabecera=1 (una fila por ticket) para evitar COUNT(DISTINCT) lento en 472K filas
 export async function getCrmCronograma(desde: string, hasta: string) {
   return query<{
     dia_semana: number;
@@ -378,12 +379,16 @@ export async function getCrmCronograma(desde: string, hasta: string) {
     SELECT
       dia_semana,
       CAST(SUBSTR(hora, 1, 2) AS INTEGER) as hora_num,
-      COUNT(DISTINCT num_doc) as tickets,
-      ROUND(COALESCE(SUM(pvp * unidades), 0), 2) as facturacion
+      COUNT(*) as tickets,
+      ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) as facturacion
     FROM ventas
-    WHERE ${BASE_WHERE} AND fecha >= ? AND fecha <= ?
+    WHERE tipo IN ('Contado', 'Credito')
+      AND UPPER(SUBSTR(num_doc, 1, 1)) != 'W'
+      AND (rp IS NULL OR rp != 'Anulada')
+      AND es_cabecera = 1
       AND hora IS NOT NULL
       AND dia_semana BETWEEN 1 AND 6
+      AND fecha >= ? AND fecha <= ?
     GROUP BY dia_semana, hora_num
     ORDER BY dia_semana, hora_num
   `, [desde, hasta]);

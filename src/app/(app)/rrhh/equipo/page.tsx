@@ -219,7 +219,18 @@ function EmpleadoRow({
   const effIb = emp.horario_inicio_b ?? HORARIO_DEFAULT[emp.id]?.[2] ?? null;
   const effFb = emp.horario_fin_b   ?? HORARIO_DEFAULT[emp.id]?.[3] ?? null;
 
-  const [draft, setDraft] = useState({
+  const [draft, setDraft] = useState<{
+    categoria: string;
+    farmaceutico: number;
+    hace_guardia: number;
+    complemento_eur: number;
+    h_lab_complemento: number;
+    departamento: string;
+    horario_inicio_a: number | null;
+    horario_fin_a: number | null;
+    horario_inicio_b: number | null;
+    horario_fin_b: number | null;
+  }>({
     categoria: emp.categoria || "auxiliar",
     farmaceutico: emp.farmaceutico,
     hace_guardia: emp.hace_guardia,
@@ -798,7 +809,7 @@ export default function EquipoPage() {
 
   const loadEmpleados = useCallback(async (inactivos = mostrarInactivos) => {
     // Auto-migrate versionado: si la versión de datos cambió, re-sincronizar
-    const MIGRATE_KEY = "rrhh_migrate_v4";
+    const MIGRATE_KEY = "rrhh_migrate_v5";
     if (typeof window !== "undefined" && !localStorage.getItem(MIGRATE_KEY)) {
       try {
         await fetch("/api/rrhh/migrate", { method: "POST" });

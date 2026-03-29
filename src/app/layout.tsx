@@ -5,10 +5,6 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Gestión Reig — Farmacia Reig",
   description: "Panel de gestión interna de Farmacia Reig",
-  icons: {
-    icon: "/icon",
-    apple: "/apple-icon",
-  },
 };
 
 export default function RootLayout({
