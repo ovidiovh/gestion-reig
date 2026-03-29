@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import {
   Empleado, Festivo, Vacacion, HorarioAsignacion,
-  GRID_START_HH, GRID_END_HH, GRID_COLS,
-  TURNO_HORARIO, HORARIO_DEFAULT, hhToLabel,
+  GRID_START_HH, GRID_COLS,
+  TURNO_HORARIO, TURNO_COLORS, TURNO_SHORT, TURNO_LABELS, HORARIO_DEFAULT, hhToLabel,
   EMPLEADOS_ROTATIVOS, EMPLEADOS_ESPECIALES,
   getTurnoForWeek, getWeekStart,
   GREEN, GREEN_DARK, GREEN_LIGHT,
@@ -19,15 +19,16 @@ const DEPTO: Record<string, { bar: string; bg: string; label: string }> = {
   otro:      { bar: "#6b7280", bg: "#f3f4f6", label: "Otros" },
 };
 
-// ── Helpers de posición ───────────────────────────────────────────────────────
+const DEPT_ORDER = ["farmacia", "optica", "ortopedia", "otro"];
 
-const pct  = (hh: number) => `${((hh - GRID_START_HH) / GRID_COLS) * 100}%`;
-const pctW = (a: number, b: number) => `${((b - a) / GRID_COLS) * 100}%`;
+// ── Helper posición ───────────────────────────────────────────────────────────
 
-// ── Ticks del eje horario (cada ~2h + 20:30 final) ────────────────────────────
+const pct = (hh: number) => `${((hh - GRID_START_HH) / GRID_COLS) * 100}%`;
 
-const TICKS = [17, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 41]
-  .filter(hh => hh >= GRID_START_HH && hh <= GRID_END_HH);
+// ── Ticks del eje horario ─────────────────────────────────────────────────────
+
+const TICKS = [17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41]
+  .filter(hh => hh >= GRID_START_HH && hh <= GRID_START_HH + GRID_COLS);
 
 // ── Tipos locales ─────────────────────────────────────────────────────────────
 
@@ -37,6 +38,14 @@ interface GSlot {
   hora_fin: number;
   hora_inicio2: number | null;
   hora_fin2: number | null;
+}
+
+interface SlotSquare { dept: string; present: boolean; }
+
+// ── Formato de fecha corta ────────────────────────────────────────────────────
+
+function fmtShort(s: string) {
+  return new Date(s + "T00:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "short" });
 }
 
 // ── Componente principal ──────────────────────────────────────────────────────
@@ -68,7 +77,6 @@ export default function DayViewPanel({
 }) {
   const [guardiaSlots, setGuardiaSlots] = useState<GSlot[]>([]);
 
-  // Cargar slots de guardia al abrir si es día de guardia
   useEffect(() => {
     if (!isGuardia || !guardiaId) return;
     fetch(`/api/rrhh/guardias/${guardiaId}`)
@@ -88,52 +96,7 @@ export default function DayViewPanel({
     weekday: "long", day: "numeric", month: "long",
   });
 
-  // Determina los bloques de trabajo de un empleado para este día
-  const getBlocks = (emp: Empleado): [number, number][] => {
-    if (isWeekend) return [];
-    if (vacsHoy.some(v => v.empleado_id === emp.id)) return [];
-
-    // Si es guardia y hay slots cargados, usar los de guardia para ese empleado
-    if (isGuardia && guardiaSlots.length > 0) {
-      const gs = guardiaSlots.find(s => s.empleado_id === emp.id);
-      if (gs) {
-        const blocks: [number, number][] = [[gs.hora_inicio, gs.hora_fin]];
-        if (gs.hora_inicio2 != null && gs.hora_fin2 != null)
-          blocks.push([gs.hora_inicio2, gs.hora_fin2]);
-        return blocks;
-      }
-    }
-
-    // Turno rotativo
-    if (EMPLEADOS_ROTATIVOS.includes(emp.id) || EMPLEADOS_ESPECIALES.includes(emp.id)) {
-      const override = asignaciones.find(a => a.empleado_id === emp.id && a.week_start === weekStart);
-      const turno = override
-        ? override.turno
-        : EMPLEADOS_ESPECIALES.includes(emp.id) ? 0 : getTurnoForWeek(emp.id, weekStart);
-      const h = TURNO_HORARIO[turno];
-      if (!h) return [];
-      const blocks: [number, number][] = [[h[0], h[1]]];
-      if (h[2] != null && h[3] != null) blocks.push([h[2], h[3]]);
-      return blocks;
-    }
-
-    // Horario fijo: primero columnas de BD, luego HORARIO_DEFAULT
-    const hIa = emp.horario_inicio_a ?? HORARIO_DEFAULT[emp.id]?.[0] ?? null;
-    const hFa = emp.horario_fin_a   ?? HORARIO_DEFAULT[emp.id]?.[1] ?? null;
-    const hIb = emp.horario_inicio_b ?? HORARIO_DEFAULT[emp.id]?.[2] ?? null;
-    const hFb = emp.horario_fin_b   ?? HORARIO_DEFAULT[emp.id]?.[3] ?? null;
-    if (hIa == null || hFa == null) return [];
-    const blocks: [number, number][] = [[hIa, hFa]];
-    if (hIb != null && hFb != null) blocks.push([hIb, hFb]);
-    return blocks;
-  };
-
-  // Empleados activos ordenados
-  const activos = empleados
-    .filter(e => e.activo !== 0)
-    .sort((a, b) => (a.orden ?? 99) - (b.orden ?? 99));
-
-  // Bloques según horario programado, ignorando vacaciones (para detectar huecos)
+  // Bloques según horario (sin tener en cuenta vacaciones)
   const getScheduledBlocks = (emp: Empleado): [number, number][] => {
     if (isWeekend) return [];
     if (isGuardia && guardiaSlots.length > 0) {
@@ -165,22 +128,42 @@ export default function DayViewPanel({
     return b;
   };
 
-  // Por franja: personas presentes y huecos por vacaciones
+  const activos = empleados
+    .filter(e => e.activo !== 0)
+    .sort((a, b) => (a.orden ?? 99) - (b.orden ?? 99));
+
+  // Por franja: cuadradito por persona (con dept y si está presente o ausente)
   const slotData = Array.from({ length: GRID_COLS }, (_, i) => {
     const hh = GRID_START_HH + i;
-    let present = 0;
-    let absent  = 0;
+    const squares: SlotSquare[] = [];
     for (const emp of activos) {
       const isVac = vacsHoy.some(v => v.empleado_id === emp.id);
       const scheduled = getScheduledBlocks(emp);
       if (scheduled.some(([a, b]) => a <= hh && hh < b)) {
-        if (isVac) absent++;
-        else present++;
+        squares.push({ dept: emp.departamento || "farmacia", present: !isVac });
       }
     }
-    return { present, absent };
+    squares.sort((a, b) => DEPT_ORDER.indexOf(a.dept) - DEPT_ORDER.indexOf(b.dept));
+    return squares;
   });
-  const maxTotal = Math.max(...slotData.map(s => s.present + s.absent), 1);
+  const maxSlotLen = Math.max(...slotData.map(s => s.length), 1);
+
+  // Turnos rotativos de la semana agrupados por turno
+  const turnoGroups: Record<number, string[]> = {};
+  [...EMPLEADOS_ESPECIALES, ...EMPLEADOS_ROTATIVOS].forEach(empId => {
+    const emp = activos.find(e => e.id === empId);
+    if (!emp) return;
+    const override = asignaciones.find(a => a.empleado_id === empId && a.week_start === weekStart);
+    const turno = override
+      ? override.turno
+      : EMPLEADOS_ESPECIALES.includes(empId) ? 0 : getTurnoForWeek(empId, weekStart);
+    if (!turnoGroups[turno]) turnoGroups[turno] = [];
+    turnoGroups[turno].push(emp.nombre);
+  });
+
+  const SQ  = 6;  // tamaño cuadradito px
+  const GAP = 1;  // gap entre cuadraditos px
+  const rowH = maxSlotLen * (SQ + GAP) + 14; // altura total fila
 
   return (
     <div
@@ -197,6 +180,7 @@ export default function DayViewPanel({
         maxWidth: 820, width: "100%", maxHeight: "92vh", overflowY: "auto",
         boxShadow: "0 24px 64px rgba(0,0,0,0.3)",
       }}>
+
         {/* ── Header ── */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
           <div>
@@ -228,192 +212,113 @@ export default function DayViewPanel({
         </div>
 
         {/* ── Leyenda departamentos ── */}
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-          {Object.entries(DEPTO).map(([key, d]) => (
-            activos.some(e => (e.departamento || "farmacia") === key) && (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+          {DEPT_ORDER.map(key => {
+            const d = DEPTO[key];
+            const hasAny = activos.some(e => (e.departamento || "farmacia") === key);
+            if (!hasAny) return null;
+            return (
               <span key={key} style={{
                 fontSize: 9, padding: "2px 8px", borderRadius: 10, fontWeight: 700,
                 background: d.bg, color: d.bar,
               }}>
-                {d.label}
+                ■ {d.label}
               </span>
-            )
-          ))}
+            );
+          })}
           {vacsHoy.length > 0 && (
             <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 10, background: "#f3f4f6", color: "#9ca3af" }}>
-              🌴 Vacaciones
+              ▣ ausencia/vacaciones
             </span>
           )}
         </div>
 
-        {/* ── Grid planning ── */}
+        {/* ── Grid de cuadritos ── */}
         {!isWeekend ? (
           <div style={{ overflowX: "auto" }}>
             <div style={{ minWidth: 480 }}>
+
               {/* Eje horario */}
               <div style={{ display: "flex", marginBottom: 2 }}>
-                <div style={{ width: 90, flexShrink: 0 }} />
-                <div style={{ flex: 1, position: "relative", height: 18 }}>
+                <div style={{ width: 72, flexShrink: 0 }} />
+                <div style={{ flex: 1, position: "relative", height: 16 }}>
                   {TICKS.map(hh => (
-                    <div
-                      key={hh}
-                      style={{
-                        position: "absolute", top: 0,
-                        left: pct(hh),
-                        transform: "translateX(-50%)",
-                        fontSize: 8, color: "#aaa", whiteSpace: "nowrap",
-                      }}
-                    >
+                    <div key={hh} style={{
+                      position: "absolute", top: 0,
+                      left: pct(hh), transform: "translateX(-50%)",
+                      fontSize: 8, color: "#aaa", whiteSpace: "nowrap",
+                    }}>
                       {hhToLabel(hh)}
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Líneas de cuadrícula (fondo) */}
-              <div style={{ display: "flex" }}>
-                <div style={{ width: 90, flexShrink: 0 }} />
-                <div style={{ flex: 1, position: "relative", height: 1, background: "#f0f0f0" }}>
-                  {TICKS.map(hh => (
-                    <div key={hh} style={{
-                      position: "absolute", top: 0, bottom: 0,
-                      left: pct(hh), width: 1, background: "#e5e7eb",
-                    }} />
-                  ))}
-                </div>
-              </div>
-
-              {/* Filas de empleados */}
-              {activos.map((emp, idx) => {
-                const blocks  = getBlocks(emp);
-                const isVac   = vacsHoy.some(v => v.empleado_id === emp.id);
-                const depto   = DEPTO[emp.departamento || "farmacia"] ?? DEPTO.otro;
-                const hasData = blocks.length > 0 || isVac || HORARIO_DEFAULT[emp.id] || EMPLEADOS_ROTATIVOS.includes(emp.id) || EMPLEADOS_ESPECIALES.includes(emp.id);
-                if (!hasData) return null;
-
-                return (
-                  <div
-                    key={emp.id}
-                    style={{
-                      display: "flex", alignItems: "center",
-                      background: idx % 2 === 0 ? "#fafafa" : "#fff",
-                      borderBottom: "1px solid #f0f0f0",
-                      minHeight: 30,
-                    }}
-                  >
-                    {/* Nombre */}
-                    <div style={{
-                      width: 90, flexShrink: 0, paddingRight: 8,
-                      display: "flex", alignItems: "center", gap: 4,
-                    }}>
-                      <div style={{
-                        width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
-                        background: isVac ? "#d1d5db" : depto.bar,
-                      }} />
-                      <span style={{
-                        fontSize: 11, fontWeight: 600,
-                        color: isVac ? "#9ca3af" : "#374151",
-                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                      }}>
-                        {emp.nombre}
-                      </span>
-                    </div>
-
-                    {/* Barra de tiempo */}
-                    <div style={{ flex: 1, position: "relative", height: 22 }}>
-                      {/* Fondo cuadrícula */}
-                      {TICKS.map(hh => (
-                        <div key={hh} style={{
-                          position: "absolute", top: 0, bottom: 0,
-                          left: pct(hh), width: 1, background: "#f0f0f0",
-                        }} />
-                      ))}
-
-                      {/* Vacaciones overlay */}
-                      {isVac && (
-                        <div style={{
-                          position: "absolute", inset: "2px 0",
-                          background: "#e5e7eb", borderRadius: 4, opacity: 0.8,
-                          display: "flex", alignItems: "center", paddingLeft: 6,
-                        }}>
-                          <span style={{ fontSize: 9, color: "#9ca3af" }}>🌴 Vacaciones</span>
-                        </div>
-                      )}
-
-                      {/* Bloques de trabajo */}
-                      {!isVac && blocks.map(([a, b], bi) => (
-                        <div
-                          key={bi}
-                          title={`${hhToLabel(a)} – ${hhToLabel(b)}`}
-                          style={{
-                            position: "absolute",
-                            left:  pct(Math.max(a, GRID_START_HH)),
-                            width: pctW(Math.max(a, GRID_START_HH), Math.min(b, GRID_END_HH)),
-                            top: 2, bottom: 2,
-                            background: depto.bar,
-                            borderRadius: 4,
-                            opacity: 0.85,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                          }}
-                        >
-                          <span style={{ fontSize: 8, color: "#fff", fontWeight: 600, whiteSpace: "nowrap" }}>
-                            {hhToLabel(a)}–{hhToLabel(b)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* ── Fila de personas: recuadritos presentes + huecos vacaciones ── */}
-              <div style={{ display: "flex", marginTop: 6, alignItems: "flex-end" }}>
+              {/* Fila de cuadritos */}
+              <div style={{ display: "flex", alignItems: "flex-end" }}>
+                {/* Etiqueta lateral */}
                 <div style={{
-                  width: 90, flexShrink: 0,
+                  width: 72, flexShrink: 0,
                   fontSize: 8, color: "#888", fontWeight: 700, textAlign: "right", paddingRight: 6,
-                  lineHeight: 1.2,
+                  lineHeight: 1.3,
                 }}>
                   personas<br />
-                  <span style={{ fontWeight: 400, color: "#bbb" }}>▣ ausente</span>
+                  <span style={{ fontWeight: 400, color: "#bbb", fontSize: 7 }}>▣ ausente</span>
                 </div>
-                <div style={{ flex: 1, display: "flex" }}>
-                  {slotData.map(({ present, absent }, i) => {
-                    const total = present + absent;
-                    const SQ = 5; // tamaño del cuadradito en px
-                    const GAP = 1;
-                    const rowH = Math.max(maxTotal, 1) * (SQ + GAP) + 10;
+
+                {/* Columnas de cuadritos (una por franja de 30 min) */}
+                <div style={{ flex: 1, display: "flex", borderTop: "1px solid #e5e7eb", borderLeft: "1px solid #e5e7eb" }}>
+                  {slotData.map((squares, i) => {
+                    const present = squares.filter(s => s.present);
+                    const absent  = squares.filter(s => !s.present);
+                    const total   = squares.length;
                     return (
                       <div
                         key={i}
                         style={{
-                          flex: 1,
+                          flex: 1, height: rowH,
                           display: "flex", flexDirection: "column-reverse",
-                          alignItems: "center", gap: GAP,
-                          height: rowH, justifyContent: "flex-start", paddingTop: 2,
+                          alignItems: "center", justifyContent: "flex-start",
+                          gap: GAP, paddingTop: 2, paddingBottom: 2,
+                          borderRight: "1px solid #e5e7eb",
+                          borderBottom: "1px solid #e5e7eb",
+                          background: i % 2 === 0 ? "#fafafa" : "#fff",
+                          position: "relative",
                         }}
                       >
-                        {/* Cuadraditos de personas presentes (abajo) */}
-                        {Array.from({ length: present }, (_, j) => (
-                          <div key={`p${j}`} style={{
-                            width: SQ, height: SQ, flexShrink: 0,
-                            background: present >= 7 ? "#14702e" : present >= 5 ? "#1a8c3a" : present >= 3 ? "#4ade80" : "#86efac",
-                            borderRadius: 1,
-                          }} />
-                        ))}
-                        {/* Cuadraditos de huecos por vacaciones (arriba, sombreados) */}
-                        {Array.from({ length: absent }, (_, j) => (
-                          <div key={`a${j}`} style={{
-                            width: SQ, height: SQ, flexShrink: 0,
-                            background: "#e5e7eb",
-                            border: "1px dashed #9ca3af",
-                            borderRadius: 1,
-                            boxSizing: "border-box",
-                          }} />
-                        ))}
-                        {/* Número total al pie */}
+                        {/* Cuadritos presentes (abajo) */}
+                        {present.map((sq, j) => {
+                          const d = DEPTO[sq.dept] ?? DEPTO.otro;
+                          return (
+                            <div key={`p${j}`} style={{
+                              width: SQ, height: SQ, flexShrink: 0,
+                              background: d.bar,
+                              borderRadius: 1,
+                            }} />
+                          );
+                        })}
+                        {/* Cuadritos ausentes (encima, sombreados con borde) */}
+                        {absent.map((sq, j) => {
+                          const d = DEPTO[sq.dept] ?? DEPTO.otro;
+                          return (
+                            <div key={`a${j}`} style={{
+                              width: SQ, height: SQ, flexShrink: 0,
+                              background: d.bg,
+                              border: `1px dashed ${d.bar}`,
+                              borderRadius: 1,
+                              boxSizing: "border-box",
+                              opacity: 0.8,
+                            }} />
+                          );
+                        })}
+                        {/* Número al pie */}
                         {total > 0 && (
-                          <div style={{ fontSize: 6, color: absent > 0 ? "#ef4444" : "#555", fontWeight: 700, lineHeight: 1, marginTop: 1 }}>
-                            {absent > 0 ? `${present}+${absent}` : present}
+                          <div style={{
+                            position: "absolute", bottom: 1,
+                            fontSize: 6, fontWeight: 700, lineHeight: 1,
+                            color: absent.length > 0 ? "#ef4444" : "#6b7280",
+                          }}>
+                            {absent.length > 0 ? `${present.length}+${absent.length}` : present.length}
                           </div>
                         )}
                       </div>
@@ -429,29 +334,71 @@ export default function DayViewPanel({
           </div>
         )}
 
-        {/* ── Vacaciones hoy ── */}
-        {vacsHoy.length > 0 && (
-          <div style={{ marginTop: 14, borderTop: "1px solid #f0f0f0", paddingTop: 12 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
-              De vacaciones / ausencia
+        {/* ── Turnos rotativos de la semana ── */}
+        {Object.keys(turnoGroups).length > 0 && (
+          <div style={{ marginTop: 16, borderTop: "1px solid #f0f0f0", paddingTop: 12 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+              Turnos esta semana
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {vacsHoy.map(v => {
-                const emp = empleados.find(e => e.id === v.empleado_id);
-                const depto = DEPTO[(emp?.departamento || "farmacia")] ?? DEPTO.otro;
+              {[0, 1, 2, 3].map(t => {
+                const nombres = turnoGroups[t];
+                if (!nombres?.length) return null;
+                const colors = TURNO_COLORS[t];
                 return (
-                  <button
-                    key={v.id}
-                    onClick={() => { onClose(); onGoToVac(); }}
-                    style={{
-                      background: depto.bg, color: depto.bar,
-                      border: "none", borderRadius: 20, padding: "4px 12px",
-                      fontSize: 12, fontWeight: 600, cursor: "pointer",
-                    }}
-                    title="Ver en pestaña Vacaciones"
-                  >
-                    {v.nombre} →
-                  </button>
+                  <div key={t} style={{
+                    display: "flex", alignItems: "center", gap: 5,
+                    padding: "5px 12px", borderRadius: 20,
+                    background: colors.bg, color: colors.color,
+                    fontSize: 12,
+                  }}>
+                    <strong style={{ fontSize: 11 }}>{TURNO_SHORT[t]}</strong>
+                    <span>{nombres.join(", ")}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 4 }}>
+              {[1, 2, 3, 0].map(t => {
+                const colors = TURNO_COLORS[t];
+                return (
+                  <span key={t} style={{ fontSize: 9, color: colors.color, background: colors.bg, padding: "1px 6px", borderRadius: 6 }}>
+                    {TURNO_SHORT[t]}: {TURNO_LABELS[t]}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Vacaciones / ausencias hoy ── */}
+        {vacsHoy.length > 0 && (
+          <div style={{ marginTop: 14, borderTop: "1px solid #f0f0f0", paddingTop: 12 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+              De vacaciones / ausencia
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              {vacsHoy.map(v => {
+                const emp   = empleados.find(e => e.id === v.empleado_id);
+                const depto = DEPTO[emp?.departamento || "farmacia"] ?? DEPTO.otro;
+                const desde = fmtShort(v.fecha_inicio);
+                const hasta = fmtShort(v.fecha_fin);
+                return (
+                  <div key={v.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: 2, background: depto.bar, flexShrink: 0 }} />
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>{v.nombre}</span>
+                    <span style={{ fontSize: 11, color: "#9ca3af" }}>{desde} – {hasta}</span>
+                    <button
+                      onClick={() => { onClose(); onGoToVac(); }}
+                      style={{
+                        background: depto.bg, color: depto.bar,
+                        border: "none", borderRadius: 10, padding: "2px 8px",
+                        fontSize: 10, fontWeight: 600, cursor: "pointer", marginLeft: "auto",
+                      }}
+                    >
+                      ver →
+                    </button>
+                  </div>
                 );
               })}
             </div>
