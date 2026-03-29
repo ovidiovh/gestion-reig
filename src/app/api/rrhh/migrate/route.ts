@@ -176,7 +176,7 @@ export async function POST() {
       try { await db.execute(sql); } catch { /* columna ya existe — ignorar */ }
     }
 
-    // 2. Seed empleados (upsert — preserva datos de usuario, actualiza horarios y departamento)
+    // 2. Seed empleados (upsert — actualiza nombre, departamento y horarios forzando los valores maestros)
     for (const e of EMPLEADOS) {
       await db.execute({
         sql: `INSERT INTO rrhh_empleados
@@ -184,11 +184,12 @@ export async function POST() {
                horario_inicio_a, horario_fin_a, horario_inicio_b, horario_fin_b)
               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
               ON CONFLICT(id) DO UPDATE SET
+                nombre            = excluded.nombre,
                 departamento      = excluded.departamento,
-                horario_inicio_a  = COALESCE(horario_inicio_a, excluded.horario_inicio_a),
-                horario_fin_a     = COALESCE(horario_fin_a,    excluded.horario_fin_a),
-                horario_inicio_b  = COALESCE(horario_inicio_b, excluded.horario_inicio_b),
-                horario_fin_b     = COALESCE(horario_fin_b,    excluded.horario_fin_b)`,
+                horario_inicio_a  = excluded.horario_inicio_a,
+                horario_fin_a     = excluded.horario_fin_a,
+                horario_inicio_b  = excluded.horario_inicio_b,
+                horario_fin_b     = excluded.horario_fin_b`,
         args: [e.id, e.nombre, e.categoria, e.empresa, e.farmaceutico, e.hace_guardia,
                e.complemento_eur, e.h_lab_complemento, e.orden, e.departamento,
                e.ia, e.fa, e.ib, e.fb],

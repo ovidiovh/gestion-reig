@@ -16,7 +16,9 @@ export default auth((req) => {
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/setup") ||
     pathname.startsWith("/_next") ||
-    pathname.startsWith("/favicon")
+    pathname.startsWith("/favicon") ||
+    pathname === "/icon" ||
+    pathname === "/apple-icon"
   ) {
     return NextResponse.next();
   }

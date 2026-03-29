@@ -797,17 +797,16 @@ export default function EquipoPage() {
   const [week, setWeek]           = useState(() => getWeekStart(new Date()));
 
   const loadEmpleados = useCallback(async (inactivos = mostrarInactivos) => {
+    // Auto-migrate versionado: si la versión de datos cambió, re-sincronizar
+    const MIGRATE_KEY = "rrhh_migrate_v4";
+    if (typeof window !== "undefined" && !localStorage.getItem(MIGRATE_KEY)) {
+      try {
+        await fetch("/api/rrhh/migrate", { method: "POST" });
+        localStorage.setItem(MIGRATE_KEY, "1");
+      } catch { /* silencioso */ }
+    }
     const r = await fetch(`/api/rrhh/empleados${inactivos ? "?incluir_inactivos=1" : ""}`).then(r => r.json());
     if (r.ok) {
-      // Auto-migrate si faltan empleados clave (Monica, Miriam)
-      const ids = (r.empleados as Empleado[]).map((e: Empleado) => e.id);
-      if (!ids.includes("monica") || !ids.includes("miriam")) {
-        try {
-          await fetch("/api/rrhh/migrate", { method: "POST" });
-          const r2 = await fetch(`/api/rrhh/empleados${inactivos ? "?incluir_inactivos=1" : ""}`).then(x => x.json());
-          if (r2.ok) { setEmpleados(r2.empleados); return; }
-        } catch { /* silencioso */ }
-      }
       setEmpleados(r.empleados);
     } else {
       setError(r.error);
