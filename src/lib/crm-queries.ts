@@ -232,47 +232,43 @@ export async function getTablasInfo() {
 }
 
 // ============================================================
-// CRM AVANZADO — Funciones para el dashboard CRM completo
+// CRM AVANZADO — Lee de tablas precalculadas (milisegundos)
+// Poblar con: POST /api/crm/precalcular
 // ============================================================
+
+// Filtro de rango mes: printf('%04d-%02d', anio, mes) >= strftime('%Y-%m', ?)
+const MES_RANGE = `
+  printf('%04d-%02d', anio, mes) >= strftime('%Y-%m', ?)
+  AND printf('%04d-%02d', anio, mes) <= strftime('%Y-%m', ?)
+`;
 
 /* ── KPIs resumen ── */
 export async function getCrmResumen(desde: string, hasta: string) {
   try {
-    const [cab] = await withTimeout(query<{
+    const [row] = await withTimeout(query<{
       facturacion: number;
       tickets: number;
+      unidades: number;
     }>(`
       SELECT
-        ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) AS facturacion,
-        COUNT(*) AS tickets
-      FROM ventas
-      WHERE ${CAB_WHERE} AND fecha >= ? AND fecha <= ?
+        ROUND(COALESCE(SUM(facturacion), 0), 2) AS facturacion,
+        COALESCE(SUM(tickets), 0)               AS tickets,
+        COALESCE(SUM(unidades), 0)              AS unidades
+      FROM crm_resumen_mensual
+      WHERE ${MES_RANGE}
     `, [desde, hasta]));
 
-    const [det] = await withTimeout(query<{ uds: number }>(`
-      SELECT COALESCE(SUM(cantidad), 0) AS uds
-      FROM ventas
-      WHERE ${DET_WHERE} AND fecha >= ? AND fecha <= ?
-    `, [desde, hasta]));
-
-    const facturacion  = Number(cab?.facturacion  || 0);
-    const tickets      = Number(cab?.tickets      || 0);
-    const unidades     = Number(det?.uds          || 0);
+    const facturacion  = Number(row?.facturacion || 0);
+    const tickets      = Number(row?.tickets     || 0);
+    const unidades     = Number(row?.unidades    || 0);
     const ticket_medio = tickets > 0 ? Math.round((facturacion / tickets) * 100) / 100 : 0;
 
-    return {
-      facturacion,
-      tickets,
-      ticket_medio,
-      unidades,
-      pct_receta:     0,
-      tickets_receta: 0,
-      tickets_cross:  0,
-      pct_cross:      0,
-    };
+    return { facturacion, tickets, ticket_medio, unidades,
+             pct_receta: 0, tickets_receta: 0, tickets_cross: 0, pct_cross: 0 };
   } catch (e) {
     console.error("[crm] getCrmResumen:", e);
-    return { facturacion: 0, tickets: 0, ticket_medio: 0, unidades: 0, pct_receta: 0, tickets_receta: 0, tickets_cross: 0, pct_cross: 0 };
+    return { facturacion: 0, tickets: 0, ticket_medio: 0, unidades: 0,
+             pct_receta: 0, tickets_receta: 0, tickets_cross: 0, pct_cross: 0 };
   }
 }
 
@@ -286,14 +282,13 @@ export async function getCrmTendencia(desde: string, hasta: string) {
       ticket_medio: number;
     }>(`
       SELECT
-        strftime('%Y-%m', fecha) as mes,
-        ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) as facturacion,
-        COUNT(*) as tickets,
-        ROUND(COALESCE(SUM(ABS(imp_neto)), 0) / NULLIF(COUNT(*), 0), 2) as ticket_medio
-      FROM ventas
-      WHERE ${CAB_WHERE} AND fecha >= ? AND fecha <= ?
-      GROUP BY strftime('%Y-%m', fecha)
-      ORDER BY mes
+        printf('%04d-%02d', anio, mes)          AS mes,
+        ROUND(COALESCE(facturacion, 0), 2)      AS facturacion,
+        COALESCE(tickets, 0)                    AS tickets,
+        ROUND(COALESCE(ticket_medio, 0), 2)     AS ticket_medio
+      FROM crm_resumen_mensual
+      WHERE ${MES_RANGE}
+      ORDER BY anio, mes
     `, [desde, hasta]));
   } catch (e) {
     console.error("[crm] getCrmTendencia:", e);
@@ -311,15 +306,13 @@ export async function getCrmComparativa() {
       tickets: number;
     }>(`
       SELECT
-        strftime('%Y', fecha) as anio,
-        strftime('%m', fecha) as mes_num,
-        ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) as facturacion,
-        COUNT(*) as tickets
-      FROM ventas
-      WHERE ${CAB_WHERE}
-        AND fecha >= '2025-01-01' AND fecha <= '2026-12-31'
-      GROUP BY anio, mes_num
-      ORDER BY anio, mes_num
+        CAST(anio AS TEXT)                      AS anio,
+        printf('%02d', mes)                     AS mes_num,
+        ROUND(COALESCE(facturacion, 0), 2)      AS facturacion,
+        COALESCE(tickets, 0)                    AS tickets
+      FROM crm_resumen_mensual
+      WHERE anio IN (2025, 2026)
+      ORDER BY anio, mes
     `));
   } catch (e) {
     console.error("[crm] getCrmComparativa:", e);
@@ -340,14 +333,13 @@ export async function getCrmVendedores(desde: string, hasta: string) {
     }>(`
       SELECT
         vendedor,
-        COUNT(*) as tickets,
-        ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) as facturacion,
-        ROUND(COALESCE(SUM(ABS(imp_neto)), 0) / NULLIF(COUNT(*), 0), 2) as ticket_medio,
-        0 as unidades,
-        0.0 as pct_receta
-      FROM ventas
-      WHERE ${CAB_WHERE} AND fecha >= ? AND fecha <= ?
-        AND vendedor IS NOT NULL AND vendedor != ''
+        SUM(tickets)                                                    AS tickets,
+        ROUND(COALESCE(SUM(facturacion), 0), 2)                        AS facturacion,
+        ROUND(COALESCE(SUM(facturacion), 0) / NULLIF(SUM(tickets), 0), 2) AS ticket_medio,
+        COALESCE(SUM(unidades), 0)                                     AS unidades,
+        0.0                                                            AS pct_receta
+      FROM crm_vendedores_mensual
+      WHERE ${MES_RANGE}
       GROUP BY vendedor
       ORDER BY facturacion DESC
     `, [desde, hasta]));
@@ -375,17 +367,15 @@ export async function getCrmProductos(
       pvp_medio: number;
     }>(`
       SELECT
-        COALESCE(codigo, '') as codigo,
-        COALESCE(descripcion, 'Sin descripción') as descripcion,
-        COALESCE(SUM(cantidad), 0) as unidades,
-        ROUND(COALESCE(SUM(pvp * cantidad), 0), 2) as facturacion,
-        COUNT(DISTINCT hash) as tickets,
-        ROUND(COALESCE(AVG(pvp), 0), 2) as pvp_medio
-      FROM ventas
-      WHERE ${DET_WHERE} AND fecha >= ? AND fecha <= ?
-        AND codigo IS NOT NULL AND codigo != ''
-        AND descripcion IS NOT NULL AND descripcion != ''
-      GROUP BY codigo, descripcion
+        codigo,
+        MAX(descripcion)                           AS descripcion,
+        COALESCE(SUM(unidades), 0)                 AS unidades,
+        ROUND(COALESCE(SUM(facturacion), 0), 2)    AS facturacion,
+        SUM(tickets)                               AS tickets,
+        ROUND(COALESCE(AVG(pvp_medio), 0), 2)      AS pvp_medio
+      FROM crm_productos_mensual
+      WHERE ${MES_RANGE}
+      GROUP BY codigo
       ORDER BY ${order}
       LIMIT ?
     `, [desde, hasta, limit]));
@@ -395,7 +385,7 @@ export async function getCrmProductos(
   }
 }
 
-/* ── Cronograma — no hay columna hora, retorna vacío ── */
+/* ── Cronograma — pendiente de precalcular ── */
 export async function getCrmCronograma(_desde: string, _hasta: string) {
   return [] as { dia_semana: number; hora_num: number; tickets: number; facturacion: number }[];
 }
@@ -409,11 +399,11 @@ export async function getCrmSegmentacion(desde: string, hasta: string) {
       facturacion: number;
     }>(`
       SELECT
-        COALESCE(tipo_pago, 'Otros') AS tipo_pago,
-        COUNT(*) AS tickets,
-        ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) AS facturacion
-      FROM ventas
-      WHERE ${CAB_WHERE} AND fecha >= ? AND fecha <= ?
+        tipo_pago,
+        SUM(tickets)                              AS tickets,
+        ROUND(COALESCE(SUM(facturacion), 0), 2)   AS facturacion
+      FROM crm_segmentacion_mensual
+      WHERE ${MES_RANGE}
       GROUP BY tipo_pago
       ORDER BY facturacion DESC
     `, [desde, hasta]));
