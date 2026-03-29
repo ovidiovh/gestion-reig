@@ -231,13 +231,21 @@ function EmpleadoRow({
     horario_inicio_b: effIb,
     horario_fin_b:    effFb,
   });
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving]   = useState(false);
+  const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const handleSave = async () => {
     setSaving(true);
-    await onUpdate(emp.id, draft);
-    setSaving(false);
-    setEditing(false);
+    setSaveMsg(null);
+    try {
+      await onUpdate(emp.id, draft);
+      setSaveMsg({ ok: true, text: "✓ Guardado correctamente" });
+      setTimeout(() => { setSaveMsg(null); setEditing(false); }, 1200);
+    } catch (e) {
+      setSaveMsg({ ok: false, text: String(e) });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const deptLabel  = DEPTO_OPTS.find(d => d.value === (emp.departamento || "farmacia"))?.label ?? "—";
@@ -426,9 +434,19 @@ function EmpleadoRow({
 
           </div>
 
-          <div style={{ display: "flex", gap: 8, marginTop: 18, alignItems: "center" }}>
+          {saveMsg && (
+            <div style={{
+              marginTop: 14, padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600,
+              background: saveMsg.ok ? "#dcfce7" : "#fef2f2",
+              color: saveMsg.ok ? "#166534" : "#c0392b",
+            }}>
+              {saveMsg.text}
+            </div>
+          )}
+
+          <div style={{ display: "flex", gap: 8, marginTop: 12, alignItems: "center" }}>
             <button onClick={handleSave} disabled={saving}
-              style={{ background: GREEN, color: "#fff", border: "none", borderRadius: 8, padding: "10px 28px", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>
+              style={{ background: GREEN, color: "#fff", border: "none", borderRadius: 8, padding: "10px 28px", cursor: "pointer", fontSize: 13, fontWeight: 700, opacity: saving ? 0.7 : 1 }}>
               {saving ? "Guardando…" : "✓ Guardar cambios"}
             </button>
             <button onClick={() => setEditing(false)}
@@ -787,8 +805,20 @@ export default function EquipoPage() {
 
   const loadEmpleados = useCallback(async (inactivos = mostrarInactivos) => {
     const r = await fetch(`/api/rrhh/empleados${inactivos ? "?incluir_inactivos=1" : ""}`).then(r => r.json());
-    if (r.ok) setEmpleados(r.empleados);
-    else setError(r.error);
+    if (r.ok) {
+      // Auto-migrate si faltan empleados clave (Monica, Miriam)
+      const ids = (r.empleados as Empleado[]).map((e: Empleado) => e.id);
+      if (!ids.includes("monica") || !ids.includes("miriam")) {
+        try {
+          await fetch("/api/rrhh/migrate", { method: "POST" });
+          const r2 = await fetch(`/api/rrhh/empleados${inactivos ? "?incluir_inactivos=1" : ""}`).then(x => x.json());
+          if (r2.ok) { setEmpleados(r2.empleados); return; }
+        } catch { /* silencioso */ }
+      }
+      setEmpleados(r.empleados);
+    } else {
+      setError(r.error);
+    }
   }, [mostrarInactivos]);
 
   const loadHorarios = useCallback(async (w: string) => {
@@ -810,12 +840,19 @@ export default function EquipoPage() {
   };
 
   const handleUpdate = async (id: string, fields: Partial<Empleado>) => {
-    await fetch("/api/rrhh/empleados", {
+    const res  = await fetch("/api/rrhh/empleados", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, ...fields }),
     });
-    await loadEmpleados();
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error ?? `Error ${res.status}`);
+    // Actualizar el empleado en el estado local inmediatamente con los datos devueltos
+    if (data.empleado) {
+      setEmpleados(prev => prev.map(e => e.id === id ? { ...e, ...data.empleado } : e));
+    } else {
+      await loadEmpleados();
+    }
   };
 
   const handleBaja = async (id: string) => {
