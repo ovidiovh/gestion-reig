@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  Empleado, HorarioAsignacion,
+  Empleado, HorarioAsignacion, TurnoConfig,
   GREEN, GREEN_DARK, GREEN_LIGHT,
   TURNO_LABELS, TURNO_SHORT, TURNO_COLORS,
   EMPLEADOS_ROTATIVOS, EMPLEADOS_ESPECIALES,
   ANCHOR_WEEK, getWeekStart, getTurnoForWeek,
+  hhToLabel,
 } from "../types";
 
 // ── Mapas de display ──────────────────────────────────────────────────────────
@@ -212,6 +213,9 @@ function EmpleadoRow({
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({
+    categoria: emp.categoria || "auxiliar",
+    farmaceutico: emp.farmaceutico,
+    hace_guardia: emp.hace_guardia,
     complemento_eur: emp.complemento_eur,
     h_lab_complemento: emp.h_lab_complemento,
     departamento: emp.departamento || "farmacia",
@@ -333,12 +337,37 @@ function EmpleadoRow({
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 14 }}>
 
             <div>
+              <label style={lblStyle}>Categoría</label>
+              <select value={draft.categoria}
+                onChange={e => setDraft(d => ({ ...d, categoria: e.target.value }))}
+                style={fldStyle}>
+                <option value="farmaceutico">Farmacéutico/a</option>
+                <option value="auxiliar">Auxiliar</option>
+                <option value="mantenimiento">Mantenimiento</option>
+                <option value="limpieza">Limpieza</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
+
+            <div>
               <label style={lblStyle}>Departamento</label>
               <select value={draft.departamento}
                 onChange={e => setDraft(d => ({ ...d, departamento: e.target.value }))}
                 style={fldStyle}>
                 {DEPTO_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <input type="checkbox" id={`fma-${emp.id}`} checked={draft.farmaceutico === 1}
+                onChange={e => setDraft(d => ({ ...d, farmaceutico: e.target.checked ? 1 : 0 }))} />
+              <label htmlFor={`fma-${emp.id}`} style={{ ...lblStyle, margin: 0, textTransform: "none", letterSpacing: 0 }}>Es farmacéutico/a</label>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <input type="checkbox" id={`hg-${emp.id}`} checked={draft.hace_guardia === 1}
+                onChange={e => setDraft(d => ({ ...d, hace_guardia: e.target.checked ? 1 : 0 }))} />
+              <label htmlFor={`hg-${emp.id}`} style={{ ...lblStyle, margin: 0, textTransform: "none", letterSpacing: 0 }}>Hace guardia</label>
             </div>
 
             <div>
@@ -425,6 +454,136 @@ const HORARIO_TEXTO: Record<string, string> = {
   luisa:   "8:30 – 12:00",
 };
 
+// ── Modal editor de horarios de turnos ───────────────────────────────────────
+
+function timeToHhLocal(t: string): number | null {
+  if (!t) return null;
+  const [h, m] = t.split(":").map(Number);
+  if (isNaN(h)) return null;
+  return h * 2 + (m >= 30 ? 1 : 0);
+}
+
+function TurnoEditorModal({ turnos, onSave, onClose }: {
+  turnos: TurnoConfig[];
+  onSave: (cfg: TurnoConfig) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [drafts, setDrafts] = useState<TurnoConfig[]>(turnos);
+  const [saving, setSaving] = useState<number | null>(null);
+  const [error, setError]   = useState("");
+
+  const hhToTimeLocal = (hh: number | null): string => {
+    if (hh == null) return "";
+    const h = Math.floor(hh / 2);
+    const m = hh % 2 === 0 ? "00" : "30";
+    return `${h.toString().padStart(2, "0")}:${m}`;
+  };
+
+  const setField = (turno: number, field: keyof TurnoConfig, val: number | null) => {
+    setDrafts(prev => prev.map(d => d.turno === turno ? { ...d, [field]: val } : d));
+  };
+
+  const handleSave = async (turno: number) => {
+    const cfg = drafts.find(d => d.turno === turno);
+    if (!cfg) return;
+    setSaving(turno);
+    setError("");
+    try {
+      await onSave(cfg);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const inp: React.CSSProperties = {
+    border: "1px solid #ddd", borderRadius: 6, fontSize: 12,
+    padding: "4px 8px", background: "#fff", width: "100%",
+  };
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 70, background: "rgba(0,0,0,0.45)",
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+    }}>
+      <div style={{
+        background: "#fff", borderRadius: 14, padding: 24,
+        maxWidth: 520, width: "100%", maxHeight: "90vh", overflowY: "auto",
+        boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: GREEN_DARK }}>⚙ Horarios de turnos</h2>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "#999" }}>×</button>
+        </div>
+
+        <div style={{ fontSize: 11, color: "#888", marginBottom: 16 }}>
+          Edita los horarios de cada turno. Los cambios afectan al planning de toda la semana.
+        </div>
+
+        {drafts.map(d => {
+          const colors = TURNO_COLORS[d.turno];
+          return (
+            <div key={d.turno} style={{
+              background: colors.bg, borderRadius: 10, padding: "12px 16px",
+              marginBottom: 10, border: `1px solid ${colors.color}22`,
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                <span style={{ fontWeight: 700, color: colors.color, fontSize: 13 }}>
+                  {TURNO_SHORT[d.turno]} · {TURNO_LABELS[d.turno].split("·")[0].trim()}
+                </span>
+                <button
+                  onClick={() => handleSave(d.turno)}
+                  disabled={saving === d.turno}
+                  style={{
+                    background: GREEN, color: "#fff", border: "none", borderRadius: 6,
+                    padding: "4px 14px", cursor: "pointer", fontSize: 12, fontWeight: 600,
+                  }}
+                >
+                  {saving === d.turno ? "…" : "Guardar"}
+                </button>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
+                <div>
+                  <div style={{ fontSize: 9, color: "#666", marginBottom: 3 }}>Entrada A</div>
+                  <input type="time" step={1800} value={hhToTimeLocal(d.ia)}
+                    onChange={e => setField(d.turno, "ia", timeToHhLocal(e.target.value))}
+                    style={inp} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 9, color: "#666", marginBottom: 3 }}>Salida A</div>
+                  <input type="time" step={1800} value={hhToTimeLocal(d.fa)}
+                    onChange={e => setField(d.turno, "fa", timeToHhLocal(e.target.value))}
+                    style={inp} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 9, color: "#666", marginBottom: 3 }}>Entrada B</div>
+                  <input type="time" step={1800} value={hhToTimeLocal(d.ib ?? null)}
+                    onChange={e => setField(d.turno, "ib", timeToHhLocal(e.target.value) ?? null)}
+                    style={inp} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 9, color: "#666", marginBottom: 3 }}>Salida B</div>
+                  <input type="time" step={1800} value={hhToTimeLocal(d.fb ?? null)}
+                    onChange={e => setField(d.turno, "fb", timeToHhLocal(e.target.value) ?? null)}
+                    style={inp} />
+                </div>
+              </div>
+              <div style={{ fontSize: 9, color: colors.color, marginTop: 6 }}>
+                {hhToLabel(d.ia)}–{hhToLabel(d.fa)}{d.ib && d.fb ? ` / ${hhToLabel(d.ib)}–${hhToLabel(d.fb)}` : ""}
+              </div>
+            </div>
+          );
+        })}
+
+        {error && (
+          <div style={{ background: "#fef2f2", color: "#c0392b", padding: "8px 12px", borderRadius: 6, fontSize: 12, marginTop: 8 }}>{error}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Vista de horarios de todo el equipo ───────────────────────────────────────
 
 function HorariosTab({ empleados, asignaciones, week, onChangeWeek, onSaveAsignacion }: {
@@ -444,6 +603,32 @@ function HorariosTab({ empleados, asignaciones, week, onChangeWeek, onSaveAsigna
   };
 
   const [saving, setSaving] = useState<string | null>(null);
+  const [showTurnoEditor, setShowTurnoEditor] = useState(false);
+  const [turnosConfig, setTurnosConfig] = useState<TurnoConfig[]>([]);
+
+  useEffect(() => {
+    fetch("/api/rrhh/turnos-config")
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok && d.turnos?.length) {
+          setTurnosConfig(d.turnos.map((t: { turno: number; inicio_a: number; fin_a: number; inicio_b: number | null; fin_b: number | null }) => ({
+            turno: t.turno, ia: t.inicio_a, fa: t.fin_a, ib: t.inicio_b, fb: t.fin_b,
+          })));
+        }
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const handleSaveTurno = async (cfg: TurnoConfig) => {
+    const r = await fetch("/api/rrhh/turnos-config", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ turno: cfg.turno, inicio_a: cfg.ia, fin_a: cfg.fa, inicio_b: cfg.ib ?? null, fin_b: cfg.fb ?? null }),
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error ?? "Error al guardar");
+    setTurnosConfig(prev => prev.map(t => t.turno === cfg.turno ? cfg : t));
+  };
 
   const handleChangeTurno = async (empId: string, turno: number) => {
     setSaving(empId);
@@ -460,6 +645,14 @@ function HorariosTab({ empleados, asignaciones, week, onChangeWeek, onSaveAsigna
 
   return (
     <div>
+      {showTurnoEditor && turnosConfig.length > 0 && (
+        <TurnoEditorModal
+          turnos={turnosConfig}
+          onSave={handleSaveTurno}
+          onClose={() => setShowTurnoEditor(false)}
+        />
+      )}
+
       {/* Navegación de semana */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
         <button onClick={() => onChangeWeek(addWeeks(week, -1))} style={{ background: GREEN_LIGHT, border: "none", borderRadius: 6, padding: "5px 12px", cursor: "pointer", color: GREEN_DARK, fontSize: 14, fontWeight: 700 }}>◀</button>
@@ -471,6 +664,11 @@ function HorariosTab({ empleados, asignaciones, week, onChangeWeek, onSaveAsigna
         {!isCurrentWeek && (
           <button onClick={() => onChangeWeek(getWeekStart(new Date()))} style={{ background: GREEN, color: "#fff", border: "none", borderRadius: 6, padding: "5px 10px", cursor: "pointer", fontSize: 11, fontWeight: 600 }}>Hoy</button>
         )}
+        <button
+          onClick={() => setShowTurnoEditor(true)}
+          title="Editar horarios de turnos"
+          style={{ background: "#f3f4f6", color: "#6b7280", border: "1px solid #e5e7eb", borderRadius: 6, padding: "5px 10px", cursor: "pointer", fontSize: 14 }}
+        >⚙</button>
       </div>
 
       {/* Leyenda de turnos rotativos */}

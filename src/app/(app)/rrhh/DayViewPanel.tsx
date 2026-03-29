@@ -233,13 +233,13 @@ export default function DayViewPanel({
           )}
         </div>
 
-        {/* ── Grid de cuadritos ── */}
+        {/* ── Horarios y cuadritos ── */}
         {!isWeekend ? (
           <div style={{ overflowX: "auto" }}>
             <div style={{ minWidth: 480 }}>
 
-              {/* Eje horario */}
-              <div style={{ display: "flex", marginBottom: 2 }}>
+              {/* Eje horario compartido */}
+              <div style={{ display: "flex", marginBottom: 3 }}>
                 <div style={{ width: 72, flexShrink: 0 }} />
                 <div style={{ flex: 1, position: "relative", height: 16 }}>
                   {TICKS.map(hh => (
@@ -254,9 +254,66 @@ export default function DayViewPanel({
                 </div>
               </div>
 
-              {/* Fila de cuadritos */}
+              {/* ── Filas de horario por empleado ── */}
+              {activos.map(emp => {
+                const isVac   = vacsHoy.some(v => v.empleado_id === emp.id);
+                const blocks  = getScheduledBlocks(emp);
+                const dept    = DEPTO[emp.departamento || "farmacia"] ?? DEPTO.otro;
+                const hasWork = blocks.length > 0;
+                if (!hasWork && !isVac) return null;
+
+                return (
+                  <div key={emp.id} style={{ display: "flex", alignItems: "center", marginBottom: 2 }}>
+                    {/* Nombre */}
+                    <div style={{
+                      width: 72, flexShrink: 0, textAlign: "right", paddingRight: 6,
+                      fontSize: 9, fontWeight: 600,
+                      color: isVac ? "#9ca3af" : dept.bar,
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}>
+                      {emp.nombre}
+                    </div>
+                    {/* Barra */}
+                    <div style={{ flex: 1, position: "relative", height: 14, background: "#f3f4f6", borderRadius: 3, overflow: "hidden" }}>
+                      {/* Líneas verticales */}
+                      {TICKS.map(hh => (
+                        <div key={hh} style={{
+                          position: "absolute", left: pct(hh), top: 0, bottom: 0,
+                          width: 1, background: "#e5e7eb", zIndex: 0,
+                        }} />
+                      ))}
+                      {isVac ? (
+                        <div style={{
+                          position: "absolute", inset: 0,
+                          background: "repeating-linear-gradient(-45deg,#f3f4f6,#f3f4f6 3px,#e5e7eb 3px,#e5e7eb 6px)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>
+                          <span style={{ fontSize: 7, color: "#9ca3af", background: "#fff", padding: "0 3px", borderRadius: 2, zIndex: 1, position: "relative" }}>vac.</span>
+                        </div>
+                      ) : blocks.map(([ia, fa], j) => {
+                        const ca = Math.max(ia, GRID_START_HH);
+                        const cf = Math.min(fa, GRID_START_HH + GRID_COLS);
+                        if (cf <= ca) return null;
+                        return (
+                          <div key={j} style={{
+                            position: "absolute",
+                            left: pct(ca),
+                            width: `${((cf - ca) / GRID_COLS) * 100}%`,
+                            top: 2, bottom: 2, borderRadius: 2,
+                            background: dept.bar, zIndex: 1,
+                          }} />
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Separador */}
+              <div style={{ height: 1, background: "#e5e7eb", margin: "8px 0 6px 72px" }} />
+
+              {/* ── Fila de cuadritos ── */}
               <div style={{ display: "flex", alignItems: "flex-end" }}>
-                {/* Etiqueta lateral */}
                 <div style={{
                   width: 72, flexShrink: 0,
                   fontSize: 8, color: "#888", fontWeight: 700, textAlign: "right", paddingRight: 6,
@@ -266,7 +323,6 @@ export default function DayViewPanel({
                   <span style={{ fontWeight: 400, color: "#bbb", fontSize: 7 }}>▣ ausente</span>
                 </div>
 
-                {/* Columnas de cuadritos (una por franja de 30 min) */}
                 <div style={{ flex: 1, display: "flex", borderTop: "1px solid #e5e7eb", borderLeft: "1px solid #e5e7eb" }}>
                   {slotData.map((squares, i) => {
                     const present = squares.filter(s => s.present);
@@ -286,38 +342,16 @@ export default function DayViewPanel({
                           position: "relative",
                         }}
                       >
-                        {/* Cuadritos presentes (abajo) */}
                         {present.map((sq, j) => {
                           const d = DEPTO[sq.dept] ?? DEPTO.otro;
-                          return (
-                            <div key={`p${j}`} style={{
-                              width: SQ, height: SQ, flexShrink: 0,
-                              background: d.bar,
-                              borderRadius: 1,
-                            }} />
-                          );
+                          return <div key={`p${j}`} style={{ width: SQ, height: SQ, flexShrink: 0, background: d.bar, borderRadius: 1 }} />;
                         })}
-                        {/* Cuadritos ausentes (encima, sombreados con borde) */}
                         {absent.map((sq, j) => {
                           const d = DEPTO[sq.dept] ?? DEPTO.otro;
-                          return (
-                            <div key={`a${j}`} style={{
-                              width: SQ, height: SQ, flexShrink: 0,
-                              background: d.bg,
-                              border: `1px dashed ${d.bar}`,
-                              borderRadius: 1,
-                              boxSizing: "border-box",
-                              opacity: 0.8,
-                            }} />
-                          );
+                          return <div key={`a${j}`} style={{ width: SQ, height: SQ, flexShrink: 0, background: d.bg, border: `1px dashed ${d.bar}`, borderRadius: 1, boxSizing: "border-box", opacity: 0.8 }} />;
                         })}
-                        {/* Número al pie */}
                         {total > 0 && (
-                          <div style={{
-                            position: "absolute", bottom: 1,
-                            fontSize: 6, fontWeight: 700, lineHeight: 1,
-                            color: absent.length > 0 ? "#ef4444" : "#6b7280",
-                          }}>
+                          <div style={{ position: "absolute", bottom: 1, fontSize: 6, fontWeight: 700, lineHeight: 1, color: absent.length > 0 ? "#ef4444" : "#6b7280" }}>
                             {absent.length > 0 ? `${present.length}+${absent.length}` : present.length}
                           </div>
                         )}

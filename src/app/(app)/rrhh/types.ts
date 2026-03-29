@@ -57,6 +57,14 @@ export interface Vacacion {
   farmaceutico: number;
 }
 
+export interface TurnoConfig {
+  turno: number;   // 0=Esp, 1=T1, 2=T2, 3=T3
+  ia: number;      // inicio_a (media-horas)
+  fa: number;      // fin_a
+  ib: number | null;
+  fb: number | null;
+}
+
 export interface BancoHoras {
   id: number;
   empleado_id: string;

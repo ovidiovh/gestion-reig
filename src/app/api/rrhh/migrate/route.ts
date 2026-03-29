@@ -145,6 +145,14 @@ export async function POST() {
         notas        TEXT,
         created_at   TEXT NOT NULL DEFAULT (datetime('now'))
       );
+
+      CREATE TABLE IF NOT EXISTS rrhh_turnos_config (
+        turno        INTEGER PRIMARY KEY,  -- 0=Esp, 1=T1, 2=T2, 3=T3
+        inicio_a     INTEGER NOT NULL,
+        fin_a        INTEGER NOT NULL,
+        inicio_b     INTEGER,
+        fin_b        INTEGER
+      );
     `);
 
     // 1b. Migraciones idempotentes (añadir columnas si no existen)
@@ -187,6 +195,22 @@ export async function POST() {
       });
     }
 
+    // 1c. Seed turnos_config (upsert — usa TURNO_HORARIO como valores por defecto)
+    const TURNOS_SEED = [
+      { turno: 0, inicio_a: 17, fin_a: 25, inicio_b: null, fin_b: null },  // Esp: 8:30–12:30
+      { turno: 1, inicio_a: 17, fin_a: 33, inicio_b: null, fin_b: null },  // T1:  8:30–16:30
+      { turno: 2, inicio_a: 18, fin_a: 26, inicio_b: 32,   fin_b: 40   },  // T2:  9–13 / 16–20
+      { turno: 3, inicio_a: 25, fin_a: 41, inicio_b: null, fin_b: null },  // T3:  12:30–20:30
+    ];
+    for (const t of TURNOS_SEED) {
+      await db.execute({
+        sql: `INSERT INTO rrhh_turnos_config (turno, inicio_a, fin_a, inicio_b, fin_b)
+              VALUES (?, ?, ?, ?, ?)
+              ON CONFLICT(turno) DO NOTHING`,
+        args: [t.turno, t.inicio_a, t.fin_a, t.inicio_b, t.fin_b],
+      });
+    }
+
     // 2b. Desactivar empleados que ya no trabajan en la farmacia
     await db.execute({ sql: `UPDATE rrhh_empleados SET activo = 0 WHERE id = 'luisa'`, args: [] });
 
@@ -219,7 +243,7 @@ export async function POST() {
         "rrhh_empleados", "rrhh_festivos", "rrhh_guardias",
         "rrhh_guardia_slots", "rrhh_guardia_defaults",
         "rrhh_vacaciones", "rrhh_ausencias", "rrhh_horarios_asignacion",
-        "rrhh_banco_horas",
+        "rrhh_banco_horas", "rrhh_turnos_config",
       ],
       empleados: EMPLEADOS.length,
       festivos: FESTIVOS_2026.length,

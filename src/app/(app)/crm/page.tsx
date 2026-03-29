@@ -382,7 +382,7 @@ export default function CrmPage() {
   }, [periodo, customDesde, customHasta]);
 
   // Helper seguro para fetch JSON
-  const safeFetch = useCallback(async <T>(url: string, setter: (d: T) => void, setLoading: (v: boolean) => void) => {
+  const safeFetch = useCallback(async <T,>(url: string, setter: (d: T) => void, setLoading: (v: boolean) => void) => {
     setLoading(true);
     try {
       const r = await fetch(url);
