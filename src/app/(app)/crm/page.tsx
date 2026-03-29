@@ -428,6 +428,16 @@ export default function CrmPage() {
     safeFetch("/api/crm/comparativa", (d: ComparativaRow[]) => { setComparativa(d); setComparativaLoaded(true); }, () => {});
   }, [comparativaLoaded, safeFetch]);
 
+  // Setup CRM: crea índices en ventas la primera vez (idempotente)
+  useEffect(() => {
+    const KEY = "crm_setup_v1";
+    if (typeof window !== "undefined" && !localStorage.getItem(KEY)) {
+      fetch("/api/crm/setup", { method: "POST" })
+        .then(() => localStorage.setItem(KEY, "1"))
+        .catch(() => undefined);
+    }
+  }, []);
+
   // Preparar datos para gráficos
   const comparativaChartData = MESES.map((nombre, i) => {
     const mesNum = String(i + 1).padStart(2, "0");

@@ -4,7 +4,10 @@ let client: Client | null = null;
 
 /**
  * Singleton de conexión a Turso.
- * Lee las credenciales de las variables de entorno de Vercel.
+ * En serverless (Vercel) el cliente HTTP de libsql es stateless — cada llamada
+ * a execute() hace una petición HTTP independiente, por lo que el singleton es
+ * seguro aunque el proceso se mantenga caliente.  Si las credenciales cambian
+ * (raro) llamar a resetTurso() antes de volver a usar getTurso().
  */
 export function getTurso(): Client {
   if (client) return client;
@@ -20,6 +23,11 @@ export function getTurso(): Client {
 
   client = createClient({ url, authToken });
   return client;
+}
+
+/** Forzar recreación del cliente (útil si las credenciales rotaron) */
+export function resetTurso() {
+  client = null;
 }
 
 /**

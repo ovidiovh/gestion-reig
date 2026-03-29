@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSegmentacion } from "@/lib/crm-queries";
 
+export const maxDuration = 60;
+
 export async function GET(req: NextRequest) {
   try {
     const params = req.nextUrl.searchParams;

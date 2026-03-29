@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getCrmComparativa } from "@/lib/crm-queries";
 
+export const maxDuration = 60;
+
 export async function GET() {
   try {
     const data = await getCrmComparativa();
