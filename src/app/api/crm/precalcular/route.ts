@@ -7,17 +7,7 @@ export const maxDuration = 300;
 /**
  * POST /api/crm/precalcular
  * Crea y rellena las tablas resumen precalculadas desde la tabla ventas.
- * Ejecutar UNA VEZ tras cada carga masiva de datos.
- *
- * Columnas reales en ventas:
- *   fecha, hora, num_doc, vendedor_nombre, tipo, tipo_pago,
- *   codigo, descripcion, unidades, pvp, imp_neto, es_cabecera, hash_linea
- *
- * Tablas creadas:
- *   - crm_resumen_mensual       (una fila por mes)
- *   - crm_vendedores_mensual    (una fila por mes × vendedor)
- *   - crm_productos_mensual     (una fila por mes × código de producto)
- *   - crm_segmentacion_mensual  (una fila por mes × tipo_pago)
+ * Procesa año a año para evitar timeouts en queries sobre 900K+ filas.
  */
 export async function POST() {
   const log: string[] = [];
@@ -36,7 +26,6 @@ export async function POST() {
         PRIMARY KEY (anio, mes)
       )
     `);
-
     await db.execute(`
       CREATE TABLE IF NOT EXISTS crm_vendedores_mensual (
         anio         INTEGER NOT NULL,
@@ -49,7 +38,6 @@ export async function POST() {
         PRIMARY KEY (anio, mes, vendedor)
       )
     `);
-
     await db.execute(`
       CREATE TABLE IF NOT EXISTS crm_productos_mensual (
         anio        INTEGER NOT NULL,
@@ -63,7 +51,6 @@ export async function POST() {
         PRIMARY KEY (anio, mes, codigo)
       )
     `);
-
     await db.execute(`
       CREATE TABLE IF NOT EXISTS crm_segmentacion_mensual (
         anio        INTEGER NOT NULL,
@@ -74,124 +61,136 @@ export async function POST() {
         PRIMARY KEY (anio, mes, tipo_pago)
       )
     `);
-
-    log.push(`[${elapsed(t0)}s] Tablas creadas/verificadas`);
+    log.push(`[${e(t0)}s] Tablas creadas/verificadas`);
 
     // ── 2. Vaciar tablas ───────────────────────────────────────────────────
-    await db.execute(`DELETE FROM crm_resumen_mensual`);
-    await db.execute(`DELETE FROM crm_vendedores_mensual`);
-    await db.execute(`DELETE FROM crm_productos_mensual`);
-    await db.execute(`DELETE FROM crm_segmentacion_mensual`);
+    await db.batch([
+      { sql: `DELETE FROM crm_resumen_mensual` },
+      { sql: `DELETE FROM crm_vendedores_mensual` },
+      { sql: `DELETE FROM crm_productos_mensual` },
+      { sql: `DELETE FROM crm_segmentacion_mensual` },
+    ]);
+    log.push(`[${e(t0)}s] Tablas vaciadas`);
 
-    log.push(`[${elapsed(t0)}s] Tablas vaciadas`);
+    // ── 3. Procesar año a año (≈130K filas/año → sin timeout) ─────────────
+    const years = [2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026];
 
-    // ── 3. crm_resumen_mensual ─────────────────────────────────────────────
-    // Columnas reales: es_cabecera, imp_neto, unidades, vendedor_nombre
-    await db.execute(`
-      INSERT INTO crm_resumen_mensual (anio, mes, facturacion, tickets, unidades, ticket_medio)
-      SELECT
-        CAST(strftime('%Y', fecha) AS INTEGER)  AS anio,
-        CAST(strftime('%m', fecha) AS INTEGER)  AS mes,
-        ROUND(
-          SUM(CASE WHEN es_cabecera = 1 THEN ABS(imp_neto) ELSE 0 END), 2
-        )                                        AS facturacion,
-        SUM(CASE WHEN es_cabecera = 1 THEN 1 ELSE 0 END)
-                                                 AS tickets,
-        COALESCE(
-          SUM(CASE WHEN es_cabecera = 0 THEN unidades ELSE 0 END), 0
-        )                                        AS unidades,
-        ROUND(
-          SUM(CASE WHEN es_cabecera = 1 THEN ABS(imp_neto) ELSE 0 END) /
-          NULLIF(SUM(CASE WHEN es_cabecera = 1 THEN 1 ELSE 0 END), 0), 2
-        )                                        AS ticket_medio
-      FROM ventas
-      GROUP BY
-        CAST(strftime('%Y', fecha) AS INTEGER),
-        CAST(strftime('%m', fecha) AS INTEGER)
-    `);
+    for (const anio of years) {
+      const y = String(anio);
 
+      await db.batch([
+        // crm_resumen_mensual
+        {
+          sql: `
+            INSERT OR REPLACE INTO crm_resumen_mensual
+                   (anio, mes, facturacion, tickets, unidades, ticket_medio)
+            SELECT
+              CAST(strftime('%Y', fecha) AS INTEGER)  AS anio,
+              CAST(strftime('%m', fecha) AS INTEGER)  AS mes,
+              ROUND(SUM(CASE WHEN es_cabecera = 1 THEN ABS(imp_neto) ELSE 0 END), 2) AS facturacion,
+              SUM(CASE WHEN es_cabecera = 1 THEN 1 ELSE 0 END)                       AS tickets,
+              COALESCE(SUM(CASE WHEN es_cabecera = 0 THEN unidades ELSE 0 END), 0)   AS unidades,
+              ROUND(
+                SUM(CASE WHEN es_cabecera = 1 THEN ABS(imp_neto) ELSE 0 END) /
+                NULLIF(SUM(CASE WHEN es_cabecera = 1 THEN 1 ELSE 0 END), 0), 2
+              )                                                                       AS ticket_medio
+            FROM ventas
+            WHERE strftime('%Y', fecha) = ?
+            GROUP BY
+              CAST(strftime('%Y', fecha) AS INTEGER),
+              CAST(strftime('%m', fecha) AS INTEGER)
+          `,
+          args: [y],
+        },
+        // crm_vendedores_mensual
+        {
+          sql: `
+            INSERT OR REPLACE INTO crm_vendedores_mensual
+                   (anio, mes, vendedor, tickets, facturacion, ticket_medio, unidades)
+            SELECT
+              CAST(strftime('%Y', fecha) AS INTEGER)    AS anio,
+              CAST(strftime('%m', fecha) AS INTEGER)    AS mes,
+              COALESCE(vendedor_nombre, 'Sin asignar')  AS vendedor,
+              COUNT(*)                                  AS tickets,
+              ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) AS facturacion,
+              ROUND(COALESCE(SUM(ABS(imp_neto)), 0) / NULLIF(COUNT(*), 0), 2) AS ticket_medio,
+              0                                         AS unidades
+            FROM ventas
+            WHERE strftime('%Y', fecha) = ?
+              AND es_cabecera = 1
+              AND vendedor_nombre IS NOT NULL
+              AND vendedor_nombre != ''
+            GROUP BY
+              CAST(strftime('%Y', fecha) AS INTEGER),
+              CAST(strftime('%m', fecha) AS INTEGER),
+              vendedor_nombre
+          `,
+          args: [y],
+        },
+        // crm_productos_mensual
+        {
+          sql: `
+            INSERT OR REPLACE INTO crm_productos_mensual
+                   (anio, mes, codigo, descripcion, unidades, facturacion, tickets, pvp_medio)
+            SELECT
+              CAST(strftime('%Y', fecha) AS INTEGER)        AS anio,
+              CAST(strftime('%m', fecha) AS INTEGER)        AS mes,
+              codigo,
+              COALESCE(MAX(descripcion), 'Sin descripción') AS descripcion,
+              COALESCE(SUM(unidades), 0)                    AS unidades,
+              ROUND(COALESCE(SUM(pvp * unidades), 0), 2)    AS facturacion,
+              COUNT(DISTINCT hash_linea)                    AS tickets,
+              ROUND(COALESCE(AVG(pvp), 0), 2)               AS pvp_medio
+            FROM ventas
+            WHERE strftime('%Y', fecha) = ?
+              AND es_cabecera = 0
+              AND codigo      IS NOT NULL AND codigo      != ''
+              AND descripcion IS NOT NULL AND descripcion != ''
+            GROUP BY
+              CAST(strftime('%Y', fecha) AS INTEGER),
+              CAST(strftime('%m', fecha) AS INTEGER),
+              codigo
+          `,
+          args: [y],
+        },
+        // crm_segmentacion_mensual
+        {
+          sql: `
+            INSERT OR REPLACE INTO crm_segmentacion_mensual
+                   (anio, mes, tipo_pago, tickets, facturacion)
+            SELECT
+              CAST(strftime('%Y', fecha) AS INTEGER)     AS anio,
+              CAST(strftime('%m', fecha) AS INTEGER)     AS mes,
+              COALESCE(tipo_pago, 'Otros')               AS tipo_pago,
+              COUNT(*)                                   AS tickets,
+              ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2)  AS facturacion
+            FROM ventas
+            WHERE strftime('%Y', fecha) = ?
+              AND es_cabecera = 1
+            GROUP BY
+              CAST(strftime('%Y', fecha) AS INTEGER),
+              CAST(strftime('%m', fecha) AS INTEGER),
+              tipo_pago
+          `,
+          args: [y],
+        },
+      ]);
+
+      log.push(`[${e(t0)}s] Año ${anio} procesado`);
+    }
+
+    // ── 4. Verificar resultados ────────────────────────────────────────────
     const r1 = await db.execute(`SELECT COUNT(*) AS n FROM crm_resumen_mensual`);
-    log.push(`[${elapsed(t0)}s] crm_resumen_mensual: ${r1.rows[0]?.[0]} filas`);
-
-    // ── 4. crm_vendedores_mensual ──────────────────────────────────────────
-    await db.execute(`
-      INSERT INTO crm_vendedores_mensual
-             (anio, mes, vendedor, tickets, facturacion, ticket_medio, unidades)
-      SELECT
-        CAST(strftime('%Y', fecha) AS INTEGER)    AS anio,
-        CAST(strftime('%m', fecha) AS INTEGER)    AS mes,
-        COALESCE(vendedor_nombre, 'Sin asignar')  AS vendedor,
-        COUNT(*)                                  AS tickets,
-        ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) AS facturacion,
-        ROUND(
-          COALESCE(SUM(ABS(imp_neto)), 0) / NULLIF(COUNT(*), 0), 2
-        )                                         AS ticket_medio,
-        0                                         AS unidades
-      FROM ventas
-      WHERE es_cabecera = 1
-        AND vendedor_nombre IS NOT NULL
-        AND vendedor_nombre != ''
-      GROUP BY
-        CAST(strftime('%Y', fecha) AS INTEGER),
-        CAST(strftime('%m', fecha) AS INTEGER),
-        vendedor_nombre
-    `);
-
     const r2 = await db.execute(`SELECT COUNT(*) AS n FROM crm_vendedores_mensual`);
-    log.push(`[${elapsed(t0)}s] crm_vendedores_mensual: ${r2.rows[0]?.[0]} filas`);
-
-    // ── 5. crm_productos_mensual ───────────────────────────────────────────
-    await db.execute(`
-      INSERT INTO crm_productos_mensual
-             (anio, mes, codigo, descripcion, unidades, facturacion, tickets, pvp_medio)
-      SELECT
-        CAST(strftime('%Y', fecha) AS INTEGER)        AS anio,
-        CAST(strftime('%m', fecha) AS INTEGER)        AS mes,
-        codigo,
-        COALESCE(MAX(descripcion), 'Sin descripción') AS descripcion,
-        COALESCE(SUM(unidades), 0)                    AS unidades,
-        ROUND(COALESCE(SUM(pvp * unidades), 0), 2)    AS facturacion,
-        COUNT(DISTINCT hash_linea)                    AS tickets,
-        ROUND(COALESCE(AVG(pvp), 0), 2)               AS pvp_medio
-      FROM ventas
-      WHERE es_cabecera = 0
-        AND codigo      IS NOT NULL AND codigo      != ''
-        AND descripcion IS NOT NULL AND descripcion != ''
-      GROUP BY
-        CAST(strftime('%Y', fecha) AS INTEGER),
-        CAST(strftime('%m', fecha) AS INTEGER),
-        codigo
-    `);
-
     const r3 = await db.execute(`SELECT COUNT(*) AS n FROM crm_productos_mensual`);
-    log.push(`[${elapsed(t0)}s] crm_productos_mensual: ${r3.rows[0]?.[0]} filas`);
-
-    // ── 6. crm_segmentacion_mensual ────────────────────────────────────────
-    await db.execute(`
-      INSERT INTO crm_segmentacion_mensual (anio, mes, tipo_pago, tickets, facturacion)
-      SELECT
-        CAST(strftime('%Y', fecha) AS INTEGER)     AS anio,
-        CAST(strftime('%m', fecha) AS INTEGER)     AS mes,
-        COALESCE(tipo_pago, 'Otros')               AS tipo_pago,
-        COUNT(*)                                   AS tickets,
-        ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2)  AS facturacion
-      FROM ventas
-      WHERE es_cabecera = 1
-      GROUP BY
-        CAST(strftime('%Y', fecha) AS INTEGER),
-        CAST(strftime('%m', fecha) AS INTEGER),
-        tipo_pago
-    `);
-
     const r4 = await db.execute(`SELECT COUNT(*) AS n FROM crm_segmentacion_mensual`);
-    log.push(`[${elapsed(t0)}s] crm_segmentacion_mensual: ${r4.rows[0]?.[0]} filas`);
 
-    log.push(`[${elapsed(t0)}s] COMPLETADO`);
+    log.push(`[${e(t0)}s] COMPLETADO — resumen:${r1.rows[0]?.[0]} vendedores:${r2.rows[0]?.[0]} productos:${r3.rows[0]?.[0]} segmentacion:${r4.rows[0]?.[0]}`);
 
     return NextResponse.json({ ok: true, log });
-  } catch (e) {
-    console.error("[crm/precalcular]", e);
-    return NextResponse.json({ ok: false, error: String(e), log }, { status: 500 });
+  } catch (err) {
+    console.error("[crm/precalcular]", err);
+    return NextResponse.json({ ok: false, error: String(err), log }, { status: 500 });
   }
 }
 
@@ -216,6 +215,6 @@ export async function GET() {
   return NextResponse.json({ ok: true, counts });
 }
 
-function elapsed(t0: number) {
+function e(t0: number) {
   return ((Date.now() - t0) / 1000).toFixed(1);
 }
