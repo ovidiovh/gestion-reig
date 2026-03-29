@@ -226,12 +226,12 @@ export async function getCrmResumen(desde: string, hasta: string) {
         COUNT(*) AS tickets,
         ROUND(COALESCE(SUM(ABS(imp_neto)), 0) / NULLIF(COUNT(*), 0), 2) AS ticket_medio,
         COALESCE(SUM(CASE WHEN es_receta = 1 THEN 1 ELSE 0 END), 0) AS tickets_receta
-      FROM ventas INDEXED BY idx_ventas_crm
+      FROM ventas
       WHERE ${CAB_WHERE} AND fecha >= ? AND fecha <= ?
     `, [desde, hasta]),
     query<{ uds: number }>(`
       SELECT COALESCE(SUM(unidades), 0) AS uds
-      FROM ventas INDEXED BY idx_ventas_crm
+      FROM ventas
       WHERE tipo IN ('Contado', 'Credito') AND es_cabecera = 0
         AND fecha >= ? AND fecha <= ?
     `, [desde, hasta]),
@@ -269,7 +269,7 @@ export async function getCrmTendencia(desde: string, hasta: string) {
       ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) as facturacion,
       COUNT(*) as tickets,
       ROUND(COALESCE(SUM(ABS(imp_neto)), 0) / NULLIF(COUNT(*), 0), 2) as ticket_medio
-    FROM ventas INDEXED BY idx_ventas_crm
+    FROM ventas
     WHERE ${CAB_WHERE} AND fecha >= ? AND fecha <= ?
     GROUP BY strftime('%Y-%m', fecha)
     ORDER BY mes
@@ -289,7 +289,7 @@ export async function getCrmComparativa() {
       strftime('%m', fecha) as mes_num,
       ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) as facturacion,
       COUNT(*) as tickets
-    FROM ventas INDEXED BY idx_ventas_crm
+    FROM ventas
     WHERE ${CAB_WHERE}
       AND fecha >= '2025-01-01' AND fecha <= '2026-12-31'
     GROUP BY anio, mes_num
@@ -314,7 +314,7 @@ export async function getCrmVendedores(desde: string, hasta: string) {
       ROUND(COALESCE(SUM(ABS(imp_neto)), 0) / NULLIF(COUNT(*), 0), 2) as ticket_medio,
       0 as unidades,
       0.0 as pct_receta
-    FROM ventas INDEXED BY idx_ventas_crm
+    FROM ventas
     WHERE ${CAB_WHERE} AND fecha >= ? AND fecha <= ?
       AND vendedor_nombre IS NOT NULL AND vendedor_nombre != ''
     GROUP BY vendedor_nombre
@@ -368,7 +368,7 @@ export async function getCrmCronograma(desde: string, hasta: string) {
       CAST(SUBSTR(hora, 1, 2) AS INTEGER) as hora_num,
       COUNT(*) as tickets,
       ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) as facturacion
-    FROM ventas INDEXED BY idx_ventas_cronograma
+    FROM ventas
     WHERE ${CAB_WHERE}
       AND hora IS NOT NULL
       AND dia_semana BETWEEN 1 AND 6
@@ -393,7 +393,7 @@ export async function getCrmSegmentacion(desde: string, hasta: string) {
       0 AS es_receta_flag,
       COUNT(*) AS tickets,
       ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) AS facturacion
-    FROM ventas INDEXED BY idx_ventas_crm
+    FROM ventas
     WHERE ${CAB_WHERE} AND fecha >= ? AND fecha <= ?
     GROUP BY tipo, tipo_pago
     ORDER BY facturacion DESC
