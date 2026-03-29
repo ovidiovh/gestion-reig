@@ -249,7 +249,7 @@ function EmpleadoRow({
       <div style={{
         display: "grid",
         gridTemplateColumns: "1.8fr 1.4fr 1.4fr 0.5fr 0.6fr 0.6fr auto",
-        padding: "10px 16px", alignItems: "center", gap: 8,
+        padding: "10px 16px", alignItems: "center", gap: 8, minWidth: 620,
       }}>
 
         {/* Nombre + depto */}
@@ -740,8 +740,8 @@ export default function EquipoPage() {
           </div>
 
           {/* Cabecera tabla */}
-          <div style={{ background: "#fff", borderRadius: 12, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", marginBottom: 20 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1.8fr 0.9fr 0.6fr 0.8fr 0.8fr 0.7fr", background: GREEN, padding: "8px 16px" }}>
+          <div style={{ background: "#fff", borderRadius: 12, overflowX: "auto", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", marginBottom: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1.8fr 0.9fr 0.6fr 0.8fr 0.8fr 0.7fr", background: GREEN, padding: "8px 16px", borderRadius: "12px 12px 0 0", minWidth: 620 }}>
               {["Nombre", "Categoría", "Horario", "Guardia", "Compl. €", "h/Guardia", ""].map(h => (
                 <div key={h} style={{ fontSize: 9, fontWeight: 700, color: "#fff", textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</div>
               ))}
@@ -772,7 +772,7 @@ export default function EquipoPage() {
                     gridTemplateColumns: "1.5fr 1.8fr 0.9fr 0.6fr 0.8fr 0.8fr 0.7fr",
                     padding: "8px 16px", alignItems: "center",
                     background: i % 2 === 0 ? "#fff" : "#f9fafb",
-                    borderBottom: "1px solid #f0f0f0",
+                    borderBottom: "1px solid #f0f0f0", minWidth: 620,
                   }}>
                     <div style={{ fontSize: 12, color: "#aaa", textDecoration: "line-through" }}>{emp.nombre}</div>
                     <div style={{ fontSize: 11, color: "#ccc" }}>{CATEGORIA_LABEL[emp.categoria] ?? emp.categoria}</div>

@@ -374,65 +374,59 @@ export default function CrmPage() {
   const [cronogramaLoading, setCronogramaLoading] = useState(false);
   const [segmentacion, setSegmentacion] = useState<Segmentacion | null>(null);
   const [segmentacionLoading, setSegmentacionLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const activeRange = useCallback((): { desde: string; hasta: string } => {
     if (periodo === "custom") return { desde: customDesde, hasta: customHasta };
     return periodoToRange(periodo);
   }, [periodo, customDesde, customHasta]);
 
+  // Helper seguro para fetch JSON
+  const safeFetch = useCallback(async <T>(url: string, setter: (d: T) => void, setLoading: (v: boolean) => void) => {
+    setLoading(true);
+    try {
+      const r = await fetch(url);
+      const d = await r.json();
+      if (!r.ok) {
+        setFetchError(`Error ${r.status}: ${d?.error ?? url}`);
+        return;
+      }
+      setter(d as T);
+    } catch (e) {
+      setFetchError(String(e));
+      console.error("[crm fetch]", url, e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Cargar datos dependientes del rango
   useEffect(() => {
     const { desde, hasta } = activeRange();
     if (!desde || !hasta) return;
+    setFetchError(null);
 
     const qs = `desde=${desde}&hasta=${hasta}`;
-
-    setResumenLoading(true);
-    fetch(`/api/crm/resumen?${qs}`)
-      .then((r) => r.json()).then(setResumen).catch(console.error)
-      .finally(() => setResumenLoading(false));
-
-    setTendenciaLoading(true);
-    fetch(`/api/crm/tendencia?${qs}`)
-      .then((r) => r.json()).then(setTendencia).catch(console.error)
-      .finally(() => setTendenciaLoading(false));
-
-    setVendedoresLoading(true);
-    fetch(`/api/crm/vendedores?${qs}`)
-      .then((r) => r.json()).then(setVendedores).catch(console.error)
-      .finally(() => setVendedoresLoading(false));
-
-    setCronogramaLoading(true);
-    fetch(`/api/crm/cronograma?${qs}`)
-      .then((r) => r.json()).then(setCronograma).catch(console.error)
-      .finally(() => setCronogramaLoading(false));
-
-    setSegmentacionLoading(true);
-    fetch(`/api/crm/segmentacion?${qs}`)
-      .then((r) => r.json()).then(setSegmentacion).catch(console.error)
-      .finally(() => setSegmentacionLoading(false));
-  }, [activeRange]);
+    safeFetch(`/api/crm/resumen?${qs}`, setResumen, setResumenLoading);
+    safeFetch(`/api/crm/tendencia?${qs}`, setTendencia, setTendenciaLoading);
+    safeFetch(`/api/crm/vendedores?${qs}`, setVendedores, setVendedoresLoading);
+    safeFetch(`/api/crm/cronograma?${qs}`, setCronograma, setCronogramaLoading);
+    safeFetch(`/api/crm/segmentacion?${qs}`, setSegmentacion, setSegmentacionLoading);
+  }, [activeRange, safeFetch]);
 
   // Productos: recarga también al cambiar tab
   useEffect(() => {
     const { desde, hasta } = activeRange();
     if (!desde || !hasta) return;
-
     const qs = `desde=${desde}&hasta=${hasta}`;
-    setProductosLoading(true);
-    fetch(`/api/crm/productos?${qs}&orderBy=${productoTab}&limit=20`)
-      .then((r) => r.json()).then(setProductos).catch(console.error)
-      .finally(() => setProductosLoading(false));
-  }, [activeRange, productoTab]);
+    safeFetch(`/api/crm/productos?${qs}&orderBy=${productoTab}&limit=20`, setProductos, setProductosLoading);
+  }, [activeRange, productoTab, safeFetch]);
 
   // Comparativa YoY: carga única (datos históricos completos)
   useEffect(() => {
     if (comparativaLoaded) return;
-    fetch("/api/crm/comparativa")
-      .then((r) => r.json())
-      .then((d) => { setComparativa(d); setComparativaLoaded(true); })
-      .catch(console.error);
-  }, [comparativaLoaded]);
+    safeFetch("/api/crm/comparativa", (d: ComparativaRow[]) => { setComparativa(d); setComparativaLoaded(true); }, () => {});
+  }, [comparativaLoaded, safeFetch]);
 
   // Preparar datos para gráficos
   const comparativaChartData = MESES.map((nombre, i) => {
@@ -518,6 +512,14 @@ export default function CrmPage() {
             className="rounded-lg border px-3 py-1.5 text-sm"
             style={{ borderColor: C.borde }}
           />
+        </div>
+      )}
+
+      {/* ─── ERROR BANNER ─────────────────────────────────────────────── */}
+      {fetchError && (
+        <div className="rounded-lg p-3 text-sm flex items-start gap-2" style={{ background: "#fef2f2", color: "#c0392b", border: "1px solid #fecaca" }}>
+          <span style={{ fontWeight: 700 }}>Error al cargar datos:</span>
+          <span style={{ fontFamily: "monospace", fontSize: 12 }}>{fetchError}</span>
         </div>
       )}
 
