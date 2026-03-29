@@ -40,7 +40,7 @@ interface GSlot {
   hora_fin2: number | null;
 }
 
-interface SlotSquare { dept: string; present: boolean; }
+interface SlotSquare { dept: string; present: boolean; enPracticas: boolean; }
 
 // ── Formato de fecha corta ────────────────────────────────────────────────────
 
@@ -140,7 +140,7 @@ export default function DayViewPanel({
       const isVac = vacsHoy.some(v => v.empleado_id === emp.id);
       const scheduled = getScheduledBlocks(emp);
       if (scheduled.some(([a, b]) => a <= hh && hh < b)) {
-        squares.push({ dept: emp.departamento || "farmacia", present: !isVac });
+        squares.push({ dept: emp.departamento || "farmacia", present: !isVac, enPracticas: emp.categoria === "practicas" });
       }
     }
     squares.sort((a, b) => DEPT_ORDER.indexOf(a.dept) - DEPT_ORDER.indexOf(b.dept));
@@ -284,6 +284,16 @@ export default function DayViewPanel({
                       >
                         {present.map((sq, j) => {
                           const d = DEPTO[sq.dept] ?? DEPTO.otro;
+                          if (sq.enPracticas) {
+                            return (
+                              <div key={`p${j}`} style={{
+                                width: SQ, height: SQ, flexShrink: 0, borderRadius: 1,
+                                background: d.bar,
+                                backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px)",
+                                backgroundSize: "3px 3px",
+                              }} />
+                            );
+                          }
                           return <div key={`p${j}`} style={{ width: SQ, height: SQ, flexShrink: 0, background: d.bar, borderRadius: 1 }} />;
                         })}
                         {absent.map((sq, j) => {
@@ -308,30 +318,30 @@ export default function DayViewPanel({
           </div>
         )}
 
-        {/* ── Turnos rotativos de la semana ── */}
+        {/* ── Turnos rotativos de la semana — un chip por persona ── */}
         {Object.keys(turnoGroups).length > 0 && (
           <div style={{ marginTop: 16, borderTop: "1px solid #f0f0f0", paddingTop: 12 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
               Turnos esta semana
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {[1, 2, 3].map(t => {
+              {[1, 2, 3].flatMap(t => {
                 const nombres = turnoGroups[t];
-                if (!nombres?.length) return null;
+                if (!nombres?.length) return [];
                 const colors = TURNO_COLORS[t];
                 const time = TURNO_LABELS[t].split(' · ')[1] ?? '';
-                return (
-                  <div key={t} style={{
+                return nombres.map(nombre => (
+                  <div key={`${t}-${nombre}`} style={{
                     display: "flex", alignItems: "center", gap: 4,
-                    padding: "5px 12px", borderRadius: 20,
+                    padding: "5px 10px", borderRadius: 20,
                     background: colors.bg, color: colors.color,
                     fontSize: 12,
                   }}>
                     <strong style={{ fontSize: 11 }}>{TURNO_SHORT[t]}</strong>
-                    <span>{nombres.join(", ")}</span>
-                    {time && <span style={{ opacity: 0.7, fontSize: 10 }}>· {time}</span>}
+                    <span>{nombre}</span>
+                    {time && <span style={{ opacity: 0.7, fontSize: 10 }}>{time}</span>}
                   </div>
-                );
+                ));
               })}
             </div>
           </div>

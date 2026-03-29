@@ -118,9 +118,10 @@ export const TURNO_COLORS: Record<number, { bg: string; color: string }> = {
   3: { bg: "#fef9c3", color: "#854d0e" },
 };
 
-// Empleados que rotan (no Zuleica, no farmacéuticos, no externos)
+// Empleados que rotan (solo Ani, Yoli, Leti, Dulce)
 export const EMPLEADOS_ROTATIVOS = ["ani", "yoli", "leti", "dulce"];
-export const EMPLEADOS_ESPECIALES = ["zuleica"];
+// Zuleica: horario FIJO L-J 16:30-20:30, NO rotativo
+export const EMPLEADOS_ESPECIALES: string[] = [];
 
 /** Devuelve el lunes de la semana que contiene la fecha d */
 export function getWeekStart(d: Date): string {
@@ -199,9 +200,11 @@ export const HORARIO_DEFAULT: Record<string, [number, number, number | null, num
   miriam:  [18, 34, null, null],   // 9:00–17:00
   monica:  [18, 34, null, null],   // 9:00–17:00
   javier:  [18, 34, null, null],   // 9:00–17:00 (días sin guardia)
+  zuleica: [33, 41, null, null],   // 16:30–20:30 (L-J fijo)
+  davinia: [18, 28, null, null],   // 9:00–14:00 (en prácticas)
   teresa:  [17, 24, null, null],   // 8:30–12:00
   luisa:   [17, 24, null, null],
-  jenny:   [18, 34, null, null],   // 9:00–17:00   // 8:30–12:00
+  jenny:   [18, 34, null, null],
 };
 
 /** Convierte media-hora (ej. 17=8:30, 26=13:00) a etiqueta "H:MM" */

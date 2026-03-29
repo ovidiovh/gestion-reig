@@ -404,8 +404,49 @@ function EmpleadoRow({
                 style={fldStyle} />
             </div>
 
+            {/* ── Días L-V ── */}
+            <div style={{ gridColumn: "span 2" }}>
+              <label style={lblStyle}>Días laborables (L–V)</label>
+              <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+                {(["L","M","X","J","V"] as const).map(dia => {
+                  const isDif = dia === "V" && (draft.horario_inicio_b != null || draft.horario_fin_b != null);
+                  return (
+                    <button
+                      key={dia}
+                      type="button"
+                      title={dia === "V" ? "Clic para asignar horario diferente el viernes" : undefined}
+                      onClick={() => {
+                        if (dia === "V") {
+                          if (draft.horario_inicio_b != null || draft.horario_fin_b != null) {
+                            setDraft(d => ({ ...d, horario_inicio_b: null, horario_fin_b: null }));
+                          } else {
+                            setDraft(d => ({ ...d, horario_inicio_b: d.horario_inicio_a, horario_fin_b: d.horario_fin_a }));
+                          }
+                        }
+                      }}
+                      style={{
+                        padding: "5px 11px", borderRadius: 6, border: "none",
+                        background: isDif ? "#f59e0b" : GREEN,
+                        color: "#fff", fontWeight: 700, fontSize: 12,
+                        cursor: dia === "V" ? "pointer" : "default",
+                        opacity: dia === "V" ? 1 : 0.85,
+                      }}
+                    >
+                      {dia}
+                    </button>
+                  );
+                })}
+              </div>
+              <div style={{ fontSize: 9, color: "#888", marginTop: 3 }}>
+                Clic en <strong>V</strong> para asignar horario diferente el viernes
+              </div>
+            </div>
+
+            {/* ── Horario base (L-J, y V si no es diferente) ── */}
             <div>
-              <label style={lblStyle}>Entrada turno A</label>
+              <label style={lblStyle}>
+                Entrada{(draft.horario_inicio_b != null || draft.horario_fin_b != null) ? " L-J" : " L-V"}
+              </label>
               <input type="time" step={1800}
                 value={hhToTime(draft.horario_inicio_a)}
                 onChange={e => setDraft(d => ({ ...d, horario_inicio_a: timeToHh(e.target.value) }))}
@@ -413,28 +454,32 @@ function EmpleadoRow({
             </div>
 
             <div>
-              <label style={lblStyle}>Salida turno A</label>
+              <label style={lblStyle}>
+                Salida{(draft.horario_inicio_b != null || draft.horario_fin_b != null) ? " L-J" : " L-V"}
+              </label>
               <input type="time" step={1800}
                 value={hhToTime(draft.horario_fin_a)}
                 onChange={e => setDraft(d => ({ ...d, horario_fin_a: timeToHh(e.target.value) }))}
                 style={fldStyle} />
             </div>
 
-            <div>
-              <label style={lblStyle}>Entrada turno B (opcional)</label>
-              <input type="time" step={1800}
-                value={hhToTime(draft.horario_inicio_b)}
-                onChange={e => setDraft(d => ({ ...d, horario_inicio_b: timeToHh(e.target.value) }))}
-                style={fldStyle} />
-            </div>
-
-            <div>
-              <label style={lblStyle}>Salida turno B (opcional)</label>
-              <input type="time" step={1800}
-                value={hhToTime(draft.horario_fin_b)}
-                onChange={e => setDraft(d => ({ ...d, horario_fin_b: timeToHh(e.target.value) }))}
-                style={fldStyle} />
-            </div>
+            {/* ── Horario viernes diferente ── */}
+            {(draft.horario_inicio_b != null || draft.horario_fin_b != null) && (<>
+              <div>
+                <label style={lblStyle}>Entrada Viernes</label>
+                <input type="time" step={1800}
+                  value={hhToTime(draft.horario_inicio_b)}
+                  onChange={e => setDraft(d => ({ ...d, horario_inicio_b: timeToHh(e.target.value) }))}
+                  style={fldStyle} />
+              </div>
+              <div>
+                <label style={lblStyle}>Salida Viernes</label>
+                <input type="time" step={1800}
+                  value={hhToTime(draft.horario_fin_b)}
+                  onChange={e => setDraft(d => ({ ...d, horario_fin_b: timeToHh(e.target.value) }))}
+                  style={fldStyle} />
+              </div>
+            </>)}
 
           </div>
 
@@ -479,7 +524,8 @@ const HORARIO_TEXTO: Record<string, string> = {
   miriam:  "9:00 – 17:00",
   monica:  "9:00 – 17:00",
   javier:  "9:00 – 17:00 (guardia: 9–14 / 20–23)",
-  jenny:   "9:00 – 17:00",
+  zuleica: "16:30 – 20:30 (L-J) · Viernes diferente",
+  davinia: "9:00 – 14:00 (en prácticas)",
   teresa:  "8:30 – 12:00",
   luisa:   "8:30 – 12:00",
 };
@@ -701,15 +747,6 @@ function HorariosTab({ empleados, asignaciones, week, onChangeWeek, onSaveAsigna
         >⚙</button>
       </div>
 
-      {/* Leyenda de turnos rotativos */}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
-        {[1, 2, 3, 0].map(t => (
-          <div key={t} style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 20, ...TURNO_COLORS[t], fontSize: 11 }}>
-            <strong>{TURNO_SHORT[t]}</strong> — {TURNO_LABELS[t]}
-          </div>
-        ))}
-      </div>
-
       {/* Tabla de todos los empleados */}
       <div style={{ background: "#fff", borderRadius: 12, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", marginBottom: 20 }}>
         <div style={{ background: GREEN, padding: "8px 16px", display: "grid", gridTemplateColumns: "1.2fr 0.8fr 2fr", gap: 8 }}>
@@ -809,7 +846,7 @@ export default function EquipoPage() {
 
   const loadEmpleados = useCallback(async (inactivos = mostrarInactivos) => {
     // Auto-migrate versionado: si la versión de datos cambió, re-sincronizar
-    const MIGRATE_KEY = "rrhh_migrate_v5";
+    const MIGRATE_KEY = "rrhh_migrate_v6";
     if (typeof window !== "undefined" && !localStorage.getItem(MIGRATE_KEY)) {
       try {
         const ctrl = new AbortController();
