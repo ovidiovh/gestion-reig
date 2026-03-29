@@ -6,6 +6,7 @@ import {
   GREEN, GREEN_DARK, GREEN_LIGHT,
   TURNO_LABELS, TURNO_SHORT, TURNO_COLORS,
   EMPLEADOS_ROTATIVOS, EMPLEADOS_ESPECIALES,
+  HORARIO_DEFAULT,
   ANCHOR_WEEK, getWeekStart, getTurnoForWeek,
   hhToLabel,
 } from "../types";
@@ -212,6 +213,12 @@ function EmpleadoRow({
   onBaja: (id: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
+  // Horario efectivo: DB primero, luego HORARIO_DEFAULT como fallback
+  const effIa = emp.horario_inicio_a ?? HORARIO_DEFAULT[emp.id]?.[0] ?? null;
+  const effFa = emp.horario_fin_a   ?? HORARIO_DEFAULT[emp.id]?.[1] ?? null;
+  const effIb = emp.horario_inicio_b ?? HORARIO_DEFAULT[emp.id]?.[2] ?? null;
+  const effFb = emp.horario_fin_b   ?? HORARIO_DEFAULT[emp.id]?.[3] ?? null;
+
   const [draft, setDraft] = useState({
     categoria: emp.categoria || "auxiliar",
     farmaceutico: emp.farmaceutico,
@@ -219,10 +226,10 @@ function EmpleadoRow({
     complemento_eur: emp.complemento_eur,
     h_lab_complemento: emp.h_lab_complemento,
     departamento: emp.departamento || "farmacia",
-    horario_inicio_a: emp.horario_inicio_a,
-    horario_fin_a:    emp.horario_fin_a,
-    horario_inicio_b: emp.horario_inicio_b,
-    horario_fin_b:    emp.horario_fin_b,
+    horario_inicio_a: effIa,
+    horario_fin_a:    effFa,
+    horario_inicio_b: effIb,
+    horario_fin_b:    effFb,
   });
   const [saving, setSaving] = useState(false);
 
@@ -234,7 +241,8 @@ function EmpleadoRow({
   };
 
   const deptLabel  = DEPTO_OPTS.find(d => d.value === (emp.departamento || "farmacia"))?.label ?? "—";
-  const horarioTxt = fmtHorario(emp.horario_inicio_a, emp.horario_fin_a, emp.horario_inicio_b, emp.horario_fin_b);
+  const isRotativo = EMPLEADOS_ROTATIVOS.includes(emp.id) || EMPLEADOS_ESPECIALES.includes(emp.id);
+  const horarioTxt = isRotativo ? "Horario rotativo" : fmtHorario(effIa, effFa, effIb, effFb);
 
   const fldStyle: React.CSSProperties = {
     border: "1px solid #bbf7d0", borderRadius: 6, fontSize: 13,
