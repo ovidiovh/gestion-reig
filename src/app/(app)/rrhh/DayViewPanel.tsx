@@ -13,9 +13,9 @@ import {
 // ── Colores por departamento ──────────────────────────────────────────────────
 
 const DEPTO: Record<string, { bar: string; bg: string; label: string }> = {
-  farmacia:  { bar: "#2E7D32", bg: "#E8F5E9", label: "Farmacia" },
-  optica:    { bar: "#B45309", bg: "#FEF3C7", label: "Óptica" },
-  ortopedia: { bar: "#C2410C", bg: "#FFF7ED", label: "Ortopedia" },
+  farmacia:  { bar: "#2E7D32", bg: "#E8F5E9", label: "Farmacia" },   // verde
+  optica:    { bar: "#CA8A04", bg: "#FEF9C3", label: "Óptica" },     // amarillo
+  ortopedia: { bar: "#EA580C", bg: "#FFF7ED", label: "Ortopedia" },  // naranja
   otro:      { bar: "#6B7280", bg: "#F3F4F6", label: "Otros" },
 };
 
@@ -148,15 +148,13 @@ export default function DayViewPanel({
   });
   const maxSlotLen = Math.max(...slotData.map(s => s.length), 1);
 
-  // Turnos rotativos de la semana agrupados por turno
+  // Turnos rotativos de la semana agrupados por turno (solo EMPLEADOS_ROTATIVOS, sin Zuleica)
   const turnoGroups: Record<number, string[]> = {};
-  [...EMPLEADOS_ESPECIALES, ...EMPLEADOS_ROTATIVOS].forEach(empId => {
+  EMPLEADOS_ROTATIVOS.forEach(empId => {
     const emp = activos.find(e => e.id === empId);
     if (!emp) return;
     const override = asignaciones.find(a => a.empleado_id === empId && a.week_start === weekStart);
-    const turno = override
-      ? override.turno
-      : EMPLEADOS_ESPECIALES.includes(empId) ? 0 : getTurnoForWeek(empId, weekStart);
+    const turno = override ? override.turno : getTurnoForWeek(empId, weekStart);
     if (!turnoGroups[turno]) turnoGroups[turno] = [];
     turnoGroups[turno].push(emp.nombre);
   });
@@ -317,30 +315,22 @@ export default function DayViewPanel({
               Turnos esta semana
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {[0, 1, 2, 3].map(t => {
+              {[1, 2, 3].map(t => {
                 const nombres = turnoGroups[t];
                 if (!nombres?.length) return null;
                 const colors = TURNO_COLORS[t];
+                const time = TURNO_LABELS[t].split(' · ')[1] ?? '';
                 return (
                   <div key={t} style={{
-                    display: "flex", alignItems: "center", gap: 5,
+                    display: "flex", alignItems: "center", gap: 4,
                     padding: "5px 12px", borderRadius: 20,
                     background: colors.bg, color: colors.color,
                     fontSize: 12,
                   }}>
                     <strong style={{ fontSize: 11 }}>{TURNO_SHORT[t]}</strong>
                     <span>{nombres.join(", ")}</span>
+                    {time && <span style={{ opacity: 0.7, fontSize: 10 }}>· {time}</span>}
                   </div>
-                );
-              })}
-            </div>
-            <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 4 }}>
-              {[1, 2, 3, 0].map(t => {
-                const colors = TURNO_COLORS[t];
-                return (
-                  <span key={t} style={{ fontSize: 9, color: colors.color, background: colors.bg, padding: "1px 6px", borderRadius: 6 }}>
-                    {TURNO_SHORT[t]}: {TURNO_LABELS[t]}
-                  </span>
                 );
               })}
             </div>
