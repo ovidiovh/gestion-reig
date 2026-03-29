@@ -265,57 +265,50 @@ function EmpleadoRow({
   return (
     <div style={{ background: index % 2 === 0 ? "#fff" : "#f9fafb", borderBottom: "1px solid #f0f0f0" }}>
 
-      {/* ─ Fila principal ─ */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "1.8fr 1.4fr 1.4fr 0.5fr 0.6fr 0.6fr auto",
-        padding: "10px 16px", alignItems: "center", gap: 8, minWidth: 620,
-      }}>
+      {/* ─ Fila principal (card layout — sin scroll horizontal) ─ */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px" }}>
 
-        {/* Nombre + depto */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
-            background: emp.farmaceutico ? GREEN_LIGHT : "#f0f0f0",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 13, fontWeight: 700, color: emp.farmaceutico ? GREEN_DARK : "#888",
-          }}>
-            {emp.nombre.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: emp.farmaceutico ? GREEN_DARK : "#2a2e2b" }}>
-              {emp.nombre}
-            </div>
-            <div style={{ fontSize: 9, color: "#9ca3af" }}>{deptLabel}</div>
-          </div>
-        </div>
-
-        {/* Categoría */}
-        <div style={{ fontSize: 11, color: "#6b7280" }}>{CATEGORIA_LABEL[emp.categoria] ?? emp.categoria}</div>
-
-        {/* Horario */}
+        {/* Avatar */}
         <div style={{
-          fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-          color: horarioTxt !== "—" ? GREEN_DARK : "#d1d5db", fontWeight: horarioTxt !== "—" ? 600 : 400,
+          width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+          background: emp.farmaceutico ? GREEN_LIGHT : "#f0f0f0",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 14, fontWeight: 700, color: emp.farmaceutico ? GREEN_DARK : "#888",
         }}>
-          {horarioTxt}
+          {emp.nombre.charAt(0).toUpperCase()}
         </div>
 
-        {/* Guardia */}
-        <div>
-          {emp.hace_guardia
-            ? <span style={{ background: GREEN_LIGHT, color: GREEN, fontWeight: 700, fontSize: 9, padding: "2px 7px", borderRadius: 10 }}>✓ Sí</span>
-            : <span style={{ color: "#ccc", fontSize: 10 }}>—</span>}
-        </div>
-
-        {/* Complemento */}
-        <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: emp.complemento_eur > 0 ? GREEN_DARK : "#ccc" }}>
-          {emp.complemento_eur > 0 ? `${emp.complemento_eur}€` : "—"}
-        </div>
-
-        {/* h/Guardia */}
-        <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: emp.h_lab_complemento > 0 ? "#555" : "#ccc" }}>
-          {emp.h_lab_complemento > 0 ? `${emp.h_lab_complemento}h` : "—"}
+        {/* Info principal — crece para llenar el espacio */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Línea 1: nombre + badge guardia */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: emp.farmaceutico ? GREEN_DARK : "#2a2e2b" }}>
+              {emp.nombre}
+            </span>
+            {emp.empresa === "mirelus" && (
+              <span style={{ fontSize: 8, color: "#9ca3af", background: "#f3f4f6", padding: "1px 5px", borderRadius: 4 }}>ext.</span>
+            )}
+            {emp.hace_guardia === 1 && (
+              <span style={{ fontSize: 8, background: GREEN_LIGHT, color: GREEN, fontWeight: 700, padding: "1px 6px", borderRadius: 8 }}>guardia</span>
+            )}
+          </div>
+          {/* Línea 2: depto · categoría */}
+          <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 1 }}>
+            {deptLabel} · {CATEGORIA_LABEL[emp.categoria] ?? emp.categoria}
+          </div>
+          {/* Línea 3: horario */}
+          <div style={{
+            fontSize: 11, fontFamily: "'JetBrains Mono', monospace", marginTop: 2,
+            color: horarioTxt !== "—" ? GREEN_DARK : "#d1d5db",
+            fontWeight: horarioTxt !== "—" ? 600 : 400,
+          }}>
+            {horarioTxt}
+            {emp.complemento_eur > 0 && (
+              <span style={{ marginLeft: 8, fontSize: 10, color: "#6b7280", fontWeight: 400 }}>
+                +{emp.complemento_eur}€/guardia
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Botón Editar */}
@@ -982,13 +975,8 @@ export default function EquipoPage() {
             </button>
           </div>
 
-          {/* Cabecera tabla */}
-          <div style={{ background: "#fff", borderRadius: 12, overflowX: "auto", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", marginBottom: 20 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1.8fr 0.9fr 0.6fr 0.8fr 0.8fr 0.7fr", background: GREEN, padding: "8px 16px", borderRadius: "12px 12px 0 0", minWidth: 620 }}>
-              {["Nombre", "Categoría", "Horario", "Guardia", "Compl. €", "h/Guardia", ""].map(h => (
-                <div key={h} style={{ fontSize: 9, fontWeight: 700, color: "#fff", textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</div>
-              ))}
-            </div>
+          {/* Lista de empleados */}
+          <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.06)", marginBottom: 20, overflow: "hidden" }}>
 
             <div style={{ marginBottom: 4 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: GREEN, padding: "6px 16px 2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Farmacia Reig</div>

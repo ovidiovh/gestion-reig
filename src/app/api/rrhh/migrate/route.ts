@@ -211,8 +211,8 @@ export async function POST() {
       });
     }
 
-    // 2b. Desactivar empleados que ya no trabajan en la farmacia
-    await db.execute({ sql: `UPDATE rrhh_empleados SET activo = 0 WHERE id = 'luisa'`, args: [] });
+    // 2b. Desactivar empleados que no deben aparecer en el planning
+    await db.execute({ sql: `UPDATE rrhh_empleados SET activo = 0 WHERE id IN ('luisa', 'teresa')`, args: [] });
 
     // 3. Seed festivos 2026
     for (const f of FESTIVOS_2026) {

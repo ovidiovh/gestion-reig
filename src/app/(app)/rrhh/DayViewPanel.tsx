@@ -233,13 +233,13 @@ export default function DayViewPanel({
           )}
         </div>
 
-        {/* ── Horarios y cuadritos ── */}
+        {/* ── Grid de cuadritos ── */}
         {!isWeekend ? (
           <div style={{ overflowX: "auto" }}>
             <div style={{ minWidth: 480 }}>
 
-              {/* Eje horario compartido */}
-              <div style={{ display: "flex", marginBottom: 3 }}>
+              {/* Eje horario */}
+              <div style={{ display: "flex", marginBottom: 2 }}>
                 <div style={{ width: 72, flexShrink: 0 }} />
                 <div style={{ flex: 1, position: "relative", height: 16 }}>
                   {TICKS.map(hh => (
@@ -254,65 +254,7 @@ export default function DayViewPanel({
                 </div>
               </div>
 
-              {/* ── Filas de horario por empleado ── */}
-              {activos.map(emp => {
-                const isVac   = vacsHoy.some(v => v.empleado_id === emp.id);
-                const blocks  = getScheduledBlocks(emp);
-                const dept    = DEPTO[emp.departamento || "farmacia"] ?? DEPTO.otro;
-                const hasWork = blocks.length > 0;
-                if (!hasWork && !isVac) return null;
-
-                return (
-                  <div key={emp.id} style={{ display: "flex", alignItems: "center", marginBottom: 2 }}>
-                    {/* Nombre */}
-                    <div style={{
-                      width: 72, flexShrink: 0, textAlign: "right", paddingRight: 6,
-                      fontSize: 9, fontWeight: 600,
-                      color: isVac ? "#9ca3af" : dept.bar,
-                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                    }}>
-                      {emp.nombre}
-                    </div>
-                    {/* Barra */}
-                    <div style={{ flex: 1, position: "relative", height: 14, background: "#f3f4f6", borderRadius: 3, overflow: "hidden" }}>
-                      {/* Líneas verticales */}
-                      {TICKS.map(hh => (
-                        <div key={hh} style={{
-                          position: "absolute", left: pct(hh), top: 0, bottom: 0,
-                          width: 1, background: "#e5e7eb", zIndex: 0,
-                        }} />
-                      ))}
-                      {isVac ? (
-                        <div style={{
-                          position: "absolute", inset: 0,
-                          background: "repeating-linear-gradient(-45deg,#f3f4f6,#f3f4f6 3px,#e5e7eb 3px,#e5e7eb 6px)",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                        }}>
-                          <span style={{ fontSize: 7, color: "#9ca3af", background: "#fff", padding: "0 3px", borderRadius: 2, zIndex: 1, position: "relative" }}>vac.</span>
-                        </div>
-                      ) : blocks.map(([ia, fa], j) => {
-                        const ca = Math.max(ia, GRID_START_HH);
-                        const cf = Math.min(fa, GRID_START_HH + GRID_COLS);
-                        if (cf <= ca) return null;
-                        return (
-                          <div key={j} style={{
-                            position: "absolute",
-                            left: pct(ca),
-                            width: `${((cf - ca) / GRID_COLS) * 100}%`,
-                            top: 2, bottom: 2, borderRadius: 2,
-                            background: dept.bar, zIndex: 1,
-                          }} />
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* Separador */}
-              <div style={{ height: 1, background: "#e5e7eb", margin: "8px 0 6px 72px" }} />
-
-              {/* ── Fila de cuadritos ── */}
+              {/* ── Fila de cuadritos (personas por franja) ── */}
               <div style={{ display: "flex", alignItems: "flex-end" }}>
                 <div style={{
                   width: 72, flexShrink: 0,
