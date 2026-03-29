@@ -44,16 +44,16 @@ const HORAS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 
 // Paleta coherente con el diseño de gestion.vidalreig.com
 const C = {
-  verde: "#1a8c3a",
-  verdeDark: "#14702e",
-  verdeLight: "#e8f5ec",
-  verdeMid: "#4caf6f",
-  amarillo: "#f59e0b",
-  rojo: "#ef4444",
-  azul: "#3b82f6",
-  gris: "#5a615c",
-  fondo: "#f8faf9",
-  borde: "#e5e7eb",
+  verde: "#2E7D32",
+  verdeDark: "#1B5E20",
+  verdeLight: "#E8F5E9",
+  verdeMid: "#4CAF50",
+  amarillo: "#F59E0B",
+  rojo: "#DC2626",
+  azul: "#1565C0",
+  gris: "#4B5563",
+  fondo: "#F7FAF8",
+  borde: "#E5E7EB",
 };
 
 const COLORES_PIE = [C.verde, C.azul, C.amarillo, "#8b5cf6", "#ec4899", "#14b8a6"];

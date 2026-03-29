@@ -13,10 +13,10 @@ import {
 // ── Colores por departamento ──────────────────────────────────────────────────
 
 const DEPTO: Record<string, { bar: string; bg: string; label: string }> = {
-  farmacia:  { bar: "#166534", bg: "#dcfce7", label: "Farmacia" },
-  optica:    { bar: "#1d4ed8", bg: "#dbeafe", label: "Óptica" },
-  ortopedia: { bar: "#b45309", bg: "#fef3c7", label: "Ortopedia" },
-  otro:      { bar: "#6b7280", bg: "#f3f4f6", label: "Otros" },
+  farmacia:  { bar: "#2E7D32", bg: "#E8F5E9", label: "Farmacia" },
+  optica:    { bar: "#1565C0", bg: "#E3F2FD", label: "Óptica" },
+  ortopedia: { bar: "#E65100", bg: "#FFF3E0", label: "Ortopedia" },
+  otro:      { bar: "#6B7280", bg: "#F3F4F6", label: "Otros" },
 };
 
 const DEPT_ORDER = ["farmacia", "optica", "ortopedia", "otro"];

@@ -219,9 +219,9 @@ export const GRID_COLS     = GRID_END_HH - GRID_START_HH; // 24
 export const MESES      = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 export const DIAS_SEMANA = ["L","M","X","J","V","S","D"];
 
-export const GREEN       = "#1a8c3a";
-export const GREEN_DARK  = "#14702e";
-export const GREEN_LIGHT = "#e8f5ec";
+export const GREEN       = "#2E7D32";
+export const GREEN_DARK  = "#1B5E20";
+export const GREEN_LIGHT = "#E8F5E9";
 
 export function fmtDate(s: string) {
   return new Date(s + "T00:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "short" });

@@ -32,8 +32,9 @@ interface NavSection {
 /* ───── Colores por contexto ───── */
 
 const THEME = {
-  farmacia: "#0C6D32",
-  optica: "#0C4D6D",
+  farmacia: "#1B5E20",
+  optica:   "#1565C0",
+  orto:     "#E65100",
 } as const;
 
 /* ───── Iconos SVG ───── */
