@@ -355,7 +355,7 @@ function periodoToRange(p: Periodo): { desde: string; hasta: string } {
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function CrmPage() {
-  const [periodo, setPeriodo] = useState<Periodo>("2025");
+  const [periodo, setPeriodo] = useState<Periodo>("2026");
   const [customDesde, setCustomDesde] = useState("");
   const [customHasta, setCustomHasta] = useState("");
   const [productoTab, setProductoTab] = useState<"facturacion" | "unidades">("facturacion");

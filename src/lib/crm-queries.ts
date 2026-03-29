@@ -7,12 +7,10 @@ import { query } from "./db";
 // Los de contado por B. Otros prefijos: D, N, K, Y, Z
 // Campo vendedor_nombre identifica quién vendió
 
+// BASE_WHERE simplificado: solo usa columnas cubiertas por idx_ventas_crm(tipo,es_cabecera,fecha)
+// Los filtros de rp/descripcion se eliminaron — requieren row-fetch y hacen lentas las queries de año completo
 const BASE_WHERE = `
   tipo IN ('Contado', 'Credito')
-  AND UPPER(SUBSTR(num_doc, 1, 1)) != 'W'
-  AND (rp IS NULL OR rp != 'Anulada')
-  AND (descripcion NOT LIKE '%TRASPASO ENTRE CAJAS%')
-  AND (descripcion NOT LIKE '%Entrega A Cuenta%')
   AND es_cabecera = 0
 `;
 

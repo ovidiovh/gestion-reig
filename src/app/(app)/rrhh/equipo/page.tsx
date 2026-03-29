@@ -812,9 +812,12 @@ export default function EquipoPage() {
     const MIGRATE_KEY = "rrhh_migrate_v5";
     if (typeof window !== "undefined" && !localStorage.getItem(MIGRATE_KEY)) {
       try {
-        await fetch("/api/rrhh/migrate", { method: "POST" });
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 8000);
+        await fetch("/api/rrhh/migrate", { method: "POST", signal: ctrl.signal });
+        clearTimeout(t);
         localStorage.setItem(MIGRATE_KEY, "1");
-      } catch { /* silencioso */ }
+      } catch { /* silencioso — timeout o error no bloquea la carga */ }
     }
     const r = await fetch(`/api/rrhh/empleados${inactivos ? "?incluir_inactivos=1" : ""}`).then(r => r.json());
     if (r.ok) {
