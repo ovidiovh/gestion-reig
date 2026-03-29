@@ -816,8 +816,9 @@ export default function EquipoPage() {
         const t = setTimeout(() => ctrl.abort(), 8000);
         await fetch("/api/rrhh/migrate", { method: "POST", signal: ctrl.signal });
         clearTimeout(t);
-        localStorage.setItem(MIGRATE_KEY, "1");
-      } catch { /* silencioso — timeout o error no bloquea la carga */ }
+      } catch { /* silencioso — timeout o error no bloquea la carga */ } finally {
+        localStorage.setItem(MIGRATE_KEY, "1"); // siempre marcar para no reintentar
+      }
     }
     const r = await fetch(`/api/rrhh/empleados${inactivos ? "?incluir_inactivos=1" : ""}`).then(r => r.json());
     if (r.ok) {

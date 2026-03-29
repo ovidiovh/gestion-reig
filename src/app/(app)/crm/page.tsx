@@ -430,11 +430,10 @@ export default function CrmPage() {
 
   // Setup CRM: crea índices en ventas la primera vez (idempotente)
   useEffect(() => {
-    const KEY = "crm_setup_v1";
+    const KEY = "crm_setup_v2";
     if (typeof window !== "undefined" && !localStorage.getItem(KEY)) {
-      fetch("/api/crm/setup", { method: "POST" })
-        .then(() => localStorage.setItem(KEY, "1"))
-        .catch(() => undefined);
+      localStorage.setItem(KEY, "1"); // marcar antes para no reintentar si falla
+      fetch("/api/crm/setup", { method: "POST" }).catch(() => undefined);
     }
   }, []);
 

@@ -14,8 +14,8 @@ import {
 
 const DEPTO: Record<string, { bar: string; bg: string; label: string }> = {
   farmacia:  { bar: "#2E7D32", bg: "#E8F5E9", label: "Farmacia" },
-  optica:    { bar: "#1565C0", bg: "#E3F2FD", label: "Óptica" },
-  ortopedia: { bar: "#E65100", bg: "#FFF3E0", label: "Ortopedia" },
+  optica:    { bar: "#B45309", bg: "#FEF3C7", label: "Óptica" },
+  ortopedia: { bar: "#C2410C", bg: "#FFF7ED", label: "Ortopedia" },
   otro:      { bar: "#6B7280", bg: "#F3F4F6", label: "Otros" },
 };
 
@@ -290,7 +290,7 @@ export default function DayViewPanel({
                         })}
                         {absent.map((sq, j) => {
                           const d = DEPTO[sq.dept] ?? DEPTO.otro;
-                          return <div key={`a${j}`} style={{ width: SQ, height: SQ, flexShrink: 0, background: d.bg, border: `1px dashed ${d.bar}`, borderRadius: 1, boxSizing: "border-box", opacity: 0.8 }} />;
+                          return <div key={`a${j}`} style={{ width: SQ, height: SQ, flexShrink: 0, background: "#ffffff", border: `1.5px solid ${d.bar}`, borderRadius: 1, boxSizing: "border-box" }} />;
                         })}
                         {total > 0 && (
                           <div style={{ position: "absolute", bottom: 1, fontSize: 6, fontWeight: 700, lineHeight: 1, color: absent.length > 0 ? "#ef4444" : "#6b7280" }}>
