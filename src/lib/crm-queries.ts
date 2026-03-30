@@ -267,8 +267,32 @@ export async function getCrmResumen(year: number) {
     const unidades     = Number(row?.unidades    || 0);
     const ticket_medio = tickets > 0 ? Math.round((facturacion / tickets) * 100) / 100 : 0;
 
+    // Receta vs libre desde segmentación precalculada
+    let fact_receta = 0;
+    let tickets_receta = 0;
+    try {
+      const recetaRows = await withTimeout(query<{
+        tipo_pago: string;
+        facturacion: number;
+        tickets: number;
+      }>(`
+        SELECT tipo_pago, SUM(facturacion) AS facturacion, SUM(tickets) AS tickets
+        FROM crm_segmentacion_mensual
+        WHERE anio = ? AND tipo_pago IN ('__receta__', '__libre__')
+        GROUP BY tipo_pago
+      `, [year]));
+      for (const r of recetaRows) {
+        if (r.tipo_pago === '__receta__') {
+          fact_receta = Number(r.facturacion || 0);
+          tickets_receta = Number(r.tickets || 0);
+        }
+      }
+    } catch { /* tabla puede no existir aún */ }
+
+    const pct_receta = facturacion > 0 ? Math.round((fact_receta / facturacion) * 1000) / 10 : 0;
+
     return { facturacion, tickets, ticket_medio, unidades,
-             pct_receta: 0, tickets_receta: 0, tickets_cross: 0, pct_cross: 0 };
+             pct_receta, tickets_receta, tickets_cross: 0, pct_cross: 0 };
   } catch (e) {
     console.error("[crm] getCrmResumen:", e);
     return { facturacion: 0, tickets: 0, ticket_medio: 0, unidades: 0,
@@ -315,7 +339,7 @@ export async function getCrmComparativa() {
         ROUND(COALESCE(facturacion, 0), 2)      AS facturacion,
         COALESCE(tickets, 0)                    AS tickets
       FROM crm_resumen_mensual
-      WHERE anio IN (2025, 2026)
+      WHERE anio IN (2024, 2025, 2026)
       ORDER BY anio, mes
     `));
   } catch (e) {
@@ -411,9 +435,17 @@ export async function getCrmSegmentacion(year: number) {
       ORDER BY facturacion DESC
     `, [year]));
 
-    const byTipo = rows.map(r => ({ tipo: r.tipo_pago, tickets: r.tickets, facturacion: r.facturacion }));
-    const byPago = rows.slice(0, 8).map(r => ({ tipo_pago: r.tipo_pago, tickets: r.tickets, facturacion: r.facturacion }));
-    const byReceta = [{ tipo: "Venta libre", tickets: 0, facturacion: 0 }];
+    // Separar tipo_pago normales de las categorías receta/libre
+    const realRows = rows.filter(r => !r.tipo_pago.startsWith('__'));
+    const recetaRow = rows.find(r => r.tipo_pago === '__receta__');
+    const libreRow = rows.find(r => r.tipo_pago === '__libre__');
+
+    const byTipo = realRows.map(r => ({ tipo: r.tipo_pago, tickets: r.tickets, facturacion: r.facturacion }));
+    const byPago = realRows.slice(0, 8).map(r => ({ tipo_pago: r.tipo_pago, tickets: r.tickets, facturacion: r.facturacion }));
+    const byReceta = [
+      { tipo: "Receta", tickets: Number(recetaRow?.tickets || 0), facturacion: Number(recetaRow?.facturacion || 0) },
+      { tipo: "Venta libre", tickets: Number(libreRow?.tickets || 0), facturacion: Number(libreRow?.facturacion || 0) },
+    ];
 
     return { byTipo, byPago, byReceta };
   } catch (e) {

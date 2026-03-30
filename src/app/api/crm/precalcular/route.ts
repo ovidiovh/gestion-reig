@@ -367,21 +367,33 @@ async function runMonth(
   // Borrar datos existentes de este mes concreto
   await deleteMonth(anio, mes, log, t0);
 
+  // Filtro de facturación real (misma lógica que queries.ts FACTURACION_WHERE)
+  const FACT_WHERE = `
+    tipo IN ('Contado', 'Credito')
+    AND UPPER(SUBSTR(num_doc, 1, 1)) != 'W'
+    AND (rp IS NULL OR rp != 'Anulada')
+    AND (descripcion NOT LIKE '%TRASPASO ENTRE CAJAS%')
+    AND (descripcion NOT LIKE '%Entrega A Cuenta%')
+  `;
+
   const stmts: { label: string; sql: string; args: string[] }[] = [
     {
+      // Facturación = SUM(pvp * unidades) en líneas de detalle
+      // Tickets = COUNT(DISTINCT num_doc)
       label: "crm_resumen_mensual",
       sql: `INSERT OR REPLACE INTO crm_resumen_mensual
              (anio, mes, facturacion, tickets, unidades, ticket_medio)
             SELECT
               CAST(strftime('%Y',fecha) AS INTEGER),
               CAST(strftime('%m',fecha) AS INTEGER),
-              ROUND(SUM(CASE WHEN es_cabecera=1 THEN ABS(imp_neto) ELSE 0 END),2),
-              SUM(CASE WHEN es_cabecera=1 THEN 1 ELSE 0 END),
-              COALESCE(SUM(CASE WHEN es_cabecera=0 THEN unidades ELSE 0 END),0),
-              ROUND(SUM(CASE WHEN es_cabecera=1 THEN ABS(imp_neto) ELSE 0 END)/
-                NULLIF(SUM(CASE WHEN es_cabecera=1 THEN 1 ELSE 0 END),0),2)
+              ROUND(COALESCE(SUM(pvp * unidades), 0), 2),
+              COUNT(DISTINCT num_doc),
+              COALESCE(SUM(unidades), 0),
+              ROUND(COALESCE(SUM(pvp * unidades), 0) /
+                NULLIF(COUNT(DISTINCT num_doc), 0), 2)
             FROM ventas
             WHERE fecha >= ? AND fecha < ?
+              AND ${FACT_WHERE}
             GROUP BY CAST(strftime('%Y',fecha) AS INTEGER),
                      CAST(strftime('%m',fecha) AS INTEGER)`,
       args: [d0, d1],
@@ -394,13 +406,14 @@ async function runMonth(
               CAST(strftime('%Y',fecha) AS INTEGER),
               CAST(strftime('%m',fecha) AS INTEGER),
               COALESCE(vendedor_nombre,'Sin asignar'),
-              COUNT(*),
-              ROUND(COALESCE(SUM(ABS(imp_neto)),0),2),
-              ROUND(COALESCE(SUM(ABS(imp_neto)),0)/NULLIF(COUNT(*),0),2),
-              0
+              COUNT(DISTINCT num_doc),
+              ROUND(COALESCE(SUM(pvp * unidades), 0), 2),
+              ROUND(COALESCE(SUM(pvp * unidades), 0) /
+                NULLIF(COUNT(DISTINCT num_doc), 0), 2),
+              COALESCE(SUM(unidades), 0)
             FROM ventas
             WHERE fecha >= ? AND fecha < ?
-              AND es_cabecera = 1
+              AND ${FACT_WHERE}
               AND vendedor_nombre IS NOT NULL AND vendedor_nombre != ''
             GROUP BY CAST(strftime('%Y',fecha) AS INTEGER),
                      CAST(strftime('%m',fecha) AS INTEGER),
@@ -416,12 +429,13 @@ async function runMonth(
               CAST(strftime('%m',fecha) AS INTEGER),
               codigo,
               COALESCE(MAX(descripcion),'Sin descripción'),
-              COALESCE(SUM(unidades),0),
-              ROUND(COALESCE(SUM(pvp*unidades),0),2),
-              COUNT(DISTINCT hash_linea),
-              ROUND(COALESCE(AVG(pvp),0),2)
+              COALESCE(SUM(unidades), 0),
+              ROUND(COALESCE(SUM(pvp * unidades), 0), 2),
+              COUNT(DISTINCT num_doc),
+              ROUND(COALESCE(AVG(pvp), 0), 2)
             FROM ventas
             WHERE fecha >= ? AND fecha < ?
+              AND ${FACT_WHERE}
               AND codigo IS NOT NULL AND codigo != ''
               AND descripcion IS NOT NULL AND descripcion != ''
             GROUP BY CAST(strftime('%Y',fecha) AS INTEGER),
@@ -430,21 +444,41 @@ async function runMonth(
       args: [d0, d1],
     },
     {
-      label: "crm_segmentacion_mensual",
+      // Segmentación por tipo_pago
+      label: "crm_segmentacion_mensual (tipo_pago)",
       sql: `INSERT OR REPLACE INTO crm_segmentacion_mensual
              (anio, mes, tipo_pago, tickets, facturacion)
             SELECT
               CAST(strftime('%Y',fecha) AS INTEGER),
               CAST(strftime('%m',fecha) AS INTEGER),
               COALESCE(tipo_pago,'Otros'),
-              COUNT(*),
-              ROUND(COALESCE(SUM(ABS(imp_neto)),0),2)
+              COUNT(DISTINCT num_doc),
+              ROUND(COALESCE(SUM(pvp * unidades), 0), 2)
             FROM ventas
             WHERE fecha >= ? AND fecha < ?
-              AND es_cabecera = 1
+              AND ${FACT_WHERE}
             GROUP BY CAST(strftime('%Y',fecha) AS INTEGER),
                      CAST(strftime('%m',fecha) AS INTEGER),
                      tipo_pago`,
+      args: [d0, d1],
+    },
+    {
+      // Segmentación receta vs venta libre (tipo_pago = '__receta__' / '__libre__')
+      label: "crm_segmentacion_mensual (receta)",
+      sql: `INSERT OR REPLACE INTO crm_segmentacion_mensual
+             (anio, mes, tipo_pago, tickets, facturacion)
+            SELECT
+              CAST(strftime('%Y',fecha) AS INTEGER),
+              CAST(strftime('%m',fecha) AS INTEGER),
+              CASE WHEN es_receta = 1 THEN '__receta__' ELSE '__libre__' END,
+              COUNT(DISTINCT num_doc),
+              ROUND(COALESCE(SUM(pvp * unidades), 0), 2)
+            FROM ventas
+            WHERE fecha >= ? AND fecha < ?
+              AND ${FACT_WHERE}
+            GROUP BY CAST(strftime('%Y',fecha) AS INTEGER),
+                     CAST(strftime('%m',fecha) AS INTEGER),
+                     CASE WHEN es_receta = 1 THEN '__receta__' ELSE '__libre__' END`,
       args: [d0, d1],
     },
   ];
