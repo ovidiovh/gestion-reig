@@ -227,11 +227,11 @@ async function runYear(
             SELECT
               CAST(strftime('%Y',fecha) AS INTEGER),
               CAST(strftime('%m',fecha) AS INTEGER),
-              ROUND(SUM(CASE WHEN codigo IS NULL THEN ABS(imp_neto) ELSE 0 END),2),
-              SUM(CASE WHEN codigo IS NULL THEN 1 ELSE 0 END),
-              COALESCE(SUM(CASE WHEN codigo IS NOT NULL THEN unidades ELSE 0 END),0),
-              ROUND(SUM(CASE WHEN codigo IS NULL THEN ABS(imp_neto) ELSE 0 END)/
-                NULLIF(SUM(CASE WHEN codigo IS NULL THEN 1 ELSE 0 END),0),2)
+              ROUND(SUM(CASE WHEN es_cabecera=1 THEN ABS(imp_neto) ELSE 0 END),2),
+              SUM(CASE WHEN es_cabecera=1 THEN 1 ELSE 0 END),
+              COALESCE(SUM(CASE WHEN es_cabecera=0 THEN unidades ELSE 0 END),0),
+              ROUND(SUM(CASE WHEN es_cabecera=1 THEN ABS(imp_neto) ELSE 0 END)/
+                NULLIF(SUM(CASE WHEN es_cabecera=1 THEN 1 ELSE 0 END),0),2)
             FROM ventas
             WHERE fecha >= ? AND fecha < ?
             GROUP BY CAST(strftime('%Y',fecha) AS INTEGER),
@@ -252,7 +252,7 @@ async function runYear(
               0
             FROM ventas
             WHERE fecha >= ? AND fecha < ?
-              AND codigo IS NULL
+              AND es_cabecera = 1
               AND vendedor_nombre IS NOT NULL AND vendedor_nombre != ''
             GROUP BY CAST(strftime('%Y',fecha) AS INTEGER),
                      CAST(strftime('%m',fecha) AS INTEGER),
@@ -293,7 +293,7 @@ async function runYear(
               ROUND(COALESCE(SUM(ABS(imp_neto)),0),2)
             FROM ventas
             WHERE fecha >= ? AND fecha < ?
-              AND codigo IS NULL
+              AND es_cabecera = 1
             GROUP BY CAST(strftime('%Y',fecha) AS INTEGER),
                      CAST(strftime('%m',fecha) AS INTEGER),
                      tipo_pago`,

@@ -8,17 +8,18 @@ import { query } from "./db";
 //   vendedor_nombre, tipo, tipo_pago, codigo, descripcion,
 //   ta, unidades, p_ant, pvp, imp_bruto, dto, imp_neto,
 //   a_cuenta, entrega, devolucion, rp, fact,
-//   fichero_origen, hash_linea
+//   fichero_origen, hash_linea, anio, mes, dia_semana,
+//   es_cabecera, es_receta
 //
-// CAB_WHERE (codigo IS NULL): una fila por ticket (cabecera)
+// CAB_WHERE (es_cabecera=1): una fila por ticket (cabecera)
 //   - Facturación: SUM(ABS(imp_neto))
 //   - Tickets:     COUNT(*)
-// DET_WHERE (codigo IS NOT NULL): una fila por línea de producto
+// DET_WHERE (es_cabecera=0): una fila por línea de producto
 //   - unidades:    SUM(unidades)
 //   - total línea: pvp * unidades
 
-const CAB_WHERE = `codigo IS NULL`;
-const DET_WHERE = `codigo IS NOT NULL`;
+const CAB_WHERE = `es_cabecera = 1`;
+const DET_WHERE = `es_cabecera = 0`;
 
 // Timeout: rechaza si Turso tarda más de 25 s
 function withTimeout<T>(p: Promise<T>, ms = 25_000): Promise<T> {
