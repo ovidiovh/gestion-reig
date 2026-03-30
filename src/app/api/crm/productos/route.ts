@@ -6,7 +6,8 @@ export const maxDuration = 60;
 export async function GET(req: NextRequest) {
   try {
     const params = req.nextUrl.searchParams;
-    const year = Number(params.get("year") || new Date().getFullYear());
+    const desde = params.get("desde");
+    const year = desde ? new Date(desde).getFullYear() : Number(params.get("year") || new Date().getFullYear());
     const orderBy = (params.get("orderBy") as "facturacion" | "unidades") || "facturacion";
     const limit = Number(params.get("limit") || 20);
     const data = await getCrmProductos(year, limit, orderBy);
