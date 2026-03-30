@@ -4,12 +4,15 @@ import { db } from "@/lib/db";
 export const maxDuration = 300;
 
 /**
- * POST /api/crm/precalcular?step=index  → solo crea tablas e índice (~20-30s)
- * POST /api/crm/precalcular?step=data   → inserta todos los años (~30-40s con índice)
- * POST /api/crm/precalcular             → ambos pasos en secuencia (puede timeout en Hobby plan)
+ * POST /api/crm/precalcular?step=index       → crea tablas e índice (1-2s)
+ * POST /api/crm/precalcular?step=data&year=N → inserta un año concreto (5-15s con índice)
+ * POST /api/crm/precalcular?step=data        → inserta todos los años (puede timeout en Hobby plan)
  */
 export async function POST(req: NextRequest) {
-  const step = req.nextUrl.searchParams.get("step") ?? "all";
+  const yearParam = req.nextUrl.searchParams.get("year");
+  // Si viene year sin step explícito → solo insertar ese año (no borrar tablas)
+  const defaultStep = yearParam ? "data" : "all";
+  const step = req.nextUrl.searchParams.get("step") ?? defaultStep;
   const log: string[] = [];
   const t0 = Date.now();
 
@@ -18,7 +21,11 @@ export async function POST(req: NextRequest) {
       await runIndex(log, t0);
     }
     if (step === "all" || step === "data") {
-      await runData(log, t0);
+      if (yearParam) {
+        await runYear(parseInt(yearParam), log, t0);
+      } else {
+        await runData(log, t0);
+      }
     }
 
     // Verificar
@@ -82,15 +89,17 @@ async function runIndex(log: string[], t0: number) {
   log.push(`[${e(t0)}s] Tablas vaciadas`);
 }
 
-async function runData(log: string[], t0: number) {
-  const years = [2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026];
-  const stmts: { sql: string; args: string[] }[] = [];
+async function runYear(anio: number, log: string[], t0: number) {
+  const stmts = buildYearStatements(anio);
+  await db.batch(stmts);
+  log.push(`[${e(t0)}s] Año ${anio}: ${stmts.length} statements completados`);
+}
 
-  for (const anio of years) {
-    const d0 = `${anio}-01-01`;
-    const d1 = `${anio + 1}-01-01`;
-
-    stmts.push({
+function buildYearStatements(anio: number): { sql: string; args: string[] }[] {
+  const d0 = `${anio}-01-01`;
+  const d1 = `${anio + 1}-01-01`;
+  return [
+    {
       sql: `INSERT OR REPLACE INTO crm_resumen_mensual
              (anio, mes, facturacion, tickets, unidades, ticket_medio)
             SELECT
@@ -106,15 +115,14 @@ async function runData(log: string[], t0: number) {
             GROUP BY CAST(strftime('%Y',fecha) AS INTEGER),
                      CAST(strftime('%m',fecha) AS INTEGER)`,
       args: [d0, d1],
-    });
-
-    stmts.push({
+    },
+    {
       sql: `INSERT OR REPLACE INTO crm_vendedores_mensual
              (anio, mes, vendedor, tickets, facturacion, ticket_medio, unidades)
             SELECT
               CAST(strftime('%Y',fecha) AS INTEGER),
               CAST(strftime('%m',fecha) AS INTEGER),
-              COALESCE(vendedor_nombre,'Sin asignar'),
+              COALESCE(vendedor,'Sin asignar'),
               COUNT(*),
               ROUND(COALESCE(SUM(ABS(imp_neto)),0),2),
               ROUND(COALESCE(SUM(ABS(imp_neto)),0)/NULLIF(COUNT(*),0),2),
@@ -122,14 +130,13 @@ async function runData(log: string[], t0: number) {
             FROM ventas
             WHERE fecha >= ? AND fecha < ?
               AND es_cabecera=1
-              AND vendedor_nombre IS NOT NULL AND vendedor_nombre != ''
+              AND vendedor IS NOT NULL AND vendedor != ''
             GROUP BY CAST(strftime('%Y',fecha) AS INTEGER),
                      CAST(strftime('%m',fecha) AS INTEGER),
-                     vendedor_nombre`,
+                     vendedor`,
       args: [d0, d1],
-    });
-
-    stmts.push({
+    },
+    {
       sql: `INSERT OR REPLACE INTO crm_productos_mensual
              (anio, mes, codigo, descripcion, unidades, facturacion, tickets, pvp_medio)
             SELECT
@@ -139,7 +146,7 @@ async function runData(log: string[], t0: number) {
               COALESCE(MAX(descripcion),'Sin descripción'),
               COALESCE(SUM(unidades),0),
               ROUND(COALESCE(SUM(pvp*unidades),0),2),
-              COUNT(DISTINCT hash_linea),
+              COUNT(DISTINCT hash),
               ROUND(COALESCE(AVG(pvp),0),2)
             FROM ventas
             WHERE fecha >= ? AND fecha < ?
@@ -150,9 +157,8 @@ async function runData(log: string[], t0: number) {
                      CAST(strftime('%m',fecha) AS INTEGER),
                      codigo`,
       args: [d0, d1],
-    });
-
-    stmts.push({
+    },
+    {
       sql: `INSERT OR REPLACE INTO crm_segmentacion_mensual
              (anio, mes, tipo_pago, tickets, facturacion)
             SELECT
@@ -168,9 +174,14 @@ async function runData(log: string[], t0: number) {
                      CAST(strftime('%m',fecha) AS INTEGER),
                      tipo_pago`,
       args: [d0, d1],
-    });
-  }
+    },
+  ];
+}
 
+async function runData(log: string[], t0: number) {
+  const years = [2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026];
+  const stmts: { sql: string; args: string[] }[] = [];
+  for (const anio of years) stmts.push(...buildYearStatements(anio));
   await db.batch(stmts);
   log.push(`[${e(t0)}s] ${stmts.length} INSERTs completados`);
 }

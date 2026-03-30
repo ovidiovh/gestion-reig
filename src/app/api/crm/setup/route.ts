@@ -13,12 +13,12 @@ export async function POST() {
   const indices = [
     // Índice principal CRM: tipo + es_cabecera + fecha — cubre toda la WHERE clause
     `CREATE INDEX IF NOT EXISTS idx_ventas_crm ON ventas(tipo, es_cabecera, fecha)`,
-    // Vendedor — para GROUP BY vendedor_nombre
-    `CREATE INDEX IF NOT EXISTS idx_ventas_vendedor ON ventas(vendedor_nombre, fecha)`,
+    // Vendedor — para GROUP BY vendedor
+    `CREATE INDEX IF NOT EXISTS idx_ventas_vendedor ON ventas(vendedor, fecha)`,
     // Producto — para GROUP BY codigo
     `CREATE INDEX IF NOT EXISTS idx_ventas_codigo ON ventas(codigo, fecha)`,
-    // Cronograma — para GROUP BY dia_semana, hora
-    `CREATE INDEX IF NOT EXISTS idx_ventas_cronograma ON ventas(tipo, es_cabecera, fecha, dia_semana, hora)`,
+    // Fecha — para precalcular por año
+    `CREATE INDEX IF NOT EXISTS idx_ventas_fecha_cab ON ventas(fecha, es_cabecera)`,
   ];
 
   const results: { sql: string; ok: boolean; error?: string }[] = [];

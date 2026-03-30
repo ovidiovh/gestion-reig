@@ -5,14 +5,14 @@ import { query } from "./db";
 // ============================================================
 // Columnas reales en Turso:
 //   fecha, vendedor, codigo, descripcion, imp_bruto, imp_neto,
-//   pvp, cantidad, es_cabecera, tipo_pago, hash
+//   pvp, unidades, es_cabecera, tipo_pago
 //
 // CAB_WHERE (es_cabecera=1): una fila por ticket
 //   - Facturación: SUM(ABS(imp_neto))
 //   - Tickets:     COUNT(*)
 // DET_WHERE (es_cabecera=0): una fila por línea de producto
-//   - unidades:    SUM(cantidad)
-//   - total línea: pvp * cantidad
+//   - unidades:    SUM(unidades)
+//   - total línea: pvp * unidades
 
 const CAB_WHERE = `es_cabecera = 1`;
 const DET_WHERE = `es_cabecera = 0`;
@@ -89,16 +89,16 @@ export async function getTopVendedores(limit = 10) {
       unidades: number;
     }>(`
       SELECT
-        vendedor_nombre AS vendedor,
+        vendedor AS vendedor,
         COUNT(*) as tickets,
         ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) as facturacion,
         ROUND(COALESCE(SUM(ABS(imp_neto)), 0) / NULLIF(COUNT(*), 0), 2) as ticket_medio,
         0 as unidades
       FROM ventas
       WHERE ${CAB_WHERE}
-        AND vendedor_nombre IS NOT NULL
-        AND vendedor_nombre != ''
-      GROUP BY vendedor_nombre
+        AND vendedor IS NOT NULL
+        AND vendedor != ''
+      GROUP BY vendedor
       ORDER BY facturacion DESC
       LIMIT ?
     `, [limit]));
@@ -155,16 +155,16 @@ export async function getUltimasVentas(limit = 20) {
       vendedor: string;
       descripcion: string;
       pvp: number;
-      cantidad: number;
+      unidades: number;
       total: number;
     }>(`
       SELECT
         fecha,
         COALESCE(hash, '') as hash,
-        COALESCE(vendedor_nombre, '') as vendedor,
+        COALESCE(vendedor, '') as vendedor,
         COALESCE(descripcion, '') as descripcion,
         COALESCE(pvp, 0) as pvp,
-        COALESCE(unidades, 0) as cantidad,
+        COALESCE(unidades, 0) as unidades,
         ROUND(COALESCE(pvp * unidades, 0), 2) as total
       FROM ventas
       WHERE ${DET_WHERE}
@@ -192,7 +192,7 @@ export async function getTopProductos(limit = 15) {
         descripcion,
         COALESCE(SUM(unidades), 0) as unidades,
         ROUND(COALESCE(SUM(pvp * unidades), 0), 2) as facturacion,
-        COUNT(DISTINCT hash_linea) as tickets
+        COUNT(DISTINCT hash) as tickets
       FROM ventas
       WHERE ${DET_WHERE}
         AND codigo IS NOT NULL
