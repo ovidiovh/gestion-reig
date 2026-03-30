@@ -6,11 +6,10 @@ export const maxDuration = 60;
 export async function GET(req: NextRequest) {
   try {
     const params = req.nextUrl.searchParams;
-    const desde = params.get("desde") || new Date().getFullYear() + "-01-01";
-    const hasta = params.get("hasta") || new Date().toISOString().slice(0, 10);
+    const year = Number(params.get("year") || new Date().getFullYear());
     const orderBy = (params.get("orderBy") as "facturacion" | "unidades") || "facturacion";
     const limit = Number(params.get("limit") || 20);
-    const data = await getCrmProductos(desde, hasta, limit, orderBy);
+    const data = await getCrmProductos(year, limit, orderBy);
     return NextResponse.json(data);
   } catch (e) {
     console.error("[crm/productos]", e);

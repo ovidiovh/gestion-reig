@@ -6,9 +6,8 @@ export const maxDuration = 60;
 export async function GET(req: NextRequest) {
   try {
     const params = req.nextUrl.searchParams;
-    const desde = params.get("desde") || new Date().getFullYear() + "-01-01";
-    const hasta = params.get("hasta") || new Date().toISOString().slice(0, 10);
-    const data = await getCrmVendedores(desde, hasta);
+    const year = Number(params.get("year") || new Date().getFullYear());
+    const data = await getCrmVendedores(year);
     return NextResponse.json(data);
   } catch (e) {
     console.error("[crm/vendedores]", e);

@@ -246,7 +246,7 @@ const MES_RANGE = `
 `;
 
 /* ── KPIs resumen ── */
-export async function getCrmResumen(desde: string, hasta: string) {
+export async function getCrmResumen(year: number) {
   try {
     const [row] = await withTimeout(query<{
       facturacion: number;
@@ -258,8 +258,8 @@ export async function getCrmResumen(desde: string, hasta: string) {
         COALESCE(SUM(tickets), 0)               AS tickets,
         COALESCE(SUM(unidades), 0)              AS unidades
       FROM crm_resumen_mensual
-      WHERE ${MES_RANGE}
-    `, [desde, hasta]));
+      WHERE anio = ?
+    `, [year]));
 
     const facturacion  = Number(row?.facturacion || 0);
     const tickets      = Number(row?.tickets     || 0);
@@ -276,7 +276,7 @@ export async function getCrmResumen(desde: string, hasta: string) {
 }
 
 /* ── Tendencia mensual ── */
-export async function getCrmTendencia(desde: string, hasta: string) {
+export async function getCrmTendencia(year: number) {
   try {
     return await withTimeout(query<{
       mes: string;
@@ -290,9 +290,9 @@ export async function getCrmTendencia(desde: string, hasta: string) {
         COALESCE(tickets, 0)                    AS tickets,
         ROUND(COALESCE(ticket_medio, 0), 2)     AS ticket_medio
       FROM crm_resumen_mensual
-      WHERE ${MES_RANGE}
-      ORDER BY anio, mes
-    `, [desde, hasta]));
+      WHERE anio = ?
+      ORDER BY mes
+    `, [year]));
   } catch (e) {
     console.error("[crm] getCrmTendencia:", e);
     return [];
@@ -324,7 +324,7 @@ export async function getCrmComparativa() {
 }
 
 /* ── Ranking de vendedores ── */
-export async function getCrmVendedores(desde: string, hasta: string) {
+export async function getCrmVendedores(year: number) {
   try {
     return await withTimeout(query<{
       vendedor: string;
@@ -342,10 +342,10 @@ export async function getCrmVendedores(desde: string, hasta: string) {
         COALESCE(SUM(unidades), 0)                                     AS unidades,
         0.0                                                            AS pct_receta
       FROM crm_vendedores_mensual
-      WHERE ${MES_RANGE}
+      WHERE anio = ?
       GROUP BY vendedor
       ORDER BY facturacion DESC
-    `, [desde, hasta]));
+    `, [year]));
   } catch (e) {
     console.error("[crm] getCrmVendedores:", e);
     return [];
@@ -354,8 +354,7 @@ export async function getCrmVendedores(desde: string, hasta: string) {
 
 /* ── Top productos por facturación o unidades ── */
 export async function getCrmProductos(
-  desde: string,
-  hasta: string,
+  year: number,
   limit = 20,
   orderBy: "facturacion" | "unidades" = "facturacion"
 ) {
@@ -377,11 +376,11 @@ export async function getCrmProductos(
         SUM(tickets)                               AS tickets,
         ROUND(COALESCE(AVG(pvp_medio), 0), 2)      AS pvp_medio
       FROM crm_productos_mensual
-      WHERE ${MES_RANGE}
+      WHERE anio = ?
       GROUP BY codigo
       ORDER BY ${order}
       LIMIT ?
-    `, [desde, hasta, limit]));
+    `, [year, limit]));
   } catch (e) {
     console.error("[crm] getCrmProductos:", e);
     return [];
@@ -394,7 +393,7 @@ export async function getCrmCronograma(_desde: string, _hasta: string) {
 }
 
 /* ── Segmentación por tipo_pago ── */
-export async function getCrmSegmentacion(desde: string, hasta: string) {
+export async function getCrmSegmentacion(year: number) {
   try {
     const rows = await withTimeout(query<{
       tipo_pago: string;
@@ -406,10 +405,10 @@ export async function getCrmSegmentacion(desde: string, hasta: string) {
         SUM(tickets)                              AS tickets,
         ROUND(COALESCE(SUM(facturacion), 0), 2)   AS facturacion
       FROM crm_segmentacion_mensual
-      WHERE ${MES_RANGE}
+      WHERE anio = ?
       GROUP BY tipo_pago
       ORDER BY facturacion DESC
-    `, [desde, hasta]));
+    `, [year]));
 
     const byTipo = rows.map(r => ({ tipo: r.tipo_pago, tickets: r.tickets, facturacion: r.facturacion }));
     const byPago = rows.slice(0, 8).map(r => ({ tipo_pago: r.tipo_pago, tickets: r.tickets, facturacion: r.facturacion }));
