@@ -8,10 +8,14 @@ export const maxDuration = 300;
  * GET /api/crm/precalcular?debug=columns → PRAGMA table_info(ventas) + muestra
  * GET /api/crm/precalcular?debug=sample  → 3 filas de ventas para ver formato de fecha
  *
- * POST /api/crm/precalcular?step=index       → crea tablas e índice (1-2s)
- * POST /api/crm/precalcular?step=data&year=N → inserta un año concreto (5-15s con índice)
- * POST /api/crm/precalcular?step=data        → inserta todos los años
- * POST /api/crm/precalcular?step=all         → crea tablas y inserta todos los años
+ * POST /api/crm/precalcular?step=index             → crea tablas e índice (1-2s)
+ * POST /api/crm/precalcular?step=data&year=N       → inserta un año concreto (5-15s con índice)
+ * POST /api/crm/precalcular?step=data&year=N&month=M → inserta un solo mes concreto
+ * POST /api/crm/precalcular?step=data               → inserta todos los años
+ * POST /api/crm/precalcular?step=all                → crea tablas y inserta todos los años
+ *
+ * NOTA: El DELETE es siempre por año+mes, nunca global. Si el proceso falla
+ *       a mitad, los meses ya calculados se conservan intactos.
  */
 
 export async function GET(req: NextRequest) {
@@ -101,7 +105,34 @@ export async function GET(req: NextRequest) {
       counts[t] = "no existe";
     }
   }
-  return NextResponse.json({ ok: true, counts });
+
+  // Desglose por año en crm_resumen_mensual
+  let porAnio: { anio: number; meses: number; facturacion: number }[] = [];
+  try {
+    const r = await db.execute(
+      `SELECT anio, COUNT(*) AS meses, ROUND(SUM(facturacion),2) AS facturacion
+       FROM crm_resumen_mensual GROUP BY anio ORDER BY anio`
+    );
+    porAnio = r.rows.map((row) => ({
+      anio: Number(row[0]),
+      meses: Number(row[1]),
+      facturacion: Number(row[2]),
+    }));
+  } catch { /* tabla no existe */ }
+
+  // Verificar qué años tienen datos en ventas
+  let ventasPorAnio: { anio: string; filas: number }[] = [];
+  try {
+    const r = await db.execute(
+      `SELECT strftime('%Y', fecha) AS anio, COUNT(*) AS n FROM ventas GROUP BY anio ORDER BY anio`
+    );
+    ventasPorAnio = r.rows.map((row) => ({
+      anio: String(row[0]),
+      filas: Number(row[1]),
+    }));
+  } catch { /* tabla no existe */ }
+
+  return NextResponse.json({ ok: true, counts, resumen_por_anio: porAnio, ventas_por_anio: ventasPorAnio });
 }
 
 // ── Datos KPI verificados del JSON (fuente: programa gestión farmacia) ───
@@ -173,15 +204,29 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const monthParam = req.nextUrl.searchParams.get("month");
+  const TIMEOUT_PER_MONTH_MS = 30_000; // 30s por mes
+
   try {
     if (step === "all" || step === "index") {
       await runIndex(log, t0);
     }
     if (step === "all" || step === "data") {
-      if (yearParam) {
-        await runYear(parseInt(yearParam), log, errors, t0);
+      if (yearParam && monthParam) {
+        // Modo mes concreto: ?year=2026&month=3
+        await runMonth(parseInt(yearParam), parseInt(monthParam), log, errors, t0, TIMEOUT_PER_MONTH_MS);
+      } else if (yearParam) {
+        // Modo año completo: ?year=2026 (mes a mes con timeout)
+        const result = await runYear(parseInt(yearParam), log, errors, t0, TIMEOUT_PER_MONTH_MS);
+        if (result.timedOut) {
+          log.push(`[${e(t0)}s] ⚠ Timeout: se completaron ${result.completedMonths}/12 meses`);
+        }
       } else {
-        await runData(log, errors, t0);
+        // Modo completo: todos los años
+        const result = await runData(log, errors, t0, TIMEOUT_PER_MONTH_MS);
+        if (result.timedOut) {
+          log.push(`[${e(t0)}s] ⚠ Timeout: proceso incompleto, hay meses pendientes`);
+        }
       }
     }
 
@@ -203,8 +248,9 @@ export async function POST(req: NextRequest) {
       `productos:${counts.productos} segmentacion:${counts.segmentacion}`
     );
 
-    const ok = errors.length === 0;
-    return NextResponse.json({ ok, step, counts, log, errors });
+    const hasTimeout = log.some((l) => l.includes("⚠ Timeout"));
+    const ok = errors.length === 0 && !hasTimeout;
+    return NextResponse.json({ ok, step, counts, log, errors, timedOut: hasTimeout });
   } catch (err) {
     console.error("[crm/precalcular]", err);
     return NextResponse.json(
@@ -217,7 +263,7 @@ export async function POST(req: NextRequest) {
 // ── Creación de tablas e índice ──────────────────────────────────────────────
 
 async function runIndex(log: string[], t0: number) {
-  // Crear tablas
+  // Crear tablas e índice (sin borrar datos — el DELETE se hace por mes)
   for (const sql of [
     `CREATE TABLE IF NOT EXISTS crm_resumen_mensual (
       anio INTEGER NOT NULL, mes INTEGER NOT NULL,
@@ -242,43 +288,64 @@ async function runIndex(log: string[], t0: number) {
   ]) {
     await db.execute(sql);
   }
-  log.push(`[${e(t0)}s] Tablas e índice creados`);
+  log.push(`[${e(t0)}s] Tablas e índice OK (sin borrado global)`);
+}
 
-  // Vaciar tablas
-  for (const sql of [
-    `DELETE FROM crm_resumen_mensual`,
-    `DELETE FROM crm_vendedores_mensual`,
-    `DELETE FROM crm_productos_mensual`,
-    `DELETE FROM crm_segmentacion_mensual`,
-  ]) {
-    const r = await db.execute(sql);
-    log.push(`[${e(t0)}s] DELETE ${sql.split(' ')[2]}: ${r.rowsAffected} filas eliminadas`);
+// ── Borrado seguro por año+mes (solo borra el mes que vamos a recalcular) ───
+
+async function deleteMonth(anio: number, mes: number, log: string[], t0: number) {
+  const tables = [
+    "crm_resumen_mensual",
+    "crm_vendedores_mensual",
+    "crm_productos_mensual",
+    "crm_segmentacion_mensual",
+  ];
+  for (const table of tables) {
+    const r = await db.execute({
+      sql: `DELETE FROM ${table} WHERE anio = ? AND mes = ?`,
+      args: [anio, mes],
+    });
+    if (r.rowsAffected > 0) {
+      log.push(`[${e(t0)}s] DELETE ${table} ${anio}-${String(mes).padStart(2, "0")}: ${r.rowsAffected} filas`);
+    }
   }
 }
 
-// ── Inserción por año ────────────────────────────────────────────────────────
+// ── Precálculo de un solo mes (DELETE + INSERT atómico por mes) ──────────────
 
-async function runYear(
+async function runMonth(
   anio: number,
+  mes: number,
   log: string[],
   errors: string[],
-  t0: number
-) {
-  const d0 = `${anio}-01-01`;
-  const d1 = `${anio + 1}-01-01`;
+  t0: number,
+  timeoutMs: number
+): Promise<{ timedOut: boolean }> {
+  const mStr = String(mes).padStart(2, "0");
+  const d0 = `${anio}-${mStr}-01`;
+  // Primer día del mes siguiente
+  const nextMonth = mes === 12 ? 1 : mes + 1;
+  const nextYear = mes === 12 ? anio + 1 : anio;
+  const d1 = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
 
-  // Pre-check: cuántas filas hay para este año
+  const monthStart = Date.now();
+
+  // Pre-check
   const precheck = await db.execute({
     sql: `SELECT COUNT(*) AS n FROM ventas WHERE fecha >= ? AND fecha < ?`,
     args: [d0, d1],
   });
-  const rowsInYear = Number(precheck.rows[0]?.[0] ?? 0);
-  log.push(`[${e(t0)}s] Año ${anio}: ${rowsInYear} filas en ventas`);
+  const rowsInMonth = Number(precheck.rows[0]?.[0] ?? 0);
 
-  if (rowsInYear === 0) {
-    log.push(`[${e(t0)}s] Año ${anio}: sin datos, saltando`);
-    return;
+  if (rowsInMonth === 0) {
+    log.push(`[${e(t0)}s] ${anio}-${mStr}: sin datos, saltando`);
+    return { timedOut: false };
   }
+
+  log.push(`[${e(t0)}s] ${anio}-${mStr}: ${rowsInMonth} filas en ventas`);
+
+  // Borrar datos existentes de este mes concreto
+  await deleteMonth(anio, mes, log, t0);
 
   const stmts: { label: string; sql: string; args: string[] }[] = [
     {
@@ -363,23 +430,85 @@ async function runYear(
   ];
 
   for (const stmt of stmts) {
+    // Check timeout antes de cada INSERT
+    if (Date.now() - monthStart > timeoutMs) {
+      const msg = `TIMEOUT ${stmt.label} ${anio}-${mStr}: superó ${timeoutMs / 1000}s`;
+      log.push(`[${e(t0)}s] ${msg}`);
+      errors.push(msg);
+      return { timedOut: true };
+    }
     try {
       const r = await db.execute({ sql: stmt.sql, args: stmt.args });
-      log.push(`[${e(t0)}s] ${stmt.label} año ${anio}: ${r.rowsAffected} filas insertadas`);
+      log.push(`[${e(t0)}s] ${stmt.label} ${anio}-${mStr}: ${r.rowsAffected} filas`);
     } catch (err) {
-      const msg = `ERROR ${stmt.label} año ${anio}: ${String(err)}`;
+      const msg = `ERROR ${stmt.label} ${anio}-${mStr}: ${String(err)}`;
       log.push(`[${e(t0)}s] ${msg}`);
       errors.push(msg);
     }
   }
+
+  log.push(`[${e(t0)}s] ${anio}-${mStr} completado en ${((Date.now() - monthStart) / 1000).toFixed(1)}s`);
+  return { timedOut: false };
 }
 
-async function runData(log: string[], errors: string[], t0: number) {
+// ── Inserción por año (mes a mes) ───────────────────────────────────────────
+
+async function runYear(
+  anio: number,
+  log: string[],
+  errors: string[],
+  t0: number,
+  timeoutMs: number
+): Promise<{ timedOut: boolean; completedMonths: number }> {
+  // Pre-check: cuántas filas hay para este año
+  const d0 = `${anio}-01-01`;
+  const d1 = `${anio + 1}-01-01`;
+  const precheck = await db.execute({
+    sql: `SELECT COUNT(*) AS n FROM ventas WHERE fecha >= ? AND fecha < ?`,
+    args: [d0, d1],
+  });
+  const rowsInYear = Number(precheck.rows[0]?.[0] ?? 0);
+  log.push(`[${e(t0)}s] Año ${anio}: ${rowsInYear} filas totales en ventas`);
+
+  if (rowsInYear === 0) {
+    log.push(`[${e(t0)}s] Año ${anio}: sin datos, saltando`);
+    return { timedOut: false, completedMonths: 0 };
+  }
+
+  let completedMonths = 0;
+  for (let mes = 1; mes <= 12; mes++) {
+    // Check timeout global (maxDuration - margen de seguridad)
+    if (Date.now() - t0 > 250_000) {
+      log.push(`[${e(t0)}s] ⚠ Timeout global alcanzado en año ${anio}, mes ${mes}`);
+      return { timedOut: true, completedMonths };
+    }
+
+    const result = await runMonth(anio, mes, log, errors, t0, timeoutMs);
+    if (result.timedOut) {
+      return { timedOut: true, completedMonths };
+    }
+    completedMonths++;
+  }
+
+  log.push(`[${e(t0)}s] Año ${anio}: 12 meses completados`);
+  return { timedOut: false, completedMonths };
+}
+
+async function runData(
+  log: string[],
+  errors: string[],
+  t0: number,
+  timeoutMs: number
+): Promise<{ timedOut: boolean }> {
   const years = [2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026];
   for (const anio of years) {
-    await runYear(anio, log, errors, t0);
+    const result = await runYear(anio, log, errors, t0, timeoutMs);
+    if (result.timedOut) {
+      return { timedOut: true };
+    }
   }
   log.push(`[${e(t0)}s] Todos los años procesados`);
+  return { timedOut: false };
 }
 
 function e(t0: number) {
