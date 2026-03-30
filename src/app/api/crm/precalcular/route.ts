@@ -105,11 +105,11 @@ function buildYearStatements(anio: number): { sql: string; args: string[] }[] {
             SELECT
               CAST(strftime('%Y',fecha) AS INTEGER),
               CAST(strftime('%m',fecha) AS INTEGER),
-              ROUND(SUM(CASE WHEN es_cabecera=1 THEN ABS(imp_neto) ELSE 0 END),2),
-              SUM(CASE WHEN es_cabecera=1 THEN 1 ELSE 0 END),
-              COALESCE(SUM(CASE WHEN es_cabecera=0 THEN unidades ELSE 0 END),0),
-              ROUND(SUM(CASE WHEN es_cabecera=1 THEN ABS(imp_neto) ELSE 0 END)/
-                NULLIF(SUM(CASE WHEN es_cabecera=1 THEN 1 ELSE 0 END),0),2)
+              ROUND(SUM(CASE WHEN codigo IS NULL THEN ABS(imp_neto) ELSE 0 END),2),
+              SUM(CASE WHEN codigo IS NULL THEN 1 ELSE 0 END),
+              COALESCE(SUM(CASE WHEN codigo IS NOT NULL THEN unidades ELSE 0 END),0),
+              ROUND(SUM(CASE WHEN codigo IS NULL THEN ABS(imp_neto) ELSE 0 END)/
+                NULLIF(SUM(CASE WHEN codigo IS NULL THEN 1 ELSE 0 END),0),2)
             FROM ventas
             WHERE fecha >= ? AND fecha < ?
             GROUP BY CAST(strftime('%Y',fecha) AS INTEGER),
@@ -122,18 +122,18 @@ function buildYearStatements(anio: number): { sql: string; args: string[] }[] {
             SELECT
               CAST(strftime('%Y',fecha) AS INTEGER),
               CAST(strftime('%m',fecha) AS INTEGER),
-              COALESCE(vendedor,'Sin asignar'),
+              COALESCE(vendedor_nombre,'Sin asignar'),
               COUNT(*),
               ROUND(COALESCE(SUM(ABS(imp_neto)),0),2),
               ROUND(COALESCE(SUM(ABS(imp_neto)),0)/NULLIF(COUNT(*),0),2),
               0
             FROM ventas
             WHERE fecha >= ? AND fecha < ?
-              AND es_cabecera=1
-              AND vendedor IS NOT NULL AND vendedor != ''
+              AND codigo IS NULL
+              AND vendedor_nombre IS NOT NULL AND vendedor_nombre != ''
             GROUP BY CAST(strftime('%Y',fecha) AS INTEGER),
                      CAST(strftime('%m',fecha) AS INTEGER),
-                     vendedor`,
+                     vendedor_nombre`,
       args: [d0, d1],
     },
     {
@@ -146,11 +146,10 @@ function buildYearStatements(anio: number): { sql: string; args: string[] }[] {
               COALESCE(MAX(descripcion),'Sin descripción'),
               COALESCE(SUM(unidades),0),
               ROUND(COALESCE(SUM(pvp*unidades),0),2),
-              COUNT(DISTINCT hash),
+              COUNT(DISTINCT hash_linea),
               ROUND(COALESCE(AVG(pvp),0),2)
             FROM ventas
             WHERE fecha >= ? AND fecha < ?
-              AND es_cabecera=0
               AND codigo IS NOT NULL AND codigo != ''
               AND descripcion IS NOT NULL AND descripcion != ''
             GROUP BY CAST(strftime('%Y',fecha) AS INTEGER),
@@ -169,7 +168,7 @@ function buildYearStatements(anio: number): { sql: string; args: string[] }[] {
               ROUND(COALESCE(SUM(ABS(imp_neto)),0),2)
             FROM ventas
             WHERE fecha >= ? AND fecha < ?
-              AND es_cabecera=1
+              AND codigo IS NULL
             GROUP BY CAST(strftime('%Y',fecha) AS INTEGER),
                      CAST(strftime('%m',fecha) AS INTEGER),
                      tipo_pago`,

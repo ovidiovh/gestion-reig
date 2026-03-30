@@ -4,18 +4,21 @@ import { query } from "./db";
 // CRM QUERIES — Análisis de clientes desde tabla ventas
 // ============================================================
 // Columnas reales en Turso:
-//   fecha, vendedor, codigo, descripcion, imp_bruto, imp_neto,
-//   pvp, unidades, es_cabecera, tipo_pago
+//   id, fecha, hora, num_doc, vendedor_raw, vendedor_id,
+//   vendedor_nombre, tipo, tipo_pago, codigo, descripcion,
+//   ta, unidades, p_ant, pvp, imp_bruto, dto, imp_neto,
+//   a_cuenta, entrega, devolucion, rp, fact,
+//   fichero_origen, hash_linea
 //
-// CAB_WHERE (es_cabecera=1): una fila por ticket
+// CAB_WHERE (codigo IS NULL): una fila por ticket (cabecera)
 //   - Facturación: SUM(ABS(imp_neto))
 //   - Tickets:     COUNT(*)
-// DET_WHERE (es_cabecera=0): una fila por línea de producto
+// DET_WHERE (codigo IS NOT NULL): una fila por línea de producto
 //   - unidades:    SUM(unidades)
 //   - total línea: pvp * unidades
 
-const CAB_WHERE = `es_cabecera = 1`;
-const DET_WHERE = `es_cabecera = 0`;
+const CAB_WHERE = `codigo IS NULL`;
+const DET_WHERE = `codigo IS NOT NULL`;
 
 // Timeout: rechaza si Turso tarda más de 25 s
 function withTimeout<T>(p: Promise<T>, ms = 25_000): Promise<T> {
@@ -42,7 +45,7 @@ export async function getResumenBase() {
         COUNT(*) as total_ventas,
         MIN(fecha) as fecha_min,
         MAX(fecha) as fecha_max,
-        COUNT(DISTINCT vendedor) as total_vendedores
+        COUNT(DISTINCT vendedor_nombre) as total_vendedores
       FROM ventas
       WHERE ${CAB_WHERE}
     `));
@@ -89,16 +92,16 @@ export async function getTopVendedores(limit = 10) {
       unidades: number;
     }>(`
       SELECT
-        vendedor AS vendedor,
+        vendedor_nombre AS vendedor,
         COUNT(*) as tickets,
         ROUND(COALESCE(SUM(ABS(imp_neto)), 0), 2) as facturacion,
         ROUND(COALESCE(SUM(ABS(imp_neto)), 0) / NULLIF(COUNT(*), 0), 2) as ticket_medio,
         0 as unidades
       FROM ventas
       WHERE ${CAB_WHERE}
-        AND vendedor IS NOT NULL
-        AND vendedor != ''
-      GROUP BY vendedor
+        AND vendedor_nombre IS NOT NULL
+        AND vendedor_nombre != ''
+      GROUP BY vendedor_nombre
       ORDER BY facturacion DESC
       LIMIT ?
     `, [limit]));
@@ -141,7 +144,7 @@ export async function getVentasPorDia() {
   }
 }
 
-/* ── Ventas por franja horaria — no hay columna hora, retorna vacío ── */
+/* ── Ventas por franja horaria ── */
 export async function getVentasPorHora() {
   return [] as { franja: string; tickets: number; facturacion: number }[];
 }
@@ -160,8 +163,8 @@ export async function getUltimasVentas(limit = 20) {
     }>(`
       SELECT
         fecha,
-        COALESCE(hash, '') as hash,
-        COALESCE(vendedor, '') as vendedor,
+        COALESCE(hash_linea, '') as hash,
+        COALESCE(vendedor_nombre, '') as vendedor,
         COALESCE(descripcion, '') as descripcion,
         COALESCE(pvp, 0) as pvp,
         COALESCE(unidades, 0) as unidades,
@@ -192,7 +195,7 @@ export async function getTopProductos(limit = 15) {
         descripcion,
         COALESCE(SUM(unidades), 0) as unidades,
         ROUND(COALESCE(SUM(pvp * unidades), 0), 2) as facturacion,
-        COUNT(DISTINCT hash) as tickets
+        COUNT(DISTINCT hash_linea) as tickets
       FROM ventas
       WHERE ${DET_WHERE}
         AND codigo IS NOT NULL
