@@ -208,9 +208,9 @@ export async function POST(req: NextRequest) {
   const TIMEOUT_PER_MONTH_MS = 30_000; // 30s por mes
 
   try {
-    if (step === "all" || step === "index") {
-      await runIndex(log, t0);
-    }
+    // SIEMPRE asegurar que tablas e índices existen antes de procesar
+    await ensureIndexes(log, t0);
+    await runIndex(log, t0);
     if (step === "all" || step === "data") {
       if (yearParam && monthParam) {
         // Modo mes concreto: ?year=2026&month=3
@@ -260,10 +260,31 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// ── Creación de tablas e índice ──────────────────────────────────────────────
+// ── Índices en ventas (se ejecuta SIEMPRE antes de cualquier operación) ─────
+
+async function ensureIndexes(log: string[], t0: number) {
+  const indexes = [
+    // Índice principal: fecha + es_cabecera — cubre resumen, vendedores, segmentación
+    `CREATE INDEX IF NOT EXISTS idx_ventas_fecha_cab ON ventas(fecha, es_cabecera)`,
+    // Índice para productos: fecha + codigo
+    `CREATE INDEX IF NOT EXISTS idx_ventas_fecha_cod ON ventas(fecha, codigo)`,
+    // Índice simple por fecha (legacy, por si otros endpoints lo usan)
+    `CREATE INDEX IF NOT EXISTS idx_ventas_fecha ON ventas(fecha)`,
+  ];
+  for (const sql of indexes) {
+    try {
+      await db.execute(sql);
+    } catch {
+      // El índice ya puede existir — ignorar
+    }
+  }
+  log.push(`[${e(t0)}s] Índices en ventas OK`);
+}
+
+// ── Creación de tablas resumen ──────────────────────────────────────────────
 
 async function runIndex(log: string[], t0: number) {
-  // Crear tablas e índice (sin borrar datos — el DELETE se hace por mes)
+  // Crear tablas (sin borrar datos — el DELETE se hace por mes)
   for (const sql of [
     `CREATE TABLE IF NOT EXISTS crm_resumen_mensual (
       anio INTEGER NOT NULL, mes INTEGER NOT NULL,
@@ -284,11 +305,10 @@ async function runIndex(log: string[], t0: number) {
       anio INTEGER NOT NULL, mes INTEGER NOT NULL, tipo_pago TEXT NOT NULL,
       tickets INTEGER DEFAULT 0, facturacion REAL DEFAULT 0,
       PRIMARY KEY (anio, mes, tipo_pago))`,
-    `CREATE INDEX IF NOT EXISTS idx_ventas_fecha ON ventas(fecha)`,
   ]) {
     await db.execute(sql);
   }
-  log.push(`[${e(t0)}s] Tablas e índice OK (sin borrado global)`);
+  log.push(`[${e(t0)}s] Tablas resumen OK`);
 }
 
 // ── Borrado seguro por año+mes (solo borra el mes que vamos a recalcular) ───
