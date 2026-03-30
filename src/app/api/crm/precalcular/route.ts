@@ -104,13 +104,74 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ ok: true, counts });
 }
 
+// ── Datos KPI verificados del JSON (fuente: programa gestión farmacia) ───
+const KPI_DATA: Record<number, Array<{mes:number,facturacion:number,tickets:number,ticket_medio:number,pct_receta:number}>> = {
+  2025: [
+    {mes:1,facturacion:322852.93,tickets:9266,ticket_medio:34.84,pct_receta:77.4},
+    {mes:2,facturacion:328588.73,tickets:8819,ticket_medio:37.26,pct_receta:71.2},
+    {mes:3,facturacion:346528.67,tickets:9454,ticket_medio:36.65,pct_receta:72.9},
+    {mes:4,facturacion:366139.57,tickets:9571,ticket_medio:38.26,pct_receta:70.7},
+    {mes:5,facturacion:336224.31,tickets:8799,ticket_medio:38.21,pct_receta:72.7},
+    {mes:6,facturacion:339697.87,tickets:8915,ticket_medio:38.10,pct_receta:73.1},
+    {mes:7,facturacion:366041.75,tickets:9564,ticket_medio:38.27,pct_receta:72.2},
+    {mes:8,facturacion:309528.22,tickets:8312,ticket_medio:37.24,pct_receta:75.0},
+    {mes:9,facturacion:351277.83,tickets:8860,ticket_medio:39.65,pct_receta:69.6},
+    {mes:10,facturacion:337590.47,tickets:9456,ticket_medio:35.70,pct_receta:76.8},
+    {mes:11,facturacion:342945.74,tickets:8784,ticket_medio:39.04,pct_receta:68.1},
+    {mes:12,facturacion:358603.17,tickets:9142,ticket_medio:39.23,pct_receta:71.2},
+  ],
+  2024: [
+    {mes:1,facturacion:302273.62,tickets:9432,ticket_medio:32.05,pct_receta:75.8},
+    {mes:2,facturacion:281765.51,tickets:8351,ticket_medio:33.74,pct_receta:77.9},
+    {mes:3,facturacion:287179.14,tickets:7843,ticket_medio:36.62,pct_receta:70.7},
+    {mes:4,facturacion:318270.22,tickets:8892,ticket_medio:35.79,pct_receta:78.5},
+    {mes:5,facturacion:328919.31,tickets:9082,ticket_medio:36.22,pct_receta:73.1},
+    {mes:6,facturacion:297585.70,tickets:8121,ticket_medio:36.64,pct_receta:75.0},
+    {mes:7,facturacion:322586.46,tickets:9059,ticket_medio:35.61,pct_receta:73.7},
+    {mes:8,facturacion:296223.34,tickets:8389,ticket_medio:35.31,pct_receta:76.7},
+    {mes:9,facturacion:283735.38,tickets:8051,ticket_medio:35.24,pct_receta:77.2},
+    {mes:10,facturacion:341705.49,tickets:9259,ticket_medio:36.91,pct_receta:72.9},
+    {mes:11,facturacion:306629.29,tickets:8384,ticket_medio:36.57,pct_receta:75.9},
+    {mes:12,facturacion:319809.96,tickets:8035,ticket_medio:39.80,pct_receta:70.8},
+  ],
+};
+
 export async function POST(req: NextRequest) {
   const yearParam = req.nextUrl.searchParams.get("year");
+  const source = req.nextUrl.searchParams.get("source");
   const defaultStep = yearParam ? "data" : "all";
   const step = req.nextUrl.searchParams.get("step") ?? defaultStep;
   const log: string[] = [];
   const errors: string[] = [];
   const t0 = Date.now();
+
+  // ── source=json: importar datos verificados del JSON ──────────────────
+  if (source === "json") {
+    try {
+      // Crear tablas si no existen
+      await runIndex(log, t0);
+
+      for (const [anioStr, meses] of Object.entries(KPI_DATA)) {
+        const anio = parseInt(anioStr);
+        // Borrar datos existentes de este año
+        await db.execute({ sql: `DELETE FROM crm_resumen_mensual WHERE anio = ?`, args: [anio] });
+
+        for (const m of meses) {
+          await db.execute({
+            sql: `INSERT INTO crm_resumen_mensual (anio, mes, facturacion, tickets, unidades, ticket_medio)
+                  VALUES (?, ?, ?, ?, 0, ?)`,
+            args: [anio, m.mes, m.facturacion, m.tickets, m.ticket_medio],
+          });
+        }
+        log.push(`[${e(t0)}s] Año ${anio}: ${meses.length} meses importados desde JSON`);
+      }
+
+      const r = await db.execute(`SELECT COUNT(*) AS n FROM crm_resumen_mensual`);
+      return NextResponse.json({ ok: true, source: "json", filas: Number(r.rows[0]?.[0] ?? 0), log });
+    } catch (err) {
+      return NextResponse.json({ ok: false, error: String(err), log }, { status: 500 });
+    }
+  }
 
   try {
     if (step === "all" || step === "index") {
