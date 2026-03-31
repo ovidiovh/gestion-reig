@@ -98,7 +98,7 @@ export default function DayViewPanel({
 
   // Bloques según horario (sin tener en cuenta vacaciones)
   const getScheduledBlocks = (emp: Empleado): [number, number][] => {
-    if (isWeekend) return [];
+    if (isWeekend || festivo) return [];
     if (isGuardia && guardiaSlots.length > 0) {
       const gs = guardiaSlots.find(s => s.empleado_id === emp.id);
       if (gs) {
@@ -232,7 +232,7 @@ export default function DayViewPanel({
         </div>
 
         {/* ── Grid de cuadritos ── */}
-        {!isWeekend ? (
+        {!isWeekend && !festivo ? (
           <div style={{ overflowX: "auto" }}>
             <div style={{ minWidth: 480 }}>
 
@@ -314,7 +314,7 @@ export default function DayViewPanel({
           </div>
         ) : (
           <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "20px 0" }}>
-            Día libre — fin de semana
+            {festivo ? `🎉 Festivo — ${festivo.nombre}` : "Día libre — fin de semana"}
           </div>
         )}
 

@@ -219,8 +219,11 @@ export default function RRHHPage() {
       if (size === "xs") {
         setMonth(m);
         setCalView("mes");
+      } else if (size === "full" && isG) {
+        // Días de guardia: abrir guardia directamente
+        openGuardia(ds);
       } else if (size === "full") {
-        // En vista mensual: click en cualquier día abre la vista diaria
+        // Otros días: abrir vista diaria
         setDayView(ds);
       } else if (size === "sm" && isG) {
         openGuardia(ds);
