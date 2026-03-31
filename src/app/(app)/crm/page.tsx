@@ -381,17 +381,24 @@ export default function CrmPage() {
     return periodoToRange(periodo);
   }, [periodo, customDesde, customHasta]);
 
-  // Helper seguro para fetch JSON con timeout de 9s
+  // Helper seguro para fetch JSON con timeout de 25s
   const safeFetch = useCallback(async <T,>(url: string, setter: (d: T) => void, setLoading: (v: boolean) => void) => {
     setLoading(true);
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 9000);
+    const t = setTimeout(() => ctrl.abort(), 25000);
     try {
       const r = await fetch(url, { signal: ctrl.signal });
       clearTimeout(t);
       const text = await r.text();
       let d: unknown;
-      try { d = JSON.parse(text); } catch { d = null; }
+      try { d = JSON.parse(text); } catch {
+        // Response no es JSON (posible página de error de Vercel)
+        if (!r.ok) {
+          console.error("[crm fetch] non-JSON response", url, r.status, text.slice(0, 200));
+          setFetchError(`Error ${r.status} en ${url.split("?")[0]}`);
+        }
+        return;
+      }
       if (!r.ok) {
         setFetchError(`Error ${r.status}: ${(d as Record<string,string>)?.error ?? url}`);
         return;
@@ -399,11 +406,13 @@ export default function CrmPage() {
       setter(d as T);
     } catch (e) {
       clearTimeout(t);
-      const msg = e instanceof Error && e.name === "AbortError"
-        ? "Timeout: la consulta tardó demasiado. Recarga la página."
-        : String(e);
-      setFetchError(msg);
-      console.error("[crm fetch]", url, e);
+      if (e instanceof Error && e.name === "AbortError") {
+        console.warn("[crm fetch] timeout", url);
+        // No bloquear toda la página por un timeout individual
+      } else {
+        setFetchError(String(e));
+        console.error("[crm fetch]", url, e);
+      }
     } finally {
       setLoading(false);
     }
