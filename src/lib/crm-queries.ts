@@ -267,9 +267,10 @@ export async function getCrmResumen(year: number) {
     const unidades     = Number(row?.unidades    || 0);
     const ticket_medio = tickets > 0 ? Math.round((facturacion / tickets) * 100) / 100 : 0;
 
-    // Receta vs libre desde segmentación precalculada
+    // Receta vs libre + cross-sell desde segmentación precalculada
     let fact_receta = 0;
     let tickets_receta = 0;
+    let tickets_cross = 0;
     try {
       const recetaRows = await withTimeout(query<{
         tipo_pago: string;
@@ -278,21 +279,24 @@ export async function getCrmResumen(year: number) {
       }>(`
         SELECT tipo_pago, SUM(facturacion) AS facturacion, SUM(tickets) AS tickets
         FROM crm_segmentacion_mensual
-        WHERE anio = ? AND tipo_pago IN ('__receta__', '__libre__')
+        WHERE anio = ? AND tipo_pago IN ('__receta__', '__libre__', '__cross__')
         GROUP BY tipo_pago
       `, [year]));
       for (const r of recetaRows) {
         if (r.tipo_pago === '__receta__') {
           fact_receta = Number(r.facturacion || 0);
           tickets_receta = Number(r.tickets || 0);
+        } else if (r.tipo_pago === '__cross__') {
+          tickets_cross = Number(r.tickets || 0);
         }
       }
     } catch { /* tabla puede no existir aún */ }
 
     const pct_receta = facturacion > 0 ? Math.round((fact_receta / facturacion) * 1000) / 10 : 0;
+    const pct_cross = tickets_receta > 0 ? Math.round((tickets_cross / tickets_receta) * 1000) / 10 : 0;
 
     return { facturacion, tickets, ticket_medio, unidades,
-             pct_receta, tickets_receta, tickets_cross: 0, pct_cross: 0 };
+             pct_receta, tickets_receta, tickets_cross, pct_cross };
   } catch (e) {
     console.error("[crm] getCrmResumen:", e);
     return { facturacion: 0, tickets: 0, ticket_medio: 0, unidades: 0,
@@ -365,7 +369,7 @@ export async function getCrmVendedores(year: number) {
         ROUND(COALESCE(SUM(facturacion), 0), 2)                        AS facturacion,
         ROUND(COALESCE(SUM(facturacion), 0) / NULLIF(SUM(tickets), 0), 2) AS ticket_medio,
         COALESCE(SUM(unidades), 0)                                     AS unidades,
-        0.0                                                            AS pct_receta
+        ROUND(COALESCE(SUM(pct_receta * unidades) / NULLIF(SUM(unidades), 0), 0), 1) AS pct_receta
       FROM crm_vendedores_mensual
       WHERE anio = ?
       GROUP BY vendedor

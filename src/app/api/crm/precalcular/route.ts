@@ -320,6 +320,7 @@ async function runIndex(log: string[], t0: number) {
       anio INTEGER NOT NULL, mes INTEGER NOT NULL, vendedor TEXT NOT NULL,
       tickets INTEGER DEFAULT 0, facturacion REAL DEFAULT 0,
       ticket_medio REAL DEFAULT 0, unidades REAL DEFAULT 0,
+      pct_receta REAL DEFAULT 0,
       PRIMARY KEY (anio, mes, vendedor))`,
     `CREATE TABLE IF NOT EXISTS crm_productos_mensual (
       anio INTEGER NOT NULL, mes INTEGER NOT NULL, codigo TEXT NOT NULL,
@@ -333,6 +334,11 @@ async function runIndex(log: string[], t0: number) {
   ]) {
     await db.execute(sql);
   }
+  // Migrar: añadir pct_receta si no existe (tablas ya creadas sin ella)
+  try {
+    await db.execute(`ALTER TABLE crm_vendedores_mensual ADD COLUMN pct_receta REAL DEFAULT 0`);
+  } catch { /* columna ya existe */ }
+
   log.push(`[${e(t0)}s] Tablas resumen OK`);
 }
 
@@ -444,7 +450,7 @@ async function runMonth(
     log.push(`[${e(t0)}s] resumen ${anio}-${mStr}: ${facturacion}€, ${tickets} tickets`);
   })) return { timedOut: true };
 
-  // ── 2. VENDEDORES ────────────────────────────────────────────────────────
+  // ── 2. VENDEDORES (con % receta) ──────────────────────────────────────────
   if (!await runStep("vendedores", async () => {
     const cabR = await db.execute({
       sql: `SELECT COALESCE(vendedor_nombre,'Sin asignar') AS v, COUNT(*) AS t
@@ -460,7 +466,8 @@ async function runMonth(
     const detR = await db.execute({
       sql: `SELECT COALESCE(vendedor_nombre,'Sin asignar') AS v,
               ROUND(COALESCE(SUM(pvp * unidades), 0), 2) AS fact,
-              COALESCE(SUM(unidades), 0) AS uds
+              COALESCE(SUM(unidades), 0) AS uds,
+              SUM(CASE WHEN es_receta = 1 THEN 1 ELSE 0 END) AS tickets_receta
             FROM ventas
             WHERE anio = ? AND mes = ? AND es_cabecera = 0 AND ${DET_FILTER}
               AND vendedor_nombre IS NOT NULL AND vendedor_nombre != ''
@@ -471,12 +478,14 @@ async function runMonth(
     let n = 0;
     for (const row of detR.rows) {
       const v = String(row[0]), f = Number(row[1]), u = Number(row[2]);
+      const tReceta = Number(row[3] ?? 0);
       const t = ticketsMap[v] || 0;
+      const pctReceta = u > 0 ? Math.round((tReceta / u) * 1000) / 10 : 0;
       await db.execute({
         sql: `INSERT OR REPLACE INTO crm_vendedores_mensual
-              (anio, mes, vendedor, tickets, facturacion, ticket_medio, unidades)
-              VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        args: [anio, mes, v, t, f, t > 0 ? Math.round((f / t) * 100) / 100 : 0, u],
+              (anio, mes, vendedor, tickets, facturacion, ticket_medio, unidades, pct_receta)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [anio, mes, v, t, f, t > 0 ? Math.round((f / t) * 100) / 100 : 0, u, pctReceta],
       });
       n++;
     }
@@ -557,6 +566,27 @@ async function runMonth(
       });
     }
     log.push(`[${e(t0)}s] receta ${anio}-${mStr}: ${r.rows.length} cat`);
+  })) return { timedOut: true };
+
+  // ── 6. CROSS-SELL (tickets con receta Y libre) ────────────────────────────
+  if (!await runStep("cross-sell", async () => {
+    const r = await db.execute({
+      sql: `SELECT COUNT(*) AS n FROM (
+              SELECT num_doc FROM ventas
+              WHERE anio = ? AND mes = ? AND es_cabecera = 0 AND ${DET_FILTER}
+              GROUP BY num_doc
+              HAVING SUM(CASE WHEN es_receta = 1 THEN 1 ELSE 0 END) > 0
+                 AND SUM(CASE WHEN es_receta = 0 THEN 1 ELSE 0 END) > 0
+            )`,
+      args: [anio, mes],
+    });
+    const crossTickets = Number(r.rows[0]?.[0] ?? 0);
+    await db.execute({
+      sql: `INSERT OR REPLACE INTO crm_segmentacion_mensual
+            (anio, mes, tipo_pago, tickets, facturacion) VALUES (?, ?, '__cross__', ?, 0)`,
+      args: [anio, mes, crossTickets],
+    });
+    log.push(`[${e(t0)}s] cross-sell ${anio}-${mStr}: ${crossTickets} tickets`);
   })) return { timedOut: true };
 
   log.push(`[${e(t0)}s] ${anio}-${mStr} OK en ${((Date.now() - monthStart) / 1000).toFixed(1)}s`);
