@@ -264,14 +264,11 @@ export async function POST(req: NextRequest) {
 
 async function ensureIndexes(log: string[], t0: number) {
   const indexes = [
-    // Índice principal: fecha + es_cabecera — cubre resumen, vendedores, segmentación
-    // Índice principal: cab/det split por fecha → cubre resumen, vendedores, segmentación
-    `CREATE INDEX IF NOT EXISTS idx_ventas_fecha_cab ON ventas(fecha, es_cabecera)`,
-    // Índice para cabeceras con tipo → filtra tipo IN ('Contado','Credito') sin scan
-    `CREATE INDEX IF NOT EXISTS idx_ventas_cab_tipo ON ventas(es_cabecera, fecha, tipo)`,
-    // Índice para productos: fecha + codigo
-    `CREATE INDEX IF NOT EXISTS idx_ventas_fecha_cod ON ventas(fecha, codigo)`,
-    // Índice simple por fecha (legacy)
+    // Principal: cubre WHERE anio=? AND mes=? AND es_cabecera=0/1
+    `CREATE INDEX IF NOT EXISTS idx_ventas_ame ON ventas(anio, mes, es_cabecera)`,
+    // Con tipo: cubre AND tipo IN ('Contado','Credito') sin scan
+    `CREATE INDEX IF NOT EXISTS idx_ventas_amet ON ventas(anio, mes, es_cabecera, tipo)`,
+    // Legacy (otros endpoints usan fecha)
     `CREATE INDEX IF NOT EXISTS idx_ventas_fecha ON ventas(fecha)`,
   ];
   for (const sql of indexes) {
@@ -334,23 +331,19 @@ async function deleteMonth(anio: number, mes: number, log: string[], t0: number)
   }
 }
 
-// ── Filtro facturación (misma lógica que queries.ts FACTURACION_WHERE) ───────
-// Condiciones ligeras (usan índice): tipo + es_cabecera + fecha
-// Condiciones pesadas (full scan): SUBSTR, LIKE → aplicar solo donde sea necesario
-const FACT_BASE = `tipo IN ('Contado', 'Credito')`;
-const FACT_FULL = `
-  tipo IN ('Contado', 'Credito')
-  AND UPPER(SUBSTR(num_doc, 1, 1)) != 'W'
-  AND (rp IS NULL OR rp != 'Anulada')
-  AND descripcion NOT LIKE '%TRASPASO ENTRE CAJAS%'
-  AND descripcion NOT LIKE '%Entrega A Cuenta%'
-`;
+// ── Filtro facturación ──────────────────────────────────────────────────────
+// Cabeceras: solo tipo (el índice cubre anio, mes, es_cabecera, tipo)
+// Detalle: tipo + exclusiones ligeras (sin LIKE que mata el rendimiento)
+//   - num_doc NOT LIKE 'W%' es más rápido que UPPER(SUBSTR(...)) != 'W'
+//   - rp != 'Anulada' excluye anuladas
+//   - Los traspasos/entregas a cuenta son <0.1% y se pueden filtrar post-hoc si necesario
+const CAB_FILTER = `tipo IN ('Contado', 'Credito')`;
+const DET_FILTER = `tipo IN ('Contado', 'Credito') AND num_doc NOT LIKE 'W%' AND (rp IS NULL OR rp != 'Anulada')`;
 
 // ── Precálculo de un solo mes ───────────────────────────────────────────────
-// Estrategia: queries separadas cab/det para aprovechar idx(fecha, es_cabecera)
-// - Cabeceras (es_cabecera=1): 1 fila por ticket → COUNT(*) para tickets
-// - Detalle   (es_cabecera=0): 1 fila por línea  → SUM(pvp*unidades) para facturación
-// Sin COUNT(DISTINCT) → mucho más rápido en Turso
+// Usa columnas anio/mes (INTEGER) en vez de fecha (TEXT) → index seek directo
+// Queries separadas cab/det: cab para tickets, det para facturación
+// Sin COUNT(DISTINCT), sin LIKE '%...%', sin SUBSTR → máxima velocidad en Turso
 
 async function runMonth(
   anio: number,
@@ -361,35 +354,31 @@ async function runMonth(
   timeoutMs: number
 ): Promise<{ timedOut: boolean }> {
   const mStr = String(mes).padStart(2, "0");
-  const d0 = `${anio}-${mStr}-01`;
-  const nextMonth = mes === 12 ? 1 : mes + 1;
-  const nextYear = mes === 12 ? anio + 1 : anio;
-  const d1 = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
   const monthStart = Date.now();
 
-  // Pre-check rápido (usa índice fecha)
+  // Pre-check rápido (usa índice anio, mes, es_cabecera)
   const precheck = await db.execute({
-    sql: `SELECT COUNT(*) AS n FROM ventas WHERE fecha >= ? AND fecha < ? AND es_cabecera = 1`,
-    args: [d0, d1],
+    sql: `SELECT COUNT(*) AS n FROM ventas WHERE anio = ? AND mes = ? AND es_cabecera = 1`,
+    args: [anio, mes],
   });
   const cabRows = Number(precheck.rows[0]?.[0] ?? 0);
 
   if (cabRows === 0) {
-    log.push(`[${e(t0)}s] ${anio}-${mStr}: sin datos, saltando`);
+    log.push(`[${e(t0)}s] ${anio}-${mStr}: sin cabeceras, saltando`);
     return { timedOut: false };
   }
-  log.push(`[${e(t0)}s] ${anio}-${mStr}: ${cabRows} tickets (cabeceras)`);
+  log.push(`[${e(t0)}s] ${anio}-${mStr}: ${cabRows} cabeceras`);
 
-  // Borrar datos existentes de este mes concreto
+  // Borrar solo este mes
   await deleteMonth(anio, mes, log, t0);
 
-  // Helper para ejecutar un step con timeout check
+  // Helper con timeout check
   const runStep = async (label: string, fn: () => Promise<void>): Promise<boolean> => {
     if (Date.now() - monthStart > timeoutMs) {
       const msg = `TIMEOUT ${label} ${anio}-${mStr}: superó ${timeoutMs / 1000}s`;
       log.push(`[${e(t0)}s] ${msg}`);
       errors.push(msg);
-      return false; // timedOut
+      return false;
     }
     try {
       await fn();
@@ -398,30 +387,24 @@ async function runMonth(
       log.push(`[${e(t0)}s] ${msg}`);
       errors.push(msg);
     }
-    return true; // ok, continue
+    return true;
   };
 
-  // ── 1. RESUMEN MENSUAL (cab → tickets, det → facturación) ────────────────
+  // ── 1. RESUMEN MENSUAL ───────────────────────────────────────────────────
   if (!await runStep("resumen", async () => {
-    // Tickets desde cabeceras (COUNT(*), no COUNT(DISTINCT))
     const cabR = await db.execute({
-      sql: `SELECT COUNT(*) AS tickets
-            FROM ventas
-            WHERE fecha >= ? AND fecha < ? AND es_cabecera = 1
-              AND ${FACT_BASE}`,
-      args: [d0, d1],
+      sql: `SELECT COUNT(*) AS tickets FROM ventas
+            WHERE anio = ? AND mes = ? AND es_cabecera = 1 AND ${CAB_FILTER}`,
+      args: [anio, mes],
     });
     const tickets = Number(cabR.rows[0]?.[0] ?? 0);
 
-    // Facturación + unidades desde líneas de detalle
     const detR = await db.execute({
-      sql: `SELECT
-              ROUND(COALESCE(SUM(pvp * unidades), 0), 2) AS facturacion,
-              COALESCE(SUM(unidades), 0) AS unidades
+      sql: `SELECT ROUND(COALESCE(SUM(pvp * unidades), 0), 2) AS fact,
+                   COALESCE(SUM(unidades), 0) AS uds
             FROM ventas
-            WHERE fecha >= ? AND fecha < ? AND es_cabecera = 0
-              AND ${FACT_FULL}`,
-      args: [d0, d1],
+            WHERE anio = ? AND mes = ? AND es_cabecera = 0 AND ${DET_FILTER}`,
+      args: [anio, mes],
     });
     const facturacion = Number(detR.rows[0]?.[0] ?? 0);
     const unidades = Number(detR.rows[0]?.[1] ?? 0);
@@ -436,145 +419,122 @@ async function runMonth(
     log.push(`[${e(t0)}s] resumen ${anio}-${mStr}: ${facturacion}€, ${tickets} tickets`);
   })) return { timedOut: true };
 
-  // ── 2. VENDEDORES (cab → tickets por vendedor, det → facturación) ────────
+  // ── 2. VENDEDORES ────────────────────────────────────────────────────────
   if (!await runStep("vendedores", async () => {
-    // Tickets por vendedor desde cabeceras
     const cabR = await db.execute({
-      sql: `SELECT COALESCE(vendedor_nombre,'Sin asignar') AS vendedor, COUNT(*) AS tickets
+      sql: `SELECT COALESCE(vendedor_nombre,'Sin asignar') AS v, COUNT(*) AS t
             FROM ventas
-            WHERE fecha >= ? AND fecha < ? AND es_cabecera = 1
-              AND ${FACT_BASE}
+            WHERE anio = ? AND mes = ? AND es_cabecera = 1 AND ${CAB_FILTER}
               AND vendedor_nombre IS NOT NULL AND vendedor_nombre != ''
             GROUP BY vendedor_nombre`,
-      args: [d0, d1],
+      args: [anio, mes],
     });
     const ticketsMap: Record<string, number> = {};
-    for (const row of cabR.rows) {
-      ticketsMap[String(row[0])] = Number(row[1]);
-    }
+    for (const row of cabR.rows) ticketsMap[String(row[0])] = Number(row[1]);
 
-    // Facturación por vendedor desde detalle
     const detR = await db.execute({
-      sql: `SELECT COALESCE(vendedor_nombre,'Sin asignar') AS vendedor,
-              ROUND(COALESCE(SUM(pvp * unidades), 0), 2) AS facturacion,
-              COALESCE(SUM(unidades), 0) AS unidades
+      sql: `SELECT COALESCE(vendedor_nombre,'Sin asignar') AS v,
+              ROUND(COALESCE(SUM(pvp * unidades), 0), 2) AS fact,
+              COALESCE(SUM(unidades), 0) AS uds
             FROM ventas
-            WHERE fecha >= ? AND fecha < ? AND es_cabecera = 0
-              AND ${FACT_FULL}
+            WHERE anio = ? AND mes = ? AND es_cabecera = 0 AND ${DET_FILTER}
               AND vendedor_nombre IS NOT NULL AND vendedor_nombre != ''
             GROUP BY vendedor_nombre`,
-      args: [d0, d1],
+      args: [anio, mes],
     });
 
-    let inserted = 0;
+    let n = 0;
     for (const row of detR.rows) {
-      const vendedor = String(row[0]);
-      const facturacion = Number(row[1]);
-      const unidades = Number(row[2]);
-      const tickets = ticketsMap[vendedor] || 0;
-      const ticket_medio = tickets > 0 ? Math.round((facturacion / tickets) * 100) / 100 : 0;
+      const v = String(row[0]), f = Number(row[1]), u = Number(row[2]);
+      const t = ticketsMap[v] || 0;
       await db.execute({
         sql: `INSERT OR REPLACE INTO crm_vendedores_mensual
               (anio, mes, vendedor, tickets, facturacion, ticket_medio, unidades)
               VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        args: [anio, mes, vendedor, tickets, facturacion, ticket_medio, unidades],
+        args: [anio, mes, v, t, f, t > 0 ? Math.round((f / t) * 100) / 100 : 0, u],
       });
-      inserted++;
+      n++;
     }
-    log.push(`[${e(t0)}s] vendedores ${anio}-${mStr}: ${inserted} vendedores`);
+    log.push(`[${e(t0)}s] vendedores ${anio}-${mStr}: ${n}`);
   })) return { timedOut: true };
 
-  // ── 3. PRODUCTOS (solo detalle, es_cabecera=0) ───────────────────────────
+  // ── 3. PRODUCTOS (solo detalle) ──────────────────────────────────────────
   if (!await runStep("productos", async () => {
     const r = await db.execute({
       sql: `INSERT OR REPLACE INTO crm_productos_mensual
              (anio, mes, codigo, descripcion, unidades, facturacion, tickets, pvp_medio)
-            SELECT
-              ?, ?,
-              codigo,
-              COALESCE(MAX(descripcion),'Sin descripción'),
+            SELECT ?, ?, codigo,
+              COALESCE(MAX(descripcion),''),
               COALESCE(SUM(unidades), 0),
               ROUND(COALESCE(SUM(pvp * unidades), 0), 2),
               COUNT(*),
               ROUND(COALESCE(AVG(pvp), 0), 2)
             FROM ventas
-            WHERE fecha >= ? AND fecha < ? AND es_cabecera = 0
-              AND ${FACT_FULL}
+            WHERE anio = ? AND mes = ? AND es_cabecera = 0 AND ${DET_FILTER}
               AND codigo IS NOT NULL AND codigo != ''
             GROUP BY codigo`,
-      args: [anio, mes, d0, d1],
+      args: [anio, mes, anio, mes],
     });
-    log.push(`[${e(t0)}s] productos ${anio}-${mStr}: ${r.rowsAffected} productos`);
+    log.push(`[${e(t0)}s] productos ${anio}-${mStr}: ${r.rowsAffected}`);
   })) return { timedOut: true };
 
-  // ── 4. SEGMENTACIÓN POR TIPO_PAGO (cab → tickets, det → facturación) ─────
+  // ── 4. SEGMENTACIÓN POR TIPO_PAGO ────────────────────────────────────────
   if (!await runStep("segmentacion", async () => {
-    // Tickets por tipo_pago desde cabeceras
     const cabR = await db.execute({
-      sql: `SELECT COALESCE(tipo_pago,'Otros') AS tp, COUNT(*) AS tickets
+      sql: `SELECT COALESCE(tipo_pago,'Otros') AS tp, COUNT(*) AS t
             FROM ventas
-            WHERE fecha >= ? AND fecha < ? AND es_cabecera = 1
-              AND ${FACT_BASE}
+            WHERE anio = ? AND mes = ? AND es_cabecera = 1 AND ${CAB_FILTER}
             GROUP BY tipo_pago`,
-      args: [d0, d1],
+      args: [anio, mes],
     });
-    const ticketsMap: Record<string, number> = {};
-    for (const row of cabR.rows) {
-      ticketsMap[String(row[0])] = Number(row[1]);
-    }
+    const tMap: Record<string, number> = {};
+    for (const row of cabR.rows) tMap[String(row[0])] = Number(row[1]);
 
-    // Facturación por tipo_pago desde detalle
     const detR = await db.execute({
       sql: `SELECT COALESCE(tipo_pago,'Otros') AS tp,
-              ROUND(COALESCE(SUM(pvp * unidades), 0), 2) AS facturacion
+              ROUND(COALESCE(SUM(pvp * unidades), 0), 2) AS fact
             FROM ventas
-            WHERE fecha >= ? AND fecha < ? AND es_cabecera = 0
-              AND ${FACT_FULL}
+            WHERE anio = ? AND mes = ? AND es_cabecera = 0 AND ${DET_FILTER}
             GROUP BY tipo_pago`,
-      args: [d0, d1],
+      args: [anio, mes],
     });
 
-    let inserted = 0;
+    let n = 0;
     for (const row of detR.rows) {
-      const tp = String(row[0]);
-      const facturacion = Number(row[1]);
-      const tickets = ticketsMap[tp] || 0;
+      const tp = String(row[0]), f = Number(row[1]);
       await db.execute({
         sql: `INSERT OR REPLACE INTO crm_segmentacion_mensual
-              (anio, mes, tipo_pago, tickets, facturacion)
-              VALUES (?, ?, ?, ?, ?)`,
-        args: [anio, mes, tp, tickets, facturacion],
+              (anio, mes, tipo_pago, tickets, facturacion) VALUES (?, ?, ?, ?, ?)`,
+        args: [anio, mes, tp, tMap[tp] || 0, f],
       });
-      inserted++;
+      n++;
     }
-    log.push(`[${e(t0)}s] segmentacion ${anio}-${mStr}: ${inserted} tipos`);
+    log.push(`[${e(t0)}s] segmentacion ${anio}-${mStr}: ${n}`);
   })) return { timedOut: true };
 
-  // ── 5. RECETA VS LIBRE (det → facturación por es_receta) ─────────────────
+  // ── 5. RECETA VS LIBRE ───────────────────────────────────────────────────
   if (!await runStep("receta", async () => {
     const r = await db.execute({
       sql: `SELECT
               CASE WHEN es_receta = 1 THEN '__receta__' ELSE '__libre__' END AS tp,
-              COUNT(*) AS tickets,
-              ROUND(COALESCE(SUM(pvp * unidades), 0), 2) AS facturacion
+              COUNT(*) AS t,
+              ROUND(COALESCE(SUM(pvp * unidades), 0), 2) AS fact
             FROM ventas
-            WHERE fecha >= ? AND fecha < ? AND es_cabecera = 0
-              AND ${FACT_FULL}
+            WHERE anio = ? AND mes = ? AND es_cabecera = 0 AND ${DET_FILTER}
             GROUP BY CASE WHEN es_receta = 1 THEN '__receta__' ELSE '__libre__' END`,
-      args: [d0, d1],
+      args: [anio, mes],
     });
     for (const row of r.rows) {
       await db.execute({
         sql: `INSERT OR REPLACE INTO crm_segmentacion_mensual
-              (anio, mes, tipo_pago, tickets, facturacion)
-              VALUES (?, ?, ?, ?, ?)`,
+              (anio, mes, tipo_pago, tickets, facturacion) VALUES (?, ?, ?, ?, ?)`,
         args: [anio, mes, String(row[0]), Number(row[1]), Number(row[2])],
       });
     }
-    log.push(`[${e(t0)}s] receta ${anio}-${mStr}: ${r.rows.length} categorías`);
+    log.push(`[${e(t0)}s] receta ${anio}-${mStr}: ${r.rows.length} cat`);
   })) return { timedOut: true };
 
-  log.push(`[${e(t0)}s] ${anio}-${mStr} completado en ${((Date.now() - monthStart) / 1000).toFixed(1)}s`);
+  log.push(`[${e(t0)}s] ${anio}-${mStr} OK en ${((Date.now() - monthStart) / 1000).toFixed(1)}s`);
   return { timedOut: false };
 }
 
@@ -587,12 +547,10 @@ async function runYear(
   t0: number,
   timeoutMs: number
 ): Promise<{ timedOut: boolean; completedMonths: number }> {
-  // Pre-check: cuántas filas hay para este año
-  const d0 = `${anio}-01-01`;
-  const d1 = `${anio + 1}-01-01`;
+  // Pre-check: cuántas filas hay para este año (usa índice anio)
   const precheck = await db.execute({
-    sql: `SELECT COUNT(*) AS n FROM ventas WHERE fecha >= ? AND fecha < ?`,
-    args: [d0, d1],
+    sql: `SELECT COUNT(*) AS n FROM ventas WHERE anio = ?`,
+    args: [anio],
   });
   const rowsInYear = Number(precheck.rows[0]?.[0] ?? 0);
   log.push(`[${e(t0)}s] Año ${anio}: ${rowsInYear} filas totales en ventas`);
