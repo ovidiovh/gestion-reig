@@ -52,7 +52,7 @@ export interface Vacacion {
   fecha_inicio: string;
   fecha_fin: string;
   estado: "pend" | "conf" | "done";
-  tipo: "vac" | "comp";
+  tipo: "vac" | "comp" | "ap";
   nombre: string;
   farmaceutico: number;
 }

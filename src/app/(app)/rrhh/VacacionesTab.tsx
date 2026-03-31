@@ -17,11 +17,20 @@ const STATUS_COLOR: Record<string, string> = { done: GREEN, conf: "#3b82f6", pen
 const STATUS_LABEL: Record<string, string> = { done: "Disfrutado", conf: "Confirmado", pend: "Pendiente" };
 
 function VacStats(vacs: Vacacion[]) {
-  const vacOnly = vacs.filter(v => v.tipo !== "comp");
+  const vacOnly = vacs.filter(v => v.tipo === "vac");
   const done = vacOnly.filter(v => v.estado === "done").reduce((a, v) => a + daysBetween(v.fecha_inicio, v.fecha_fin), 0);
   const conf = vacOnly.filter(v => v.estado === "conf").reduce((a, v) => a + daysBetween(v.fecha_inicio, v.fecha_fin), 0);
   const pend = vacOnly.filter(v => v.estado === "pend").reduce((a, v) => a + daysBetween(v.fecha_inicio, v.fecha_fin), 0);
   return { done, conf, pend, avail: 30 - done - conf - pend };
+}
+
+// Asuntos propios: 2 días/año (XXV Convenio Colectivo Estatal de Oficinas de Farmacia, art. 37)
+function APStats(vacs: Vacacion[]) {
+  const apOnly = vacs.filter(v => v.tipo === "ap");
+  const done = apOnly.filter(v => v.estado === "done").reduce((a, v) => a + daysBetween(v.fecha_inicio, v.fecha_fin), 0);
+  const conf = apOnly.filter(v => v.estado === "conf").reduce((a, v) => a + daysBetween(v.fecha_inicio, v.fecha_fin), 0);
+  const pend = apOnly.filter(v => v.estado === "pend").reduce((a, v) => a + daysBetween(v.fecha_inicio, v.fecha_fin), 0);
+  return { done, conf, pend, avail: 2 - done - conf - pend };
 }
 
 function CompStats(vacs: Vacacion[], guardias: number) {
@@ -139,7 +148,7 @@ export default function VacacionesTab({
   const [desde, setDesde]     = useState("");
   const [hasta, setHasta]     = useState("");
   const [estado, setEstado]   = useState("pend");
-  const [tipoAdd, setTipoAdd] = useState<"vac" | "comp">("vac");
+  const [tipoAdd, setTipoAdd] = useState<"vac" | "comp" | "ap">("vac");
   const [saving, setSaving]   = useState(false);
 
   // ── Banco de horas ─────────────────────────────────────────────────────────
@@ -194,6 +203,7 @@ export default function VacacionesTab({
     const emp = empleados.find(e => e.id === selEmp)!;
     const empVacs = vacaciones.filter(v => v.empleado_id === selEmp);
     const st = VacStats(empVacs);
+    const ap = APStats(empVacs);
     const stat = guardiaStats.find(g => g.empleado_id === selEmp);
     const guardCount = effectiveGuardias(stat);
     const comp = CompStats(empVacs, guardCount);
@@ -238,6 +248,34 @@ export default function VacacionesTab({
           <div style={{ width: `${(st.done / 30) * 100}%`, background: GREEN }} />
           <div style={{ width: `${(st.conf / 30) * 100}%`, background: "#3b82f6" }} />
           <div style={{ width: `${(st.pend / 30) * 100}%`, background: "#f59e0b" }} />
+        </div>
+
+        {/* Asuntos propios (2 días/año — Convenio Oficinas de Farmacia) */}
+        <div style={{ padding: "14px 16px", background: "#faf5ff", borderRadius: 8, border: "1px solid #e9d5ff", marginBottom: 16 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, color: "#7c3aed", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>
+            Asuntos propios (2 días/año)
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginBottom: 8 }}>
+            {([
+              ["Total",       2,        "#333"],
+              ["Disfrutados", ap.done,  "#7c3aed"],
+              ["Reservados",  ap.conf + ap.pend, "#a78bfa"],
+              ["Disponibles", ap.avail, ap.avail <= 0 ? "#ef4444" : "#333"],
+            ] as [string, number, string][]).map(([l, v, c]) => (
+              <div key={l} style={{ textAlign: "center", padding: "8px 4px", background: "#fff", borderRadius: 8, border: "1px solid #ede9fe" }}>
+                <div style={{ fontSize: 20, fontWeight: 700, color: c, fontFamily: "'JetBrains Mono', monospace" }}>{v}</div>
+                <div style={{ fontSize: 8, color: "#6b7280", marginTop: 2 }}>{l}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden", background: "#eee" }}>
+            <div style={{ width: `${(ap.done / 2) * 100}%`, background: "#7c3aed" }} />
+            <div style={{ width: `${(ap.conf / 2) * 100}%`, background: "#a78bfa" }} />
+            <div style={{ width: `${(ap.pend / 2) * 100}%`, background: "#c4b5fd" }} />
+          </div>
+          <div style={{ fontSize: 9, color: "#6b7280", marginTop: 8 }}>
+            Art. 37 del XXV Convenio Colectivo Estatal de Oficinas de Farmacia. Registra días con tipo «Asuntos propios» abajo.
+          </div>
         </div>
 
         {/* Compensatorios — solo farmacéuticos */}
@@ -294,13 +332,12 @@ export default function VacacionesTab({
         {showAdd && (
           <div style={{ padding: 12, background: "#f9fafb", borderRadius: 8, border: "1px solid #e5e7eb", marginBottom: 10 }}>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const, alignItems: "center" }}>
-              {isFarma && (
-                <select value={tipoAdd} onChange={e => setTipoAdd(e.target.value as "vac" | "comp")}
-                  style={{ border: "1px solid #ddd", borderRadius: 4, padding: "3px 6px", fontSize: 10 }}>
-                  <option value="vac">Vacaciones</option>
-                  <option value="comp">Comp. guardia</option>
-                </select>
-              )}
+              <select value={tipoAdd} onChange={e => setTipoAdd(e.target.value as "vac" | "comp" | "ap")}
+                style={{ border: "1px solid #ddd", borderRadius: 4, padding: "3px 6px", fontSize: 10 }}>
+                <option value="vac">Vacaciones</option>
+                <option value="ap">Asuntos propios</option>
+                {isFarma && <option value="comp">Comp. guardia</option>}
+              </select>
               <label style={{ fontSize: 10, color: "#666" }}>
                 Desde:&nbsp;
                 <input type="date" value={desde} onChange={e => setDesde(e.target.value)}
@@ -311,7 +348,7 @@ export default function VacacionesTab({
                 <input type="date" value={hasta} onChange={e => setHasta(e.target.value)}
                   style={{ border: "1px solid #ddd", borderRadius: 4, padding: "3px 6px", fontSize: 10 }} />
               </label>
-              {tipoAdd === "vac" && (
+              {(tipoAdd === "vac" || tipoAdd === "ap") && (
                 <select value={estado} onChange={e => setEstado(e.target.value)}
                   style={{ border: "1px solid #ddd", borderRadius: 4, padding: "3px 6px", fontSize: 10 }}>
                   <option value="pend">Pedidas</option>
@@ -332,11 +369,21 @@ export default function VacacionesTab({
         )}
 
         {/* Vacaciones ordinarias */}
-        {empVacs.filter(v => v.tipo !== "comp").length > 0 && (
+        {empVacs.filter(v => v.tipo === "vac").length > 0 && (
           <div style={{ marginBottom: 8 }}>
             <div style={{ fontSize: 9, fontWeight: 600, color: "#999", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Vacaciones</div>
-            {empVacs.filter(v => v.tipo !== "comp").map(v => (
+            {empVacs.filter(v => v.tipo === "vac").map(v => (
               <VacRow key={v.id} v={v} onUpdate={onUpdateEstado} onDelete={onDeleteVacacion} />
+            ))}
+          </div>
+        )}
+
+        {/* Asuntos propios */}
+        {empVacs.filter(v => v.tipo === "ap").length > 0 && (
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ fontSize: 9, fontWeight: 600, color: "#7c3aed", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Asuntos propios</div>
+            {empVacs.filter(v => v.tipo === "ap").map(v => (
+              <VacRow key={v.id} v={v} onUpdate={onUpdateEstado} onDelete={onDeleteVacacion} isAP />
             ))}
           </div>
         )}
@@ -470,6 +517,7 @@ export default function VacacionesTab({
         {empleados.map(emp => {
           const empVacs  = vacaciones.filter(v => v.empleado_id === emp.id);
           const st       = VacStats(empVacs);
+          const apSt     = APStats(empVacs);
           const stat     = guardiaStats.find(g => g.empleado_id === emp.id);
           const guardCount = effectiveGuardias(stat);
           const comp     = CompStats(empVacs, guardCount);
@@ -497,6 +545,11 @@ export default function VacacionesTab({
                   <span style={{ fontWeight: 600, color: c }}>{v}</span>
                 </div>
               ))}
+              {/* Asuntos propios mini-stat */}
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, lineHeight: 1.6 }}>
+                <span style={{ color: "#7c3aed" }}>A. propios</span>
+                <span style={{ fontWeight: 600, color: apSt.avail <= 0 ? "#ef4444" : "#7c3aed" }}>{2 - apSt.avail}/2</span>
+              </div>
               {emp.farmaceutico === 1 && guardCount > 0 && (
                 <div style={{ marginTop: 4, paddingTop: 4, borderTop: "1px dashed #d1fae5" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, lineHeight: 1.6 }}>
@@ -550,14 +603,15 @@ export default function VacacionesTab({
   );
 }
 
-function VacRow({ v, onUpdate, onDelete, isComp = false }: {
+function VacRow({ v, onUpdate, onDelete, isComp = false, isAP = false }: {
   v: Vacacion;
   onUpdate: (id: number, estado: string) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
   isComp?: boolean;
+  isAP?: boolean;
 }) {
-  const color = isComp ? GREEN : STATUS_COLOR[v.estado];
-  const label = isComp ? "Compensatorio" : STATUS_LABEL[v.estado];
+  const color = isComp ? GREEN : isAP ? "#7c3aed" : STATUS_COLOR[v.estado];
+  const label = isComp ? "Compensatorio" : isAP ? STATUS_LABEL[v.estado] : STATUS_LABEL[v.estado];
 
   return (
     <div style={{
