@@ -19,21 +19,21 @@ import {
 
 // ─── Helpers de formato ───────────────────────────────────────────────────────
 
-const eur = (v: number) =>
-  v.toLocaleString("es-ES", {
+const eur = (v: number | null | undefined) =>
+  (Number(v) || 0).toLocaleString("es-ES", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }) + " €";
 
-const eurDec = (v: number) =>
-  v.toLocaleString("es-ES", {
+const eurDec = (v: number | null | undefined) =>
+  (Number(v) || 0).toLocaleString("es-ES", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }) + " €";
 
-const num = (v: number) => v.toLocaleString("es-ES");
+const num = (v: number | null | undefined) => (Number(v) || 0).toLocaleString("es-ES");
 
-const pct = (v: number) => v.toFixed(1) + "%";
+const pct = (v: number | null | undefined) => (Number(v) || 0).toFixed(1) + "%";
 
 const MESES = [
   "Ene", "Feb", "Mar", "Abr", "May", "Jun",
@@ -467,10 +467,10 @@ export default function CrmPage() {
   });
 
   const tendenciaChartData = tendencia.map((t) => ({
-    label: MESES[parseInt(t.mes.slice(5), 10) - 1] + " " + t.mes.slice(0, 4),
-    facturacion: t.facturacion,
-    tickets: t.tickets,
-    ticket_medio: t.ticket_medio,
+    label: MESES[parseInt((t.mes || "").slice(5), 10) - 1] + " " + (t.mes || "").slice(0, 4),
+    facturacion: Number(t.facturacion) || 0,
+    tickets: Number(t.tickets) || 0,
+    ticket_medio: Number(t.ticket_medio) || 0,
   }));
 
   const vendedoresMax = vendedores[0]?.facturacion || 1;
@@ -574,8 +574,8 @@ export default function CrmPage() {
         />
         <KpiCard
           label="Uds / ticket"
-          value={resumen && resumen.tickets > 0
-            ? (resumen.unidades / resumen.tickets).toFixed(1)
+          value={resumen && Number(resumen.tickets) > 0
+            ? (Number(resumen.unidades) / Number(resumen.tickets)).toFixed(1)
             : "—"}
           loading={resumenLoading}
         />
@@ -815,14 +815,14 @@ export default function CrmPage() {
                     const pctVal = total > 0 ? (t.facturacion / total) * 100 : 0;
                     return (
                       <div
-                        key={t.tipo}
+                        key={t.tipo || `tipo-${i}`}
                         className="rounded-lg p-3"
                         style={{
                           background: i === 0 ? C.verdeLight : "#eff6ff",
                           border: `1px solid ${C.borde}`,
                         }}
                       >
-                        <p className="text-xs font-medium" style={{ color: C.gris }}>{t.tipo}</p>
+                        <p className="text-xs font-medium" style={{ color: C.gris }}>{t.tipo || "Otros"}</p>
                         <p
                           className="text-lg font-semibold font-mono mt-0.5"
                           style={{ color: COLORES_PIE[i] }}
@@ -870,16 +870,16 @@ export default function CrmPage() {
                     </div>
                     <div className="flex-1 space-y-2">
                       {segmentacion.byReceta.map((r, i) => {
-                        const total = segmentacion.byReceta.reduce((a, b) => a + b.facturacion, 0);
-                        const pctVal = total > 0 ? (r.facturacion / total) * 100 : 0;
+                        const total = segmentacion.byReceta.reduce((a, b) => a + (Number(b.facturacion) || 0), 0);
+                        const pctVal = total > 0 ? ((Number(r.facturacion) || 0) / total) * 100 : 0;
                         return (
-                          <div key={r.tipo} className="flex items-center justify-between">
+                          <div key={r.tipo || `receta-${i}`} className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5">
                               <div
                                 className="w-2.5 h-2.5 rounded-full shrink-0"
                                 style={{ background: [C.azul, C.verde][i] ?? C.gris }}
                               />
-                              <span className="text-xs" style={{ color: C.gris }}>{r.tipo}</span>
+                              <span className="text-xs" style={{ color: C.gris }}>{r.tipo || "Otros"}</span>
                             </div>
                             <div className="text-right">
                               <span className="text-xs font-mono font-semibold" style={{ color: "#2a2e2b" }}>
@@ -910,9 +910,9 @@ export default function CrmPage() {
                     const total = segmentacion.byPago.reduce((a, b) => a + b.facturacion, 0);
                     const pctVal = total > 0 ? (p.facturacion / total) * 100 : 0;
                     return (
-                      <div key={p.tipo_pago} className="flex items-center gap-2">
+                      <div key={p.tipo_pago || `pago-${i}`} className="flex items-center gap-2">
                         <div className="w-20 text-xs truncate shrink-0" style={{ color: C.gris }}>
-                          {p.tipo_pago}
+                          {p.tipo_pago || "Otros"}
                         </div>
                         <div className="flex-1 h-2 rounded-full" style={{ background: "#f3f4f6" }}>
                           <div
