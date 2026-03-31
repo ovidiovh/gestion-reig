@@ -97,12 +97,18 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
 
         {/* Slots */}
         <div style={{ marginBottom: 8 }}>
-          {/* Header horas */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, paddingLeft: 130 }}>
-            {HORAS_GRID.map(h => (
-              <div key={h} style={{ flex: 1, textAlign: "center", fontSize: 7, color: "#bbb", fontFamily: "'JetBrains Mono', monospace" }}>{h}</div>
-            ))}
-            <div style={{ width: 30 }} />
+          {/* Header horas — misma estructura flex que las filas para alinear */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+            <div style={{ width: 72, flexShrink: 0 }} />
+            <div style={{ width: 52, flexShrink: 0 }} />
+            <span style={{ fontSize: 9, flexShrink: 0, visibility: "hidden" }}>→</span>
+            <div style={{ width: 60, flexShrink: 0 }} />
+            <div style={{ display: "flex", flex: 1, gap: 1 }}>
+              {HORAS_GRID.map(h => (
+                <div key={h} style={{ flex: 1, textAlign: "center", fontSize: 7, color: "#bbb", fontFamily: "'JetBrains Mono', monospace" }}>{h}</div>
+              ))}
+            </div>
+            <div style={{ width: 24, flexShrink: 0 }} />
           </div>
 
           {slots.map(slot => {
