@@ -14,9 +14,17 @@
 - [[06-interfaz-usuario]] — Pantallas, flujos, diseño responsive
 - [[07-reglas-negocio]] — Bloqueos, destinos, fechas, remesas
 
+## CRM — Inteligencia Comercial
+
+- [[08-crm-arquitectura]] — Stack, flujo de datos, fórmulas SQL, índices, cross-sell
+- [[09-crm-endpoints]] — Todos los endpoints API del CRM con parámetros y respuestas
+- [[10-crm-operativa]] — Cómo relanzar precálculos, scripts copy-paste, valores de referencia
+- [[11-crm-troubleshooting]] — 7 problemas conocidos con causas, soluciones y checklist
+
 ## Diagramas
 
 - [[diagramas/arquitectura.drawio]] — Arquitectura general del sistema (abrir con draw.io)
+- [[diagramas/crm-arquitectura.drawio]] — Arquitectura CRM: flujo de datos ventas → precálculo → dashboard
 
 ## Documentación de Proyecto
 

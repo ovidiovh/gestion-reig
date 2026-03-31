@@ -1,0 +1,141 @@
+<mxfile host="app.diagrams.net" modified="2026-03-31T12:00:00.000Z" agent="Claude" version="21.0.0" type="device">
+  <diagram id="crm-arquitectura" name="Arquitectura CRM">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- TÍTULO -->
+        <mxCell id="title" value="&lt;b&gt;CRM Farmacia Reig — Arquitectura&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="530" y="20" width="380" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- CAPA 1: ORIGEN DE DATOS -->
+        <mxCell id="layer1-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;dashed=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="80" width="300" height="200" as="geometry"/>
+        </mxCell>
+        <mxCell id="layer1-title" value="&lt;b&gt;ORIGEN DE DATOS&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=top;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="110" y="85" width="140" height="25" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="farmacia" value="&lt;b&gt;Programa Gestión&lt;/b&gt;&lt;br&gt;Farmacia" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=img/lib/azure2/general/Module.svg;fillColor=#dae8fc;strokeColor=#6c8ebf;rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="70" y="130" width="60" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="export" value="&lt;b&gt;Exportación&lt;/b&gt;&lt;br&gt;Diario de ventas&lt;br&gt;(.xlsx)" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=0.27;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="190" y="120" width="120" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- CAPA 2: BASE DE DATOS -->
+        <mxCell id="layer2-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;dashed=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="420" y="80" width="320" height="200" as="geometry"/>
+        </mxCell>
+        <mxCell id="layer2-title" value="&lt;b&gt;BASE DE DATOS — TURSO&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=top;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="480" y="85" width="190" height="25" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="ventas" value="&lt;b&gt;ventas&lt;/b&gt;&lt;br&gt;~1.28M filas&lt;br&gt;cabeceras + detalle" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="440" y="120" width="120" height="80" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="tablas-resumen" value="&lt;b&gt;4 Tablas Resumen&lt;/b&gt;&lt;br&gt;crm_resumen_mensual&lt;br&gt;crm_vendedores_mensual&lt;br&gt;crm_productos_mensual&lt;br&gt;crm_segmentacion_mensual" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="600" y="110" width="120" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- CAPA 3: VERCEL / API -->
+        <mxCell id="layer3-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;dashed=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="820" y="80" width="360" height="200" as="geometry"/>
+        </mxCell>
+        <mxCell id="layer3-title" value="&lt;b&gt;VERCEL PRO — NEXT.JS&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=top;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="910" y="85" width="180" height="25" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="precalcular" value="&lt;b&gt;/api/crm/precalcular&lt;/b&gt;&lt;br&gt;route.ts&lt;br&gt;maxDuration=300s" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="840" y="120" width="150" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="api-read" value="&lt;b&gt;API Lectura&lt;/b&gt;&lt;br&gt;/resumen&lt;br&gt;/tendencia&lt;br&gt;/vendedores&lt;br&gt;/segmentacion&lt;br&gt;/productos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="110" width="140" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- CAPA 4: FRONTEND -->
+        <mxCell id="layer4-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;dashed=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="1260" y="80" width="280" height="200" as="geometry"/>
+        </mxCell>
+        <mxCell id="layer4-title" value="&lt;b&gt;FRONTEND — CRM DASHBOARD&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=top;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="1290" y="85" width="220" height="25" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="dashboard" value="&lt;b&gt;gestion.vidalreig.com/crm&lt;/b&gt;&lt;br&gt;&lt;br&gt;KPIs · Tendencias&lt;br&gt;Ranking vendedores&lt;br&gt;Top productos&lt;br&gt;Segmentación&lt;br&gt;Cross-sell" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="1290" y="115" width="220" height="130" as="geometry"/>
+        </mxCell>
+
+        <!-- FLECHAS PRINCIPALES -->
+        <mxCell id="arrow1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#d6b656;" edge="1" parent="1" source="export" target="ventas">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="arrow1-label" value="&lt;i&gt;Import a Turso&lt;/i&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="arrow1">
+          <mxGeometry x="-0.1" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="arrow2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#9673a6;" edge="1" parent="1" source="ventas" target="tablas-resumen">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="arrow2-label" value="&lt;i&gt;Precálculo&lt;br&gt;mes a mes&lt;/i&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="arrow2">
+          <mxGeometry x="-0.1" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="arrow3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.3;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#d6b656;dashed=1;" edge="1" parent="1" source="ventas" target="precalcular">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="800" y="160"/><mxPoint x="800" y="138"/></Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="arrow3b" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0;exitY=0.7;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#82b366;dashed=1;" edge="1" parent="1" source="precalcular" target="tablas-resumen">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="780" y="162"/><mxPoint x="780" y="160"/></Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="arrow4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#82b366;" edge="1" parent="1" source="tablas-resumen" target="api-read">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="760" y="160"/><mxPoint x="760" y="400"/><mxPoint x="1080" y="400"/><mxPoint x="1080" y="300"/></Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="arrow5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#82b366;" edge="1" parent="1" source="api-read" target="dashboard">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="arrow5-label" value="&lt;i&gt;JSON&lt;/i&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="arrow5">
+          <mxGeometry x="-0.1" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry>
+        </mxCell>
+
+        <!-- NOTAS TÉCNICAS -->
+        <mxCell id="note-formula" value="&lt;b&gt;⚠️ Fórmula facturación&lt;/b&gt;&lt;br&gt;SUM(pvp × unidades)&lt;br&gt;sobre líneas detalle&lt;br&gt;(es_cabecera=0)&lt;br&gt;&lt;br&gt;&lt;font color=&quot;#cc0000&quot;&gt;NUNCA usar imp_neto&lt;br&gt;de cabeceras&lt;/font&gt;" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=15;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=left;spacingLeft=5;" vertex="1" parent="1">
+          <mxGeometry x="440" y="320" width="170" height="120" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="note-indices" value="&lt;b&gt;Índices críticos&lt;/b&gt;&lt;br&gt;&lt;font face=&quot;Courier&quot; size=&quot;1&quot;&gt;idx_ventas_ame&lt;br&gt;(anio, mes, es_cabecera)&lt;br&gt;&lt;br&gt;idx_ventas_amet&lt;br&gt;(anio, mes, es_cabecera, tipo)&lt;/font&gt;" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=15;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;align=left;spacingLeft=5;" vertex="1" parent="1">
+          <mxGeometry x="640" y="320" width="190" height="120" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="note-vercel" value="&lt;b&gt;Vercel Pro&lt;/b&gt;&lt;br&gt;maxDuration = 300s&lt;br&gt;&lt;br&gt;Hobby = 10s ❌&lt;br&gt;Pro = 300s ✅&lt;br&gt;&lt;br&gt;~15s por mes de precálculo" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=15;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;align=left;spacingLeft=5;" vertex="1" parent="1">
+          <mxGeometry x="860" y="320" width="170" height="120" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="note-crosssell" value="&lt;b&gt;Cross-sell&lt;/b&gt;&lt;br&gt;Tickets con receta + venta libre&lt;br&gt;Valor esperado: ~8%&lt;br&gt;&lt;br&gt;&lt;b&gt;% Receta/vendedor&lt;/b&gt;&lt;br&gt;Valor esperado: 50-85%" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=5;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="320" width="180" height="120" as="geometry"/>
+        </mxCell>
+
+        <!-- FLECHA farmacia → export -->
+        <mxCell id="arrow0" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#666666;" edge="1" parent="1" source="farmacia" target="export">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="arrow0-label" value="&lt;i&gt;.xlsx&lt;/i&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="arrow0">
+          <mxGeometry x="-0.1" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
