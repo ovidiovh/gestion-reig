@@ -8,11 +8,10 @@ export const maxDuration = 300;
  * GET /api/crm/precalcular?debug=columns → PRAGMA table_info(ventas) + muestra
  * GET /api/crm/precalcular?debug=sample  → 3 filas de ventas para ver formato de fecha
  *
- * POST /api/crm/precalcular?step=index             → crea tablas e índice (1-2s)
- * POST /api/crm/precalcular?step=data&year=N       → inserta un año concreto (5-15s con índice)
- * POST /api/crm/precalcular?step=data&year=N&month=M → inserta un solo mes concreto
- * POST /api/crm/precalcular?step=data               → inserta todos los años
- * POST /api/crm/precalcular?step=all                → crea tablas y inserta todos los años
+ * POST /api/crm/precalcular?step=index             → crea tablas + índices (¡puede tardar minutos! ejecutar 1 vez)
+ * POST /api/crm/precalcular?year=N                  → precalcula un año (mes a mes)
+ * POST /api/crm/precalcular?year=N&month=M          → precalcula un solo mes
+ * POST /api/crm/precalcular                         → precalcula todos los años
  *
  * NOTA: El DELETE es siempre por año+mes, nunca global. Si el proceso falla
  *       a mitad, los meses ya calculados se conservan intactos.
@@ -82,6 +81,22 @@ export async function GET(req: NextRequest) {
         detalle_en_rango: checks[2].rows[0]?.[0],
         fecha_min_max: checks[3].rows[0],
         filas_por_anio: checks[4].rows,
+      });
+    } catch (err) {
+      return NextResponse.json({ ok: false, error: String(err) }, { status: 500 });
+    }
+  }
+
+  // ── debug=indexes: verificar qué índices existen en ventas ──────────────
+  if (debug === "indexes") {
+    try {
+      const r = await db.execute(
+        `SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='ventas' ORDER BY name`
+      );
+      return NextResponse.json({
+        ok: true,
+        indexes: r.rows.map((row) => String(row[0])),
+        needed: ["idx_ventas_ame", "idx_ventas_amet"],
       });
     } catch (err) {
       return NextResponse.json({ ok: false, error: String(err) }, { status: 500 });
@@ -207,9 +222,19 @@ export async function POST(req: NextRequest) {
   const monthParam = req.nextUrl.searchParams.get("month");
   const TIMEOUT_PER_MONTH_MS = 30_000; // 30s por mes
 
+  // step=index: SOLO crear tablas e índices (paso separado, puede tardar minutos)
+  if (step === "index") {
+    try {
+      await ensureIndexes(log, t0);
+      await runIndex(log, t0);
+      return NextResponse.json({ ok: true, step: "index", log });
+    } catch (err) {
+      return NextResponse.json({ ok: false, step: "index", error: String(err), log }, { status: 500 });
+    }
+  }
+
   try {
-    // SIEMPRE asegurar que tablas e índices existen antes de procesar
-    await ensureIndexes(log, t0);
+    // Solo crear tablas (ligero), NO índices en el path caliente
     await runIndex(log, t0);
     if (step === "all" || step === "data") {
       if (yearParam && monthParam) {
