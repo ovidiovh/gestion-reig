@@ -11,7 +11,7 @@ interface Props {
   onSave: (slots: GuardiaSlot[], tipo: string, publicada: number) => void;
 }
 
-const HORAS_GRID = Array.from({ length: 16 }, (_, i) => i + 8); // 8..23
+const HORAS_GRID = Array.from({ length: 15 }, (_, i) => i + 9); // 9..23
 const HRS24 = Array.from({ length: 24 }, (_, i) => i);
 const HRS34 = Array.from({ length: 26 }, (_, i) => i + 8); // 8..33
 
