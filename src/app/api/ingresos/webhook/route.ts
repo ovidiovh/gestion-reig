@@ -54,12 +54,12 @@ export async function POST(req: NextRequest) {
 
       await guardarIngreso({
         fecha: ing.fecha,
-        hora: ing.hora || null,
+        hora: ing.hora || undefined,
         concepto: ing.concepto,
         importe: ing.importe,
-        num_operacion: ing.num_operacion || null,
+        num_operacion: ing.num_operacion || undefined,
         origen: "email",
-        email_id: ing.email_id || null,
+        email_id: ing.email_id || undefined,
         usuario_email: "ingresos@farmaciareig.net",
         usuario_nombre: "Script Santander",
       });
