@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useZona } from "./layout";
 
 // ── Types ──
 
@@ -63,6 +64,9 @@ const btnBase: React.CSSProperties = {
 };
 
 export default function RetiradasPage() {
+  const zona = useZona();
+  const CAJAS_DISPONIBLES = zona === "optica" ? [11] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
   const [paso, setPaso] = useState<1 | 2 | 3>(1);
 
   // Paso 1: cajas
@@ -192,8 +196,8 @@ export default function RetiradasPage() {
           {/* Selector de cajas */}
           <div style={card}>
             <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Selecciona las cajas</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
-              {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(CAJAS_DISPONIBLES.length, 5)}, 1fr)`, gap: 8 }}>
+              {CAJAS_DISPONIBLES.map((n) => {
                 const active = cajasActivas.has(n);
                 return (
                   <button
