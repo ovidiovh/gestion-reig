@@ -95,19 +95,23 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
           </div>
         </div>
 
-        {/* Slots */}
-        <div style={{ marginBottom: 8 }}>
-          {/* Header horas — misma estructura flex que las filas para alinear */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-            <div style={{ width: 72, flexShrink: 0 }} />
-            <div style={{ width: 130, flexShrink: 0 }} /> {/* espacio fijo = selectores T1 (52+flecha+60) */}
-            <div style={{ display: "flex", flex: 1, gap: 1 }}>
-              {HORAS_GRID.map(h => (
-                <div key={h} style={{ flex: 1, textAlign: "center", fontSize: 7, color: "#bbb", fontFamily: "'JetBrains Mono', monospace" }}>{h}</div>
-              ))}
-            </div>
-            <div style={{ width: 24, flexShrink: 0 }} />
+        {/* Slots — CSS Grid para alineación perfecta */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "72px 130px 1fr 28px",
+          rowGap: 0, columnGap: 4,
+          marginBottom: 8,
+          alignItems: "center",
+        }}>
+          {/* Header horas */}
+          <div /> {/* col nombre */}
+          <div /> {/* col selectores */}
+          <div style={{ display: "flex", gap: 1 }}>
+            {HORAS_GRID.map(h => (
+              <div key={h} style={{ flex: 1, textAlign: "center", fontSize: 7, color: "#bbb", fontFamily: "'JetBrains Mono', monospace" }}>{h}</div>
+            ))}
           </div>
+          <div /> {/* col total */}
 
           {slots.map(slot => {
             const isVac    = vacIds.has(slot.empleado_id);
@@ -116,52 +120,57 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
             const totalH   = (slot.hora_fin - slot.hora_inicio) + (hasSplit ? (slot.hora_fin2! - slot.hora_inicio2!) : 0);
 
             return (
-              <div key={slot.empleado_id} style={{ borderBottom: "1px solid #f5f5f5", padding: hasSplit && !isVac ? "14px 0 4px 0" : "4px 0", opacity: isVac ? 0.5 : 1, position: "relative" }}>
-                {/* Fila principal */}
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  {/* Nombre */}
-                  <div style={{
-                    width: 72, fontSize: 10, fontWeight: isFarma ? 700 : 400,
-                    color: isVac ? "#ccc" : isFarma ? GREEN_DARK : "#333",
-                    textDecoration: isVac ? "line-through" : "none",
-                    flexShrink: 0,
-                  }}>
-                    {slot.nombre}
-                    {isVac && <span style={{ color: "#ef4444", fontSize: 7, marginLeft: 2 }}>VAC</span>}
-                    {slot.empresa === "mirelus" && (
-                      <span style={{ fontSize: 7, background: "#a9d18e", padding: "0 3px", borderRadius: 2, marginLeft: 3 }}>M</span>
-                    )}
-                  </div>
+              <div key={slot.empleado_id} style={{
+                display: "grid", gridColumn: "1 / -1",
+                gridTemplateColumns: "subgrid",
+                borderBottom: "1px solid #f5f5f5",
+                padding: "4px 0",
+                opacity: isVac ? 0.5 : 1,
+                alignItems: "center",
+              }}>
+                {/* Col 1: Nombre */}
+                <div style={{
+                  fontSize: 10, fontWeight: isFarma ? 700 : 400,
+                  color: isVac ? "#ccc" : isFarma ? GREEN_DARK : "#333",
+                  textDecoration: isVac ? "line-through" : "none",
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const,
+                }}>
+                  {slot.nombre}
+                  {isVac && <span style={{ color: "#ef4444", fontSize: 7, marginLeft: 2 }}>VAC</span>}
+                  {slot.empresa === "mirelus" && (
+                    <span style={{ fontSize: 7, background: "#a9d18e", padding: "0 3px", borderRadius: 2, marginLeft: 3 }}>M</span>
+                  )}
+                </div>
 
-                  {/* Selectores de hora — ancho fijo para alinear barras */}
-                  <div style={{ width: 130, flexShrink: 0, display: "flex", alignItems: "center", gap: 4, overflow: "hidden" }}>
+                {/* Col 2: Selectores de hora */}
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <select
                       value={slot.hora_inicio}
                       onChange={e => updateSlot(slot.empleado_id, "hora_inicio", parseInt(e.target.value))}
                       disabled={isVac}
-                      style={{ width: 52, border: "1px solid #ddd", borderRadius: 4, fontSize: 9, padding: "2px 0", textAlign: "center", background: isVac ? "#f5f5f5" : "#fff", color: isVac ? "#ccc" : "#333", flexShrink: 0 }}
+                      style={{ width: 52, border: "1px solid #ddd", borderRadius: 4, fontSize: 9, padding: "2px 0", textAlign: "center", background: isVac ? "#f5f5f5" : "#fff", color: isVac ? "#ccc" : "#333" }}
                     >
                       {HRS24.map(h => <option key={h} value={h}>{fmtHora(h)}</option>)}
                     </select>
-                    <span style={{ color: "#ccc", fontSize: 9, flexShrink: 0 }}>→</span>
+                    <span style={{ color: "#ccc", fontSize: 9 }}>→</span>
                     <select
                       value={slot.hora_fin}
                       onChange={e => updateSlot(slot.empleado_id, "hora_fin", parseInt(e.target.value))}
                       disabled={isVac}
-                      style={{ width: 60, border: "1px solid #ddd", borderRadius: 4, fontSize: 9, padding: "2px 0", textAlign: "center", background: isVac ? "#f5f5f5" : "#fff", color: isVac ? "#ccc" : "#333", flexShrink: 0 }}
+                      style={{ width: 60, border: "1px solid #ddd", borderRadius: 4, fontSize: 9, padding: "2px 0", textAlign: "center", background: isVac ? "#f5f5f5" : "#fff", color: isVac ? "#ccc" : "#333" }}
                     >
                       {HRS34.map(h => <option key={h} value={h}>{fmtHora(h)}</option>)}
                     </select>
                   </div>
-
-                  {/* Turno partido (T2) — se muestra como segunda línea para no desalinear */}
+                  {/* Turno partido (T2) debajo */}
                   {hasSplit && !isVac && (
-                    <div style={{ position: "absolute", top: -2, left: 78, display: "flex", alignItems: "center", gap: 2 }}>
-                      <span style={{ fontSize: 7, color: "#7c3aed", fontWeight: 700 }}>T2:</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 2, marginTop: 2 }}>
+                      <span style={{ fontSize: 7, color: "#7c3aed", fontWeight: 700 }}>T2</span>
                       <select
                         value={slot.hora_inicio2!}
                         onChange={e => updateSlot(slot.empleado_id, "hora_inicio2", parseInt(e.target.value))}
-                        style={{ width: 44, border: "1px solid #e9d5ff", borderRadius: 3, fontSize: 8, padding: "1px 0", textAlign: "center", background: "#faf5ff", color: "#7c3aed", flexShrink: 0 }}
+                        style={{ width: 52, border: "1px solid #e9d5ff", borderRadius: 3, fontSize: 8, padding: "1px 0", textAlign: "center", background: "#faf5ff", color: "#7c3aed" }}
                       >
                         {HRS24.map(h => <option key={h} value={h}>{fmtHora(h)}</option>)}
                       </select>
@@ -169,42 +178,42 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
                       <select
                         value={slot.hora_fin2!}
                         onChange={e => updateSlot(slot.empleado_id, "hora_fin2", parseInt(e.target.value))}
-                        style={{ width: 50, border: "1px solid #e9d5ff", borderRadius: 3, fontSize: 8, padding: "1px 0", textAlign: "center", background: "#faf5ff", color: "#7c3aed", flexShrink: 0 }}
+                        style={{ width: 60, border: "1px solid #e9d5ff", borderRadius: 3, fontSize: 8, padding: "1px 0", textAlign: "center", background: "#faf5ff", color: "#7c3aed" }}
                       >
                         {HRS34.map(h => <option key={h} value={h}>{fmtHora(h)}</option>)}
                       </select>
                     </div>
                   )}
+                </div>
 
-                  {/* Barra visual */}
-                  <div style={{ display: "flex", flex: 1, gap: 1 }}>
-                    {HORAS_GRID.map(h => {
-                      const active1 = h >= slot.hora_inicio && h < Math.min(slot.hora_fin, 24);
-                      const active2 = hasSplit && slot.hora_inicio2 != null && slot.hora_fin2 != null
-                        ? h >= slot.hora_inicio2 && h < Math.min(slot.hora_fin2, 24)
-                        : false;
-                      const active = active1 || active2;
-                      return (
-                        <div key={h} style={{
-                          flex: 1, height: 16, borderRadius: 2,
-                          background: isVac
-                            ? "#f0f0f0"
-                            : active2
-                            ? "#c4b5fd"
-                            : active
-                            ? (h >= 22 ? GREEN_DARK : GREEN)
-                            : "#f0f0f0",
-                          border: isFarma && active && !isVac ? `2px solid #0a4a1e` : "none",
-                          boxSizing: "border-box" as const,
-                        }} />
-                      );
-                    })}
-                  </div>
+                {/* Col 3: Barra visual — SIEMPRE en la misma columna del grid */}
+                <div style={{ display: "flex", gap: 1 }}>
+                  {HORAS_GRID.map(h => {
+                    const active1 = h >= slot.hora_inicio && h < Math.min(slot.hora_fin, 24);
+                    const active2 = hasSplit && slot.hora_inicio2 != null && slot.hora_fin2 != null
+                      ? h >= slot.hora_inicio2 && h < Math.min(slot.hora_fin2, 24)
+                      : false;
+                    const active = active1 || active2;
+                    return (
+                      <div key={h} style={{
+                        flex: 1, height: 14, borderRadius: 2,
+                        background: isVac
+                          ? "#f0f0f0"
+                          : active2
+                          ? "#c4b5fd"
+                          : active
+                          ? (h >= 22 ? GREEN_DARK : GREEN)
+                          : "#f0f0f0",
+                        border: isFarma && active && !isVac ? `1.5px solid #0a4a1e` : "none",
+                        boxSizing: "border-box" as const,
+                      }} />
+                    );
+                  })}
+                </div>
 
-                  {/* Horas totales */}
-                  <div style={{ width: 24, textAlign: "center", fontSize: 11, fontWeight: 600, color: isVac ? "#ddd" : "#333", flexShrink: 0 }}>
-                    {isVac ? "—" : totalH}
-                  </div>
+                {/* Col 4: Horas totales */}
+                <div style={{ textAlign: "center", fontSize: 10, fontWeight: 600, color: isVac ? "#ddd" : "#333" }}>
+                  {isVac ? "—" : totalH}
                 </div>
               </div>
             );
