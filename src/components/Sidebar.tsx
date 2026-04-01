@@ -112,6 +112,7 @@ const sections: NavSection[] = [
     items: [
       { label: "Nueva retirada", href: "/retiradas", activo: true, icon: icons.cash },
       { label: "Historial", href: "/retiradas/historial", activo: true, icon: icons.clock },
+      { label: "Ingresos banco", href: "/ingresos", activo: true, icon: icons.briefcase },
       { label: "Ventas", href: "/ventas", activo: false, icon: icons.chart },
     ],
   },
