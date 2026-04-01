@@ -17,6 +17,19 @@ interface Sesion {
   remesa_id: number | null;
   remesa_estado: string | null;
   remesa_confirmada_at: string | null;
+  origen?: string;
+}
+
+interface CajaDetalle {
+  num_caja: number;
+  b200: number; b100: number; b50: number; b20: number; b10: number; b5: number;
+  total: number;
+}
+
+interface AuditDetalle {
+  b200: number; b100: number; b50: number; b20: number; b10: number; b5: number;
+  total: number;
+  cuadra: number;
 }
 
 interface Remesa {
@@ -26,6 +39,12 @@ interface Remesa {
   estado: string;
   confirmada_at: string | null;
   num_sesiones: number;
+}
+
+interface CajaFuerte {
+  balance_farmacia: number;
+  balance_optica: number;
+  balance_total: number;
 }
 
 type Filtro = "hoy" | "semana" | "mes" | "todo";
@@ -42,6 +61,9 @@ const DESTINO_COLORS: Record<string, string> = {
   entrega_bea: "bg-purple-100 text-purple-700",
   banco: "bg-blue-100 text-blue-700",
 };
+
+const DENOMS = [200, 100, 50, 20, 10, 5] as const;
+const UMBRAL_KEY = "reig_caja_fuerte_umbral";
 
 function getFechaDesde(filtro: Filtro): string {
   const d = new Date();
@@ -65,6 +87,162 @@ function esBloqueado(destino: string) {
   return destino === "banco" || destino === "entrega_bea";
 }
 
+// ── Accordion: detalle de cajas de una sesión ──
+function SesionDetalle({ sesionId, accentColor }: { sesionId: number; accentColor: string }) {
+  const [cajas, setCajas] = useState<CajaDetalle[]>([]);
+  const [audit, setAudit] = useState<AuditDetalle | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`/api/retiradas?sesion_id=${sesionId}`);
+        const data = await res.json();
+        if (data.ok) {
+          setCajas(data.cajas || []);
+          setAudit(data.audit || null);
+        }
+      } catch { /* ignore */ }
+      finally { setLoading(false); }
+    })();
+  }, [sesionId]);
+
+  if (loading) return <div className="text-xs text-gray-400 py-2 pl-8">Cargando detalle...</div>;
+  if (cajas.length === 0) return <div className="text-xs text-gray-400 py-2 pl-8">Sin datos de cajas</div>;
+
+  return (
+    <div className="mt-2 ml-7 sm:ml-8 space-y-1.5">
+      {cajas.map((c) => (
+        <div key={c.num_caja} className="bg-white border border-gray-200 rounded-lg px-3 py-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-semibold" style={{ color: accentColor }}>
+              Caja {c.num_caja}
+            </span>
+            <span className="font-mono text-sm font-bold">{Number(c.total).toFixed(0)}€</span>
+          </div>
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-500">
+            {DENOMS.map((d) => {
+              const qty = c[`b${d}` as keyof CajaDetalle] as number;
+              return qty > 0 ? (
+                <span key={d}>
+                  {d}€ <strong className="text-gray-700">×{qty}</strong>
+                </span>
+              ) : null;
+            })}
+          </div>
+        </div>
+      ))}
+
+      {/* Resumen auditoría */}
+      {audit && (
+        <div className={`border rounded-lg px-3 py-2 text-xs ${audit.cuadra ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
+          <div className="flex items-center justify-between mb-1">
+            <span className={`font-semibold ${audit.cuadra ? "text-green-700" : "text-red-700"}`}>
+              {audit.cuadra ? "✓ Auditoría OK" : "✗ Descuadre"}
+            </span>
+            <span className="font-mono font-bold">{Number(audit.total).toFixed(0)}€</span>
+          </div>
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-gray-500">
+            {DENOMS.map((d) => {
+              const qty = audit[`b${d}` as keyof AuditDetalle] as number;
+              return qty > 0 ? (
+                <span key={d}>
+                  {d}€ <strong className="text-gray-700">×{qty}</strong>
+                </span>
+              ) : null;
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Dashboard Caja Fuerte ──
+function CajaFuerteDashboard({ data, zona, accentColor, accentLight }: {
+  data: CajaFuerte;
+  zona: string;
+  accentColor: string;
+  accentLight: string;
+}) {
+  const isFarma = zona === "farmacia";
+  const balance = isFarma ? Number(data.balance_farmacia) : Number(data.balance_optica);
+
+  // Umbral configurable — stored per zona
+  const [umbral, setUmbral] = useState(5000);
+  const [editingUmbral, setEditingUmbral] = useState(false);
+  const [tmpUmbral, setTmpUmbral] = useState("5000");
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage?.getItem(`${UMBRAL_KEY}_${zona}`);
+      if (saved) { setUmbral(Number(saved)); setTmpUmbral(saved); }
+    } catch { /* SSR or unavailable */ }
+  }, [zona]);
+
+  const guardarUmbral = () => {
+    const val = Math.max(0, parseInt(tmpUmbral) || 0);
+    setUmbral(val);
+    setEditingUmbral(false);
+    try { window.localStorage?.setItem(`${UMBRAL_KEY}_${zona}`, String(val)); } catch { /* */ }
+  };
+
+  const alerta = balance >= umbral && umbral > 0;
+
+  return (
+    <div
+      className={`rounded-xl px-4 py-4 mb-6 border-2 ${alerta ? "border-red-300 bg-red-50" : "border-gray-200"}`}
+      style={!alerta ? { background: accentLight } : {}}
+    >
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-sm font-semibold text-gray-600">
+          Caja fuerte — {isFarma ? "Farmacia" : "Óptica"}
+        </span>
+        {alerta && (
+          <span className="text-xs font-bold text-red-600 bg-red-100 rounded-full px-2 py-0.5 animate-pulse">
+            Supera umbral
+          </span>
+        )}
+      </div>
+      <div className="flex items-end justify-between">
+        <div>
+          <span className="font-mono text-3xl font-bold" style={{ color: alerta ? "#dc2626" : accentColor }}>
+            {balance.toFixed(0)} €
+          </span>
+          <span className="text-xs text-gray-400 ml-2">estimado pendiente</span>
+        </div>
+        <div className="text-right">
+          {!editingUmbral ? (
+            <button
+              onClick={() => { setTmpUmbral(String(umbral)); setEditingUmbral(true); }}
+              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              Umbral: {umbral.toLocaleString("es-ES")}€ ✎
+            </button>
+          ) : (
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                value={tmpUmbral}
+                onChange={(e) => setTmpUmbral(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && guardarUmbral()}
+                className="w-20 text-xs border rounded px-1.5 py-1 text-right font-mono"
+                autoFocus
+              />
+              <span className="text-xs text-gray-400">€</span>
+              <button onClick={guardarUmbral} className="text-xs px-1.5 py-1 bg-gray-200 rounded hover:bg-gray-300">OK</button>
+              <button onClick={() => setEditingUmbral(false)} className="text-xs text-gray-400">✕</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════
+// ── Página principal historial ──
+// ══════════════════════════════════════════════
 export default function HistorialPage() {
   const zona = useZona();
   const isFarma = zona === "farmacia";
@@ -75,8 +253,10 @@ export default function HistorialPage() {
   const [vista, setVista] = useState<Vista>("retiradas");
   const [sesiones, setSesiones] = useState<Sesion[]>([]);
   const [remesas, setRemesas] = useState<Remesa[]>([]);
+  const [cajaFuerte, setCajaFuerte] = useState<CajaFuerte>({ balance_farmacia: 0, balance_optica: 0, balance_total: 0 });
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [updating, setUpdating] = useState(false);
 
   const cargar = useCallback(async () => {
@@ -89,9 +269,12 @@ export default function HistorialPage() {
       ]);
       const dataSesiones = await resSesiones.json();
       const dataRemesas = await resRemesas.json();
-      if (dataSesiones.ok) setSesiones(dataSesiones.data.filter((s: Sesion & { origen?: string }) =>
-        zona === "optica" ? s.origen === "optica" : (!s.origen || s.origen === "farmacia")
-      ));
+      if (dataSesiones.ok) {
+        setSesiones(dataSesiones.data.filter((s: Sesion) =>
+          zona === "optica" ? s.origen === "optica" : (!s.origen || s.origen === "farmacia")
+        ));
+        if (dataSesiones.caja_fuerte) setCajaFuerte(dataSesiones.caja_fuerte);
+      }
       if (dataRemesas.ok) setRemesas(dataRemesas.data);
     } catch (err) {
       console.error("Error cargando historial:", err);
@@ -103,6 +286,7 @@ export default function HistorialPage() {
   useEffect(() => {
     cargar();
     setSelected(new Set());
+    setExpanded(new Set());
   }, [cargar]);
 
   const totalPeriodo = sesiones.reduce((s, r) => s + (r.total_cajas || 0), 0);
@@ -112,6 +296,16 @@ export default function HistorialPage() {
 
   const toggleSelect = (id: number) => {
     setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleExpand = (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpanded((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -199,6 +393,16 @@ export default function HistorialPage() {
       <p className="text-gray-500 mb-6">
         {isFarma ? "Retiradas de efectivo — Cajas 1-10" : "Retiradas de efectivo — Óptica (Caja 11)"}
       </p>
+
+      {/* ═══ Dashboard Caja Fuerte ═══ */}
+      {!loading && (
+        <CajaFuerteDashboard
+          data={cajaFuerte}
+          zona={zona}
+          accentColor={accentColor}
+          accentLight={accentLight}
+        />
+      )}
 
       {/* Tabs: Retiradas / Remesas */}
       <div className="flex gap-1 mb-4 bg-gray-100 rounded-lg p-1">
@@ -303,110 +507,126 @@ export default function HistorialPage() {
                 const isSelected = selected.has(s.id);
                 const enRemesa = !!s.remesa_id;
                 const remesaConfirmada = s.remesa_estado === "confirmada";
+                const isExpanded = expanded.has(s.id);
 
                 return (
-                  <div
-                    key={s.id}
-                    onClick={() => !bloqueado && !enRemesa && toggleSelect(s.id)}
-                    className={`rounded-lg px-3 sm:px-4 py-3 transition-all ${
-                      bloqueado || enRemesa
-                        ? remesaConfirmada
-                          ? "bg-green-50 opacity-90"
-                          : "bg-gray-100 opacity-80"
-                        : isSelected
-                        ? "ring-2 cursor-pointer"
-                        : "bg-gray-50 hover:bg-gray-100 cursor-pointer"
-                    }`}
-                    style={isSelected && !bloqueado && !enRemesa ? { background: accentLight, ringColor: accentColor, outlineColor: accentColor, boxShadow: `0 0 0 2px ${accentColor}` } : {}}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                        {/* Checkbox / icono estado */}
-                        {!bloqueado && !enRemesa && (
-                          <div
-                            className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-all ${
-                              !isSelected ? "border-gray-300" : ""
-                            }`}
-                            style={isSelected ? { background: accentColor, borderColor: accentColor, color: "#fff" } : {}}
-                          >
-                            {isSelected && <span className="text-xs">✓</span>}
-                          </div>
-                        )}
-                        {bloqueado && !enRemesa && (
-                          <div className="w-5 h-5 flex items-center justify-center shrink-0 text-gray-400">🔒</div>
-                        )}
-                        {enRemesa && (
-                          <div className="w-5 h-5 flex items-center justify-center shrink-0">
-                            {remesaConfirmada ? (
-                              <span className="text-green-600 text-sm">✓</span>
-                            ) : (
-                              <span className="text-amber-500 text-sm">⏳</span>
-                            )}
-                          </div>
-                        )}
+                  <div key={s.id}>
+                    <div
+                      onClick={() => !bloqueado && !enRemesa && toggleSelect(s.id)}
+                      className={`rounded-lg px-3 sm:px-4 py-3 transition-all ${
+                        bloqueado || enRemesa
+                          ? remesaConfirmada
+                            ? "bg-green-50 opacity-90"
+                            : "bg-gray-100 opacity-80"
+                          : isSelected
+                          ? "ring-2 cursor-pointer"
+                          : "bg-gray-50 hover:bg-gray-100 cursor-pointer"
+                      }`}
+                      style={isSelected && !bloqueado && !enRemesa ? { background: accentLight, boxShadow: `0 0 0 2px ${accentColor}` } : {}}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                          {/* Checkbox / icono estado */}
+                          {!bloqueado && !enRemesa && (
+                            <div
+                              className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-all ${
+                                !isSelected ? "border-gray-300" : ""
+                              }`}
+                              style={isSelected ? { background: accentColor, borderColor: accentColor, color: "#fff" } : {}}
+                            >
+                              {isSelected && <span className="text-xs">✓</span>}
+                            </div>
+                          )}
+                          {bloqueado && !enRemesa && (
+                            <div className="w-5 h-5 flex items-center justify-center shrink-0 text-gray-400">🔒</div>
+                          )}
+                          {enRemesa && (
+                            <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                              {remesaConfirmada ? (
+                                <span className="text-green-600 text-sm">✓</span>
+                              ) : (
+                                <span className="text-amber-500 text-sm">⏳</span>
+                              )}
+                            </div>
+                          )}
 
-                        <div className="min-w-0">
-                          <span className="font-medium text-sm sm:text-base">
-                            {new Date(s.fecha + "T12:00:00").toLocaleDateString("es-ES", {
-                              weekday: "short",
-                              day: "numeric",
-                              month: "short",
-                            })}
+                          <div className="min-w-0">
+                            <span className="font-medium text-sm sm:text-base">
+                              {new Date(s.fecha + "T12:00:00").toLocaleDateString("es-ES", {
+                                weekday: "short",
+                                day: "numeric",
+                                month: "short",
+                              })}
+                            </span>
+                            <span className="text-xs text-gray-400 ml-1 sm:ml-2">
+                              {s.num_cajas}cj
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                          {/* Badge destino */}
+                          {!bloqueado && !enRemesa ? (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); entregarABea(s.id); }}
+                              disabled={updating}
+                              className="text-xs rounded px-2 py-1 bg-purple-50 text-purple-600 hover:bg-purple-100 font-medium transition-colors hidden sm:inline-block"
+                            >
+                              A Bea
+                            </button>
+                          ) : (
+                            <span
+                              className={`text-xs rounded px-2 py-1 font-medium ${
+                                enRemesa
+                                  ? remesaConfirmada
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-blue-100 text-blue-700"
+                                  : DESTINO_COLORS[s.destino] || ""
+                              }`}
+                            >
+                              {enRemesa
+                                ? remesaConfirmada
+                                  ? "Banco ✓"
+                                  : "Banco ⏳"
+                                : DESTINO_LABELS[s.destino] || s.destino}
+                            </span>
+                          )}
+
+                          <span className="font-mono font-bold text-sm sm:text-base">
+                            {Number(s.total_cajas).toFixed(0)}€
                           </span>
-                          <span className="text-xs text-gray-400 ml-1 sm:ml-2">
-                            {s.num_cajas}cj
+                          <span
+                            className={`text-sm ${
+                              s.auditada === 1
+                                ? "text-green-600"
+                                : s.auditada === -1
+                                ? "text-red-600"
+                                : "text-gray-400"
+                            }`}
+                          >
+                            {s.auditada === 1 ? "✓" : s.auditada === -1 ? "✗" : "—"}
                           </span>
+
+                          {/* Expand/collapse button */}
+                          <button
+                            onClick={(e) => toggleExpand(s.id, e)}
+                            className="text-gray-400 hover:text-gray-600 transition-colors text-sm ml-1"
+                            title="Ver detalle"
+                          >
+                            {isExpanded ? "▲" : "▼"}
+                          </button>
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                        {/* Badge destino */}
-                        {!bloqueado && !enRemesa ? (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); entregarABea(s.id); }}
-                            disabled={updating}
-                            className="text-xs rounded px-2 py-1 bg-purple-50 text-purple-600 hover:bg-purple-100 font-medium transition-colors hidden sm:inline-block"
-                          >
-                            A Bea
-                          </button>
-                        ) : (
-                          <span
-                            className={`text-xs rounded px-2 py-1 font-medium ${
-                              enRemesa
-                                ? remesaConfirmada
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-blue-100 text-blue-700"
-                                : DESTINO_COLORS[s.destino] || ""
-                            }`}
-                          >
-                            {enRemesa
-                              ? remesaConfirmada
-                                ? "Banco ✓"
-                                : "Banco ⏳"
-                              : DESTINO_LABELS[s.destino] || s.destino}
-                          </span>
-                        )}
-
-                        <span className="font-mono font-bold text-sm sm:text-base">
-                          {Number(s.total_cajas).toFixed(0)}€
-                        </span>
-                        <span
-                          className={`text-sm ${
-                            s.auditada === 1
-                              ? "text-green-600"
-                              : s.auditada === -1
-                              ? "text-red-600"
-                              : "text-gray-400"
-                          }`}
-                        >
-                          {s.auditada === 1 ? "✓" : s.auditada === -1 ? "✗" : "—"}
-                        </span>
-                      </div>
+                      {enRemesa && (
+                        <div className="text-xs text-blue-500 mt-1 ml-7 sm:ml-8">
+                          Remesa #{s.remesa_id}
+                        </div>
+                      )}
                     </div>
-                    {enRemesa && (
-                      <div className="text-xs text-blue-500 mt-1 ml-7 sm:ml-8">
-                        Remesa #{s.remesa_id}
-                      </div>
+
+                    {/* ── Accordion: detalle cajas ── */}
+                    {isExpanded && (
+                      <SesionDetalle sesionId={s.id} accentColor={accentColor} />
                     )}
                   </div>
                 );

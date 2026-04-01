@@ -1,9 +1,31 @@
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
-// GET — listar sesiones de retirada
+// GET — listar sesiones de retirada (o detalle de una sesión con ?sesion_id=X)
 export async function GET(req: NextRequest) {
   try {
+    const sesionId = req.nextUrl.searchParams.get("sesion_id");
+
+    // ── Detalle de una sesión concreta ──
+    if (sesionId) {
+      const [cajasRes, auditRes] = await Promise.all([
+        db.execute({
+          sql: "SELECT * FROM retiradas_caja WHERE sesion_id = ? ORDER BY num_caja",
+          args: [sesionId],
+        }),
+        db.execute({
+          sql: "SELECT * FROM retiradas_audit WHERE sesion_id = ?",
+          args: [sesionId],
+        }),
+      ]);
+      return NextResponse.json({
+        ok: true,
+        cajas: cajasRes.rows,
+        audit: auditRes.rows[0] || null,
+      });
+    }
+
+    // ── Listado general ──
     const desde = req.nextUrl.searchParams.get("desde") || "2000-01-01";
     const result = await db.execute({
       sql: `SELECT s.*,
@@ -17,7 +39,23 @@ export async function GET(req: NextRequest) {
        LIMIT 200`,
       args: [desde],
     });
-    return NextResponse.json({ ok: true, data: result.rows });
+
+    // ── Balance caja fuerte (todas las sesiones en caja_fuerte sin remesa) ──
+    const balanceRes = await db.execute({
+      sql: `SELECT
+              COALESCE(SUM(CASE WHEN origen = 'farmacia' OR origen IS NULL THEN total_cajas ELSE 0 END), 0) as balance_farmacia,
+              COALESCE(SUM(CASE WHEN origen = 'optica' THEN total_cajas ELSE 0 END), 0) as balance_optica,
+              COALESCE(SUM(total_cajas), 0) as balance_total
+            FROM retiradas_sesion
+            WHERE destino = 'caja_fuerte' AND remesa_id IS NULL`,
+      args: [],
+    });
+
+    return NextResponse.json({
+      ok: true,
+      data: result.rows,
+      caja_fuerte: balanceRes.rows[0] || { balance_farmacia: 0, balance_optica: 0, balance_total: 0 },
+    });
   } catch (error) {
     return NextResponse.json({ ok: false, error: String(error) }, { status: 500 });
   }
