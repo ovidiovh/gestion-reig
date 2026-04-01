@@ -83,85 +83,51 @@ Esto detecta errores de conteo incluso si los totales cuadran por casualidad (ej
 
 ---
 
-## Decisiones pendientes (Retiradas)
+## Regla 7: Zonas — Farmacia y Óptica
+
+La app distingue dos zonas operativas con cajas y colores diferentes:
+
+| Zona | Cajas | Color UI | Uso |
+|------|-------|----------|-----|
+| Farmacia | 1–10 | `#0C6D32` (verde) | Cajas registradoras de farmacia |
+| Óptica | 11 | `#0C4D6D` (azul) | Caja única de óptica |
+
+- El layout de `/retiradas` proporciona `useZona()` hook via ZonaContext
+- Selector FARMACIA / ÓPTICA en la parte superior de la página
+- `CAJAS_DISPONIBLES` es dinámico según zona seleccionada
+- El historial también filtra por zona
+
+---
+
+## Regla 8: Conceptos de ingreso bancario
+
+Los ingresos en Santander usan 4 conceptos que aparecen en el asunto del email y en el resguardo:
+
+| Concepto | Significado | Fecha hace referencia a |
+|----------|-------------|------------------------|
+| FARMACIA [fecha] | Ingreso de un solo día de farmacia | Día que se sacó de caja |
+| ÓPTICA [fecha] | Ingreso de un solo día de óptica | Día que se sacó de caja |
+| REMESA FARMACIA [fecha] | Varios días de farmacia acumulados | Día que se junta y se ingresa en banco |
+| REMESA ÓPTICA [fecha] | Varios días de óptica acumulados | Día que se junta y se ingresa en banco |
+
+**Flujo completo del efectivo:**
+1. Retirada de caja → caja fuerte (o a Bea directamente)
+2. Al día siguiente (o cuando se vaya al banco):
+   - Un solo día → ingreso normal (FARMACIA/ÓPTICA + fecha de retirada)
+   - Varios días acumulados → remesa (REMESA FARMACIA/ÓPTICA + fecha del ingreso)
+3. Tras ingreso en Santander → llega email → script lo captura → Google Sheet
+4. Si el banco NO manda email → foto del resguardo → subir a la app (OCR) → plan B
+
+**Google Sheet:** `ingresos santander reig` (owner: ingresos@farmaciareig.net)
+Columnas: Fecha, Concepto, Importe €, Nº Operación, Enlace Email
+
+---
+
+## Decisiones pendientes
 
 | Tema | Estado | Notas |
 |------|--------|-------|
 | Botón "A Bea" | Pendiente | Ovidio consultará con Bea si se mantiene, se mueve a menú secundario o se elimina |
 | Email Santander | Pendiente | Necesitamos ver formato exacto de los emails (remitente, asunto, importe) |
-| DNS gestion.vidalreig.com | Pendiente | Configurar en Enom → Vercel |
-
----
-
-# Reglas de Negocio — Módulo RRHH
-
-> Relacionado: [[04-base-de-datos]], [[05-api-endpoints]]
-
-## Regla RRHH-1: Ciclo de guardias cada 19 días
-
-Las guardias de la farmacia se producen **cada 19 días**, empezando desde el ancla del **4 de abril de 2026** (sábado).
-
-El cálculo se realiza en cliente (`calcGuardDates()` en `types.ts`) proyectando hacia atrás y hacia adelante cubriendo todo 2026. Las fechas resultantes son un `Set<string>` que se compara contra cada día del calendario.
-
-**Consecuencia:** No hay un ciclo mensual fijo — las guardias pueden caer cualquier día de la semana. El tipo se detecta automáticamente:
-- Domingo → `fest` (guardia festiva, tarifa más alta)
-- Resto → `lab` (guardia laborable)
-
-## Regla RRHH-2: Creación lazy de guardias en BD
-
-Las fechas de guardia se calculan en el cliente pero **no se crean en base de datos hasta que alguien las abre**. Al hacer clic en un día de guardia:
-
-1. Si no existe en BD → se hace `POST /api/rrhh/guardias` con esa fecha
-2. Se crean automáticamente los slots desde `rrhh_guardia_defaults`
-3. Se carga el `GuardiaPanel` con esos slots
-
-## Regla RRHH-3: Validación farmacéutico en guardia
-
-Una guardia **no se puede publicar** si ningún farmacéutico tiene slot activo (es decir, no está de vacaciones y su hora_inicio/hora_fin cubre algún tramo).
-
-- `hasFarma = slots.some(s => s.farmaceutico === 1 && !vacIds.has(s.empleado_id))`
-- Botón "Publicar" deshabilitado si `!hasFarma`
-- Badge rojo: "✗ ¡FALTA FARMACÉUTICO!"
-
-## Regla RRHH-4: Horas >23 = día siguiente
-
-Para guardias nocturnas que cruzan medianoche, `hora_fin` puede ir de 24 a 33:
-- `hora_fin = 33` equivale a las **09:00 del día siguiente**
-- Display: `fmtHora(33)` → `"09:00+1"`
-- La barra visual solo muestra hasta las 23:59 (hora_fin se limita a 24 para el gráfico)
-
-## Regla RRHH-5: Vacaciones — pool de 30 días
-
-Cada empleado tiene un pool de **30 días de vacaciones** por año. El cómputo es:
-- `done` = días ya disfrutados
-- `conf` = días confirmados pendientes de disfrutar
-- `pend` = días pedidos pendientes de confirmación
-- `avail = 30 - done - conf - pend`
-
-Los días se calculan como `Math.round((fechaFin - fechaInicio) / 86400000) + 1` (inclusivo en ambos extremos).
-
-Solo se cuentan los registros con `tipo = 'vac'` para el pool de 30 días. Los registros `tipo = 'comp'` son descansos compensatorios por guardia y tienen su propio contador.
-
-## Regla RRHH-7: Descansos compensatorios por guardia (farmacéuticos)
-
-Los farmacéuticos que hacen guardia nocturna (María, Julio, Celia, Ovidio) generan **1 día de descanso compensatorio por guardia realizada**.
-
-- `guardias_hechas` = número de slots en `rrhh_guardia_slots` donde `farmaceutico = 1` para ese año (via `GET /api/rrhh/guardias/stats`)
-- `días_ganados = guardias_hechas`
-- `días_usados` = suma de días en `rrhh_vacaciones` donde `tipo = 'comp'`
-- `balance = ganados - usados`
-
-Los descansos compensatorios se registran en `rrhh_vacaciones` con `tipo = 'comp'` (siempre estado `done`). Se muestran separados de las vacaciones ordinarias en `VacacionesTab.tsx`.
-
-## Regla RRHH-6: Empleados Mirelus — servicios externos
-
-Los empleados con `empresa = "mirelus"` son personal de **Mirelus** (empresa de servicios): mantenimiento (Javier M.), limpieza (M. Teresa), otros (Luisa). Se muestran separados en la vista equipo y se marcan con badge `M` en el panel de guardias.
-
-## Decisiones pendientes (RRHH)
-
-| Tema | Estado | Notas |
-|------|--------|-------|
-| Añadir empleada Jenny | Pendiente | No está en la lista actual — confirmar quién es y sus datos |
-| Tabla `rrhh_turnos` | Pendiente | Horario regular (quién trabaja qué días) para mostrar en calendario |
-| Ausencias (`rrhh_ausencias`) | Pendiente | Tabla creada, sin UI todavía |
-| Jornada exacta por empleado | Pendiente | Actualmente se muestra estimada por categoría (convenio Las Palmas) |
+| Módulo resguardos OCR | Diseñado | Red de seguridad para cuando el banco no manda email. Subir foto → OCR → extraer datos → guardar |
+| Actualizar script Gmail | Pendiente | Ampliar parser de conceptos de 2 (FARMACIA/OPTICA) a 4 (+ REMESA) |
