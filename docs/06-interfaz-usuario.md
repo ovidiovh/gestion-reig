@@ -25,6 +25,7 @@
 | | Horarios / Guardias | `/horarios` | Próximamente |
 | **FINANCIERO** | Nueva retirada | `/retiradas` | Activo |
 | | Historial | `/retiradas/historial` | Activo |
+| | Ingresos banco | `/ingresos` | Activo |
 | | Ventas | `/ventas` | Próximamente |
 | **MARKETING** | CRM | `/crm` | Activo |
 | | Fichas producto | `/fichas` | Próximamente |
@@ -134,6 +135,33 @@ También zona-aware: importa `useZona` de `../layout`. Muestra título dinámico
 - Badge con contador de pendientes en la pestaña
 - Sección "Pendientes de confirmación" (fondo ámbar)
 - Sección "Confirmadas" (fondo verde/azul según zona)
+
+---
+
+## Ingresos Banco (`/ingresos`)
+
+Módulo unificado para visualizar y registrar ingresos bancarios. Recibe datos de dos fuentes: emails automáticos del Santander (vía Apps Script + webhook) y fotos de resguardos subidas manualmente (OCR).
+
+### Dashboard superior
+
+4 tarjetas con estadísticas del mes en curso: total mes (€), farmacia (€), óptica (€) y número de ingresos. Se cargan desde `GET /api/ingresos?stats=1`.
+
+### Listado con filtros
+
+Pestañas de filtro: Hoy / Semana / Mes / Todo. Tabla con columnas: Fecha, Concepto, Importe, Nº Operación, Origen.
+
+Badges de concepto con color: verde (FARMACIA), azul (OPTICA), amarillo (REMESA/pendiente). Badges de origen: `email` / `foto` / `manual`.
+
+### Subida de foto (OCR)
+
+Flujo en pasos:
+
+1. **Subir foto:** Botón con `capture="environment"` (abre cámara en móvil). Acepta imagen JPEG/PNG.
+2. **OCR:** Tesseract.js cargado desde CDN (`tesseract.min.js@5`). Extrae automáticamente fecha, hora, importe y nº operación del resguardo.
+3. **Formulario editable:** Campos pre-rellenados con datos OCR. El usuario puede corregir cualquier campo. Selector de concepto con 4 botones: FARMACIA, OPTICA, REMESA FARMACIA, REMESA OPTICA.
+4. **Guardar:** `POST /api/ingresos` con `origen=foto` + imagen comprimida en base64 (max 1200px ancho, JPEG quality 0.7).
+
+Opción "Registrar sin foto" para entrada manual sin imagen.
 
 ---
 

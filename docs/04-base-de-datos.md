@@ -115,18 +115,32 @@ La migración ya se ejecutó en producción.
 
 ---
 
-## Tabla futura: `ingresos_manuales` (pendiente)
+## Tabla 5: `ingresos_banco`
 
-Para resguardos subidos manualmente cuando el email del Santander no llega (plan B).
+Registro unificado de todos los ingresos bancarios: tanto los detectados automáticamente por email del Santander (vía Apps Script + webhook) como los subidos manualmente con foto del resguardo (OCR).
 
 | Columna | Tipo | Descripción |
 |---------|------|-------------|
 | `id` | INTEGER PK | AUTOINCREMENT |
-| `fecha` | TEXT NOT NULL | Fecha del resguardo |
-| `concepto` | TEXT NOT NULL | FARMACIA/OPTICA/REMESA FARMACIA/REMESA OPTICA |
-| `importe` | REAL NOT NULL | Importe del ingreso |
-| `num_operacion` | TEXT | Nº operación del banco (extraído por OCR) |
-| `imagen_url` | TEXT | URL de la imagen del resguardo |
-| `usuario` | TEXT NOT NULL | Quién lo subió |
-| `created_at` | TEXT NOT NULL | `datetime('now')` |
+| `fecha` | TEXT NOT NULL | Fecha del ingreso (YYYY-MM-DD) |
+| `hora` | TEXT | Hora del ingreso (HH:MM) |
+| `concepto` | TEXT NOT NULL | FARMACIA / OPTICA / REMESA FARMACIA / REMESA OPTICA |
+| `importe` | REAL NOT NULL | Importe en EUR |
+| `num_operacion` | TEXT | Nº operación del banco |
+| `origen` | TEXT NOT NULL | `email` (automático) / `foto` (OCR) / `manual` |
+| `foto_base64` | TEXT | Imagen del resguardo comprimida (solo origen=foto) |
+| `email_id` | TEXT | ID del mensaje Gmail (solo origen=email, UNIQUE) |
+| `usuario_email` | TEXT | Email del usuario que registró |
+| `usuario_nombre` | TEXT | Nombre del usuario |
 | `notas` | TEXT | Notas opcionales |
+| `created_at` | TEXT NOT NULL | `datetime('now')` |
+
+**Índices:**
+
+| Índice | Columnas | Notas |
+|--------|----------|-------|
+| `idx_ingresos_fecha` | `fecha` | Filtros por periodo |
+| `idx_ingresos_concepto` | `concepto` | Filtros por tipo |
+| `idx_ingresos_email_id` | `email_id` (UNIQUE) | WHERE email_id IS NOT NULL — evita duplicados de webhook |
+
+**Módulo:** `src/lib/ingresos.ts` — funciones `initIngresos()`, `guardarIngreso()`, `listarIngresos()`, `existeEmailId()`, `estadisticasMes()`.

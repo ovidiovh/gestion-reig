@@ -123,11 +123,19 @@ Columnas: Fecha, Concepto, Importe €, Nº Operación, Enlace Email
 
 ---
 
+## Regla 9 — Ingresos manuales (foto resguardo)
+
+Cuando el banco no envía email de confirmación, el usuario puede subir una foto del resguardo de papel. El OCR (Tesseract.js, client-side) extrae fecha, hora, importe y nº operación. El concepto NO aparece en el resguardo de papel, por lo que el usuario lo selecciona manualmente (FARMACIA / OPTICA / REMESA FARMACIA / REMESA OPTICA).
+
+Los ingresos manuales se guardan con `origen=foto` en la misma tabla `ingresos_banco` que los automáticos (`origen=email`). La imagen se almacena comprimida en base64 como justificante.
+
+---
+
 ## Decisiones pendientes
 
 | Tema | Estado | Notas |
 |------|--------|-------|
 | Botón "A Bea" | Pendiente | Ovidio consultará con Bea si se mantiene, se mueve a menú secundario o se elimina |
-| Email Santander | Pendiente | Necesitamos ver formato exacto de los emails (remitente, asunto, importe) |
-| Módulo resguardos OCR | Diseñado | Red de seguridad para cuando el banco no manda email. Subir foto → OCR → extraer datos → guardar |
-| Actualizar script Gmail | Pendiente | Ampliar parser de conceptos de 2 (FARMACIA/OPTICA) a 4 (+ REMESA) |
+| Email Santander | ✅ Resuelto | Script v2.2 procesa emails y envía datos por webhook a la app |
+| Módulo resguardos OCR | ✅ Implementado | Página /ingresos con OCR Tesseract.js + formulario editable + guardado en Turso |
+| Actualizar script Gmail | ✅ Implementado | Script v2.2 reconoce 4 conceptos + pestaña Pendientes para no reconocidos |

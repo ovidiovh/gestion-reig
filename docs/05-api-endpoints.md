@@ -264,3 +264,82 @@ Response: { ok: true }
 ```
 Response: { ok: true }
 ```
+
+---
+
+## Ingresos Banco
+
+### `GET /api/ingresos?filtro=hoy|semana|mes|todo` — Listar ingresos
+
+```
+Response: {
+  ok: true,
+  data: [{
+    id, fecha, hora, concepto, importe,
+    num_operacion, origen, email_id,
+    usuario_nombre, notas, created_at
+  }]
+}
+```
+
+Filtro por periodo (default: `mes`). Ordenado por fecha DESC, hora DESC. No devuelve `foto_base64` en el listado (optimización).
+
+### `GET /api/ingresos?stats=1` — Estadísticas del mes
+
+```
+Response: {
+  ok: true,
+  stats: {
+    total_mes: number,
+    total_farmacia: number,
+    total_optica: number,
+    count: number
+  }
+}
+```
+
+Suma importes del mes en curso agrupados por concepto (FARMACIA + REMESA FARMACIA → farmacia, OPTICA + REMESA OPTICA → optica).
+
+### `POST /api/ingresos` — Registrar ingreso (autenticado)
+
+```
+Request: {
+  fecha: "YYYY-MM-DD",
+  hora?: "HH:MM",
+  concepto: "FARMACIA" | "OPTICA" | "REMESA FARMACIA" | "REMESA OPTICA",
+  importe: number,
+  num_operacion?: string,
+  origen?: "foto" | "manual",
+  foto_base64?: string,
+  notas?: string
+}
+
+Response: { ok: true, id: number }
+Error:    { ok: false, error: "fecha, concepto e importe son obligatorios" } (400)
+```
+
+Requiere sesión autenticada (usa `getUser()` para extraer email y nombre). El campo `origen` default es `manual`.
+
+### `POST /api/ingresos/webhook` — Webhook para Apps Script (público + API key)
+
+```
+Headers:  x-api-key: <INGRESOS_WEBHOOK_KEY>
+
+Request: {
+  fecha: "YYYY-MM-DD",
+  hora?: "HH:MM",
+  concepto: string,
+  importe: number,
+  num_operacion?: string,
+  email_id?: string
+} | Array<{...}>
+
+Response: { ok: true, insertados: number, duplicados: number, total: number }
+Error:    { error: "No autorizado" } (401)
+```
+
+**Autenticación:** Header `x-api-key` debe coincidir con env var `INGRESOS_WEBHOOK_KEY` (Vercel). No usa sesión de usuario.
+
+**Deduplicación:** Si `email_id` ya existe en BD, lo cuenta como duplicado y no lo inserta (índice UNIQUE).
+
+**Origen:** Siempre `email` + usuario fijo `Script Santander`.
