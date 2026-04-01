@@ -71,6 +71,11 @@ export default function RetiradasPage() {
 
   const [paso, setPaso] = useState<1 | 2 | 3>(1);
 
+  // Fecha (editable, default hoy)
+  const [fechaRetirada, setFechaRetirada] = useState(
+    new Date().toISOString().slice(0, 10)
+  );
+
   // Paso 1: cajas
   const [cajasActivas, setCajasActivas] = useState<Set<number>>(new Set());
   const [cajasData, setCajasData] = useState<Record<number, CajaBilletes>>({});
@@ -142,7 +147,7 @@ export default function RetiradasPage() {
         return { caja_num: n, ...c, total: totalCaja(c) };
       });
       const body = {
-        fecha: new Date().toISOString().slice(0, 10),
+        fecha: fechaRetirada,
         cajas: cajasArr,
         conteo: {
           ...conteo,
@@ -177,6 +182,7 @@ export default function RetiradasPage() {
     setCajasData({});
     setConteo(emptyConteo());
     setMovimientos([]);
+    setFechaRetirada(new Date().toISOString().slice(0, 10));
     setResultado(null);
     setError("");
   };
@@ -195,6 +201,29 @@ export default function RetiradasPage() {
       {/* ═══════════ PASO 1: CAJAS ═══════════ */}
       {paso === 1 && (
         <>
+          {/* Fecha de la retirada */}
+          <div style={{ ...card, display: "flex", alignItems: "center", gap: 12 }}>
+            <label style={{ fontSize: 14, fontWeight: 700, whiteSpace: "nowrap" }}>Fecha</label>
+            <input
+              type="date"
+              value={fechaRetirada}
+              max={new Date().toISOString().slice(0, 10)}
+              onChange={(e) => setFechaRetirada(e.target.value)}
+              style={{
+                padding: "8px 12px", borderRadius: 8, border: "1px solid #ddd",
+                fontSize: 15, fontWeight: 600, color: "#333", flex: 1, maxWidth: 200,
+              }}
+            />
+            {fechaRetirada !== new Date().toISOString().slice(0, 10) && (
+              <span style={{
+                fontSize: 12, color: "#b45309", background: "#fef3c7",
+                padding: "4px 10px", borderRadius: 6, fontWeight: 600,
+              }}>
+                Fecha anterior
+              </span>
+            )}
+          </div>
+
           {/* Selector de cajas */}
           <div style={card}>
             <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Selecciona las cajas</h3>
@@ -446,92 +475,4 @@ export default function RetiradasPage() {
               <div style={{ background: "#fff", borderRadius: 16, padding: 24, width: 340, maxWidth: "90vw" }}
                 onClick={(e) => e.stopPropagation()}
               >
-                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>
-                  {showModal === "sacar" ? "Sacar de una caja" : "Ingresar en caja"}
-                </h3>
-                <label style={{ fontSize: 12, color: "#888" }}>Caja</label>
-                <select
-                  value={modalCaja}
-                  onChange={(e) => setModalCaja(Number(e.target.value))}
-                  style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #e0e0e0", marginBottom: 12 }}
-                >
-                  {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-                    <option key={n} value={n}>Caja {n}</option>
-                  ))}
-                </select>
-                <label style={{ fontSize: 12, color: "#888" }}>Importe</label>
-                <input
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  value={modalImporte || ""}
-                  onChange={(e) => setModalImporte(parseFloat(e.target.value) || 0)}
-                  style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #e0e0e0", marginBottom: 12, fontSize: 16 }}
-                  placeholder="0.00"
-                />
-                <label style={{ fontSize: 12, color: "#888" }}>Motivo</label>
-                <input
-                  type="text"
-                  value={modalMotivo}
-                  onChange={(e) => setModalMotivo(e.target.value)}
-                  style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #e0e0e0", marginBottom: 16 }}
-                  placeholder="Motivo del ajuste"
-                />
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button
-                    onClick={() => setShowModal(null)}
-                    style={{ ...btnBase, flex: 1, background: "#f3f4f6", color: "#666" }}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={addMovimiento}
-                    disabled={modalImporte <= 0}
-                    style={{
-                      ...btnBase, flex: 1,
-                      background: showModal === "ingresar" ? "#2563eb" : "#dc2626",
-                      color: "#fff",
-                      opacity: modalImporte <= 0 ? 0.5 : 1,
-                    }}
-                  >
-                    {showModal === "ingresar" ? "Ingresar" : "Sacar"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* ═══════════ PASO 3: GUARDADO ═══════════ */}
-      {paso === 3 && resultado && (
-        <div style={{ ...card, textAlign: "center", padding: 40 }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>&#10003;</div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: color, marginBottom: 8 }}>
-            Retirada guardada
-          </h2>
-          <div style={{ fontSize: 28, fontWeight: 800, marginBottom: 4 }}>{eur(resultado.total)}</div>
-          <div style={{ fontSize: 13, color: "#888", marginBottom: 24 }}>
-            {cajasActivas.size} caja{cajasActivas.size > 1 ? "s" : ""} — ID #{resultado.id}
-          </div>
-          {!cuadra && (
-            <div style={{ fontSize: 13, color: "#f59e0b", marginBottom: 16 }}>
-              Guardada con diferencia de {eur(diferencia)}
-            </div>
-          )}
-          <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-            <button onClick={reset} style={{ ...btnBase, background: color, color: "#fff", padding: "12px 24px" }}>
-              Nueva retirada
-            </button>
-            <button
-              onClick={() => window.location.href = "/retiradas?view=historial"}
-              style={{ ...btnBase, background: "#f3f4f6", color: "#666", padding: "12px 24px" }}
-            >
-              Ver historial
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+                <h3 style={{ fontSize: 16, fontWeight: 7
