@@ -66,6 +66,8 @@ const btnBase: React.CSSProperties = {
 export default function RetiradasPage() {
   const zona = useZona();
   const CAJAS_DISPONIBLES = zona === "optica" ? [11] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const color = zona === "optica" ? "#0C4D6D" : "#0C6D32";
+  const colorBg = zona === "optica" ? "#0C4D6D15" : "#0C6D3215";
 
   const [paso, setPaso] = useState<1 | 2 | 3>(1);
 
@@ -207,7 +209,7 @@ export default function RetiradasPage() {
                       ...btnBase,
                       padding: "14px 0",
                       fontSize: 16,
-                      background: active ? "var(--color-reig-green, #16a34a)" : "#f3f4f6",
+                      background: active ? color : "#f3f4f6",
                       color: active ? "#fff" : "#666",
                     }}
                   >
@@ -226,7 +228,7 @@ export default function RetiradasPage() {
               <div key={n} style={card}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                   <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>Caja {n}</h3>
-                  <span style={{ fontWeight: 800, fontSize: 16, color: t > 0 ? "var(--color-reig-green, #16a34a)" : "#aaa" }}>
+                  <span style={{ fontWeight: 800, fontSize: 16, color: t > 0 ? color : "#aaa" }}>
                     {eur(t)}
                   </span>
                 </div>
@@ -257,11 +259,11 @@ export default function RetiradasPage() {
 
           {/* Resumen + Finalizar */}
           {cajasActivas.size > 0 && (
-            <div style={{ ...card, background: "#f0fdf4", borderLeft: "4px solid var(--color-reig-green, #16a34a)" }}>
+            <div style={{ ...card, background: colorBg, borderLeft: `4px solid ${color}` }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
                   <div style={{ fontSize: 13, color: "#666" }}>{cajasActivas.size} caja{cajasActivas.size > 1 ? "s" : ""} seleccionada{cajasActivas.size > 1 ? "s" : ""}</div>
-                  <div style={{ fontSize: 24, fontWeight: 800, color: "var(--color-reig-green, #16a34a)" }}>{eur(totalGlobal)}</div>
+                  <div style={{ fontSize: 24, fontWeight: 800, color: color }}>{eur(totalGlobal)}</div>
                 </div>
                 <button
                   onClick={() => { if (totalGlobal > 0) setPaso(2); }}
@@ -270,7 +272,7 @@ export default function RetiradasPage() {
                     ...btnBase,
                     padding: "14px 32px",
                     fontSize: 16,
-                    background: totalGlobal > 0 ? "var(--color-reig-green, #16a34a)" : "#ccc",
+                    background: totalGlobal > 0 ? color : "#ccc",
                     color: "#fff",
                   }}
                 >
@@ -329,12 +331,12 @@ export default function RetiradasPage() {
           {totalConteoVal > 0 && (
             <div style={{
               ...card,
-              background: cuadra ? "#f0fdf4" : "#fef2f2",
-              borderLeft: `4px solid ${cuadra ? "#16a34a" : "#dc2626"}`,
+              background: cuadra ? colorBg : "#fef2f2",
+              borderLeft: `4px solid ${cuadra ? color : "#dc2626"}`,
             }}>
               {cuadra ? (
                 <>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: "#16a34a", marginBottom: 8 }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: color, marginBottom: 8 }}>
                     El conteo cuadra
                   </div>
                   <button
@@ -345,7 +347,7 @@ export default function RetiradasPage() {
                       width: "100%",
                       padding: "14px 0",
                       fontSize: 16,
-                      background: saving ? "#aaa" : "var(--color-reig-green, #16a34a)",
+                      background: saving ? "#aaa" : color,
                       color: "#fff",
                     }}
                   >
@@ -407,7 +409,7 @@ export default function RetiradasPage() {
                   padding: "6px 0", borderBottom: "1px solid #f0f0f0", fontSize: 13,
                 }}>
                   <span>
-                    <span style={{ color: m.tipo === "ingresar" ? "#16a34a" : "#dc2626", fontWeight: 700 }}>
+                    <span style={{ color: m.tipo === "ingresar" ? color : "#dc2626", fontWeight: 700 }}>
                       {m.tipo === "ingresar" ? "+" : "-"}{eur(m.importe)}
                     </span>
                     {" "}Caja {m.caja_num} — {m.motivo || "Sin motivo"}
@@ -505,7 +507,7 @@ export default function RetiradasPage() {
       {paso === 3 && resultado && (
         <div style={{ ...card, textAlign: "center", padding: 40 }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>&#10003;</div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--color-reig-green, #16a34a)", marginBottom: 8 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: color, marginBottom: 8 }}>
             Retirada guardada
           </h2>
           <div style={{ fontSize: 28, fontWeight: 800, marginBottom: 4 }}>{eur(resultado.total)}</div>
@@ -518,7 +520,7 @@ export default function RetiradasPage() {
             </div>
           )}
           <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-            <button onClick={reset} style={{ ...btnBase, background: "var(--color-reig-green, #16a34a)", color: "#fff", padding: "12px 24px" }}>
+            <button onClick={reset} style={{ ...btnBase, background: color, color: "#fff", padding: "12px 24px" }}>
               Nueva retirada
             </button>
             <button
