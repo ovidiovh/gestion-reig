@@ -95,24 +95,30 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
           </div>
         </div>
 
-        {/* Slots — CSS Grid para alineación perfecta */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "72px 130px 1fr 28px",
-          rowGap: 0, columnGap: 4,
-          marginBottom: 8,
-          alignItems: "center",
-        }}>
+        {/* Slots — tabla HTML pura para alineación pixel-perfect */}
+        <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 8 }}>
+          <colgroup>
+            <col style={{ width: 72 }} />
+            <col style={{ width: 130 }} />
+            <col />
+            <col style={{ width: 28 }} />
+          </colgroup>
           {/* Header horas */}
-          <div /> {/* col nombre */}
-          <div /> {/* col selectores */}
-          <div style={{ display: "grid", gridTemplateColumns: `repeat(${HORAS_GRID.length}, 1fr)`, gap: 1 }}>
-            {HORAS_GRID.map(h => (
-              <div key={h} style={{ textAlign: "center", fontSize: 7, color: "#bbb", fontFamily: "'JetBrains Mono', monospace" }}>{h}</div>
-            ))}
-          </div>
-          <div /> {/* col total */}
-
+          <thead>
+            <tr>
+              <td />
+              <td />
+              <td style={{ padding: "0 0 4px 0" }}>
+                <div style={{ display: "grid", gridTemplateColumns: `repeat(${HORAS_GRID.length}, 1fr)`, gap: 1 }}>
+                  {HORAS_GRID.map(h => (
+                    <div key={h} style={{ textAlign: "center", fontSize: 7, color: "#bbb", fontFamily: "'JetBrains Mono', monospace" }}>{h}</div>
+                  ))}
+                </div>
+              </td>
+              <td />
+            </tr>
+          </thead>
+          <tbody>
           {slots.map(slot => {
             const isVac    = vacIds.has(slot.empleado_id);
             const isFarma  = slot.farmaceutico === 1;
@@ -120,30 +126,25 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
             const totalH   = (slot.hora_fin - slot.hora_inicio) + (hasSplit ? (slot.hora_fin2! - slot.hora_inicio2!) : 0);
 
             return (
-              <div key={slot.empleado_id} style={{
-                display: "grid", gridColumn: "1 / -1",
-                gridTemplateColumns: "subgrid",
-                borderBottom: "1px solid #f5f5f5",
-                padding: "4px 0",
-                opacity: isVac ? 0.5 : 1,
-                alignItems: "center",
-              }}>
+              <tr key={slot.empleado_id} style={{ borderBottom: "1px solid #f5f5f5", opacity: isVac ? 0.5 : 1 }}>
                 {/* Col 1: Nombre */}
-                <div style={{
-                  fontSize: 10, fontWeight: isFarma ? 700 : 400,
-                  color: isVac ? "#ccc" : isFarma ? GREEN_DARK : "#333",
-                  textDecoration: isVac ? "line-through" : "none",
-                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const,
-                }}>
-                  {slot.nombre}
-                  {isVac && <span style={{ color: "#ef4444", fontSize: 7, marginLeft: 2 }}>VAC</span>}
-                  {slot.empresa === "mirelus" && (
-                    <span style={{ fontSize: 7, background: "#a9d18e", padding: "0 3px", borderRadius: 2, marginLeft: 3 }}>M</span>
-                  )}
-                </div>
+                <td style={{ padding: "4px 4px 4px 0", verticalAlign: "middle" }}>
+                  <div style={{
+                    fontSize: 10, fontWeight: isFarma ? 700 : 400,
+                    color: isVac ? "#ccc" : isFarma ? GREEN_DARK : "#333",
+                    textDecoration: isVac ? "line-through" : "none",
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const,
+                  }}>
+                    {slot.nombre}
+                    {isVac && <span style={{ color: "#ef4444", fontSize: 7, marginLeft: 2 }}>VAC</span>}
+                    {slot.empresa === "mirelus" && (
+                      <span style={{ fontSize: 7, background: "#a9d18e", padding: "0 3px", borderRadius: 2, marginLeft: 3 }}>M</span>
+                    )}
+                  </div>
+                </td>
 
-                {/* Col 2: Selectores de hora */}
-                <div>
+                {/* Col 2: Selectores */}
+                <td style={{ padding: "4px 4px", verticalAlign: "middle" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <select
                       value={slot.hora_inicio}
@@ -163,7 +164,6 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
                       {HRS34.map(h => <option key={h} value={h}>{fmtHora(h)}</option>)}
                     </select>
                   </div>
-                  {/* Turno partido (T2) debajo */}
                   {hasSplit && !isVac && (
                     <div style={{ display: "flex", alignItems: "center", gap: 2, marginTop: 2 }}>
                       <span style={{ fontSize: 7, color: "#7c3aed", fontWeight: 700 }}>T2</span>
@@ -184,41 +184,44 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
                       </select>
                     </div>
                   )}
-                </div>
+                </td>
 
-                {/* Col 3: Barra visual — SIEMPRE en la misma columna del grid */}
-                <div style={{ display: "grid", gridTemplateColumns: `repeat(${HORAS_GRID.length}, 1fr)`, gap: 1 }}>
-                  {HORAS_GRID.map(h => {
-                    const active1 = h >= slot.hora_inicio && h < Math.min(slot.hora_fin, 24);
-                    const active2 = hasSplit && slot.hora_inicio2 != null && slot.hora_fin2 != null
-                      ? h >= slot.hora_inicio2 && h < Math.min(slot.hora_fin2, 24)
-                      : false;
-                    const active = active1 || active2;
-                    return (
-                      <div key={h} style={{
-                        height: 14, borderRadius: 2,
-                        background: isVac
-                          ? "#f0f0f0"
-                          : active2
-                          ? "#c4b5fd"
-                          : active
-                          ? (h >= 22 ? GREEN_DARK : GREEN)
-                          : "#f0f0f0",
-                        outline: isFarma && active && !isVac ? "1.5px solid #0a4a1e" : "none",
-                        outlineOffset: -1,
-                      }} />
-                    );
-                  })}
-                </div>
+                {/* Col 3: Barra visual — misma celda de tabla = mismo ancho siempre */}
+                <td style={{ padding: "4px 0", verticalAlign: "middle" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: `repeat(${HORAS_GRID.length}, 1fr)`, gap: 1 }}>
+                    {HORAS_GRID.map(h => {
+                      const active1 = h >= slot.hora_inicio && h < Math.min(slot.hora_fin, 24);
+                      const active2 = hasSplit && slot.hora_inicio2 != null && slot.hora_fin2 != null
+                        ? h >= slot.hora_inicio2 && h < Math.min(slot.hora_fin2, 24)
+                        : false;
+                      const active = active1 || active2;
+                      return (
+                        <div key={h} style={{
+                          height: 14, borderRadius: 2,
+                          background: isVac
+                            ? "#f0f0f0"
+                            : active2
+                            ? "#c4b5fd"
+                            : active
+                            ? (h >= 22 ? GREEN_DARK : GREEN)
+                            : "#f0f0f0",
+                          outline: isFarma && active && !isVac ? "1.5px solid #0a4a1e" : "none",
+                          outlineOffset: -1,
+                        }} />
+                      );
+                    })}
+                  </div>
+                </td>
 
-                {/* Col 4: Horas totales */}
-                <div style={{ textAlign: "center", fontSize: 10, fontWeight: 600, color: isVac ? "#ddd" : "#333" }}>
+                {/* Col 4: Total horas */}
+                <td style={{ textAlign: "center", fontSize: 10, fontWeight: 600, color: isVac ? "#ddd" : "#333", verticalAlign: "middle" }}>
                   {isVac ? "—" : totalH}
-                </div>
-              </div>
+                </td>
+              </tr>
             );
           })}
-        </div>
+          </tbody>
+        </table>
 
         {/* Validación farmacéutico */}
         <div style={{
