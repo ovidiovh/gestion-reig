@@ -106,9 +106,9 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
           {/* Header horas */}
           <div /> {/* col nombre */}
           <div /> {/* col selectores */}
-          <div style={{ display: "flex", gap: 1 }}>
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${HORAS_GRID.length}, 1fr)`, gap: 1 }}>
             {HORAS_GRID.map(h => (
-              <div key={h} style={{ flex: 1, textAlign: "center", fontSize: 7, color: "#bbb", fontFamily: "'JetBrains Mono', monospace" }}>{h}</div>
+              <div key={h} style={{ textAlign: "center", fontSize: 7, color: "#bbb", fontFamily: "'JetBrains Mono', monospace" }}>{h}</div>
             ))}
           </div>
           <div /> {/* col total */}
@@ -187,7 +187,7 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
                 </div>
 
                 {/* Col 3: Barra visual — SIEMPRE en la misma columna del grid */}
-                <div style={{ display: "flex", gap: 1 }}>
+                <div style={{ display: "grid", gridTemplateColumns: `repeat(${HORAS_GRID.length}, 1fr)`, gap: 1 }}>
                   {HORAS_GRID.map(h => {
                     const active1 = h >= slot.hora_inicio && h < Math.min(slot.hora_fin, 24);
                     const active2 = hasSplit && slot.hora_inicio2 != null && slot.hora_fin2 != null
@@ -196,7 +196,7 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
                     const active = active1 || active2;
                     return (
                       <div key={h} style={{
-                        flex: 1, height: 14, borderRadius: 2,
+                        height: 14, borderRadius: 2,
                         background: isVac
                           ? "#f0f0f0"
                           : active2
@@ -204,8 +204,8 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
                           : active
                           ? (h >= 22 ? GREEN_DARK : GREEN)
                           : "#f0f0f0",
-                        border: isFarma && active && !isVac ? `1.5px solid #0a4a1e` : "none",
-                        boxSizing: "border-box" as const,
+                        outline: isFarma && active && !isVac ? "1.5px solid #0a4a1e" : "none",
+                        outlineOffset: -1,
                       }} />
                     );
                   })}
