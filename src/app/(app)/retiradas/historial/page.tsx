@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useZona } from "../layout";
 
 interface Sesion {
   id: number;
@@ -65,6 +66,11 @@ function esBloqueado(destino: string) {
 }
 
 export default function HistorialPage() {
+  const zona = useZona();
+  const isFarma = zona === "farmacia";
+  const accentColor = isFarma ? "var(--color-reig-green)" : "var(--color-reig-optica)";
+  const accentDark  = isFarma ? "var(--color-reig-green-dark)" : "var(--color-reig-optica-dark)";
+  const accentLight = isFarma ? "var(--color-reig-green-light)" : "var(--color-reig-optica-light)";
   const [filtro, setFiltro] = useState<Filtro>("semana");
   const [vista, setVista] = useState<Vista>("retiradas");
   const [sesiones, setSesiones] = useState<Sesion[]>([]);
@@ -83,14 +89,16 @@ export default function HistorialPage() {
       ]);
       const dataSesiones = await resSesiones.json();
       const dataRemesas = await resRemesas.json();
-      if (dataSesiones.ok) setSesiones(dataSesiones.data);
+      if (dataSesiones.ok) setSesiones(dataSesiones.data.filter((s: Sesion & { origen?: string }) =>
+        zona === "optica" ? s.origen === "optica" : (!s.origen || s.origen === "farmacia")
+      ));
       if (dataRemesas.ok) setRemesas(dataRemesas.data);
     } catch (err) {
       console.error("Error cargando historial:", err);
     } finally {
       setLoading(false);
     }
-  }, [filtro]);
+  }, [filtro, zona]);
 
   useEffect(() => {
     cargar();
@@ -178,15 +186,19 @@ export default function HistorialPage() {
   return (
     <div className="max-w-2xl">
       <div className="flex items-center justify-between mb-1">
-        <h2 className="font-serif text-3xl text-reig-green">Historial</h2>
+        <h2 className="font-serif text-3xl" style={{ color: accentColor }}>
+          Historial — {isFarma ? "Farmacia" : "Óptica"}
+        </h2>
         <Link
-          href="/retiradas"
-          className="px-4 py-2 bg-reig-green text-white rounded-lg text-sm font-medium hover:bg-reig-green-dark transition-colors"
+          href={isFarma ? "/retiradas" : "/retiradas?zona=optica"}
+          style={{ padding: "8px 16px", background: accentColor, color: "#fff", borderRadius: 8, fontSize: 14, fontWeight: 500, textDecoration: "none" }}
         >
           + Nueva retirada
         </Link>
       </div>
-      <p className="text-gray-500 mb-6">Retiradas de efectivo registradas</p>
+      <p className="text-gray-500 mb-6">
+        {isFarma ? "Retiradas de efectivo — Cajas 1-10" : "Retiradas de efectivo — Óptica (Caja 11)"}
+      </p>
 
       {/* Tabs: Retiradas / Remesas */}
       <div className="flex gap-1 mb-4 bg-gray-100 rounded-lg p-1">
@@ -194,9 +206,10 @@ export default function HistorialPage() {
           onClick={() => setVista("retiradas")}
           className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${
             vista === "retiradas"
-              ? "bg-white text-reig-green shadow-sm"
+              ? "bg-white shadow-sm"
               : "text-gray-500 hover:text-gray-700"
           }`}
+          style={vista === "retiradas" ? { color: accentColor } : {}}
         >
           Retiradas
         </button>
@@ -204,9 +217,10 @@ export default function HistorialPage() {
           onClick={() => setVista("remesas")}
           className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${
             vista === "remesas"
-              ? "bg-white text-reig-green shadow-sm"
+              ? "bg-white shadow-sm"
               : "text-gray-500 hover:text-gray-700"
           }`}
+          style={vista === "remesas" ? { color: accentColor } : {}}
         >
           Remesas banco
           {remesasPendientes.length > 0 && (
@@ -227,10 +241,9 @@ export default function HistorialPage() {
                 key={f.key}
                 onClick={() => setFiltro(f.key)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  filtro === f.key
-                    ? "bg-reig-green text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  filtro !== f.key ? "bg-gray-100 text-gray-600 hover:bg-gray-200" : ""
                 }`}
+                style={filtro === f.key ? { background: accentColor, color: "#fff" } : {}}
               >
                 {f.label}
               </button>
@@ -239,11 +252,11 @@ export default function HistorialPage() {
 
           {/* Total del periodo */}
           {!loading && sesiones.length > 0 && (
-            <div className="flex justify-between items-center bg-reig-green-light rounded-lg px-4 py-3 mb-4">
-              <span className="font-semibold text-reig-green">
+            <div className="flex justify-between items-center rounded-lg px-4 py-3 mb-4" style={{ background: accentLight }}>
+              <span className="font-semibold" style={{ color: accentColor }}>
                 Total ({filtros.find((f) => f.key === filtro)?.label.toLowerCase()})
               </span>
-              <span className="font-mono font-bold text-xl text-reig-green">
+              <span className="font-mono font-bold text-xl" style={{ color: accentColor }}>
                 {totalPeriodo.toFixed(2)} €
               </span>
             </div>
@@ -254,7 +267,8 @@ export default function HistorialPage() {
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4 bg-gray-50 rounded-lg px-3 sm:px-4 py-3">
               <button
                 onClick={selectAllEditables}
-                className="text-sm text-reig-green underline"
+                className="text-sm underline"
+                style={{ color: accentColor }}
               >
                 {selected.size === editables.length ? "Deseleccionar" : "Seleccionar"}
               </button>
@@ -300,9 +314,10 @@ export default function HistorialPage() {
                           ? "bg-green-50 opacity-90"
                           : "bg-gray-100 opacity-80"
                         : isSelected
-                        ? "bg-reig-green-light ring-2 ring-reig-green cursor-pointer"
+                        ? "ring-2 cursor-pointer"
                         : "bg-gray-50 hover:bg-gray-100 cursor-pointer"
                     }`}
+                    style={isSelected && !bloqueado && !enRemesa ? { background: accentLight, ringColor: accentColor, outlineColor: accentColor, boxShadow: `0 0 0 2px ${accentColor}` } : {}}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -310,10 +325,9 @@ export default function HistorialPage() {
                         {!bloqueado && !enRemesa && (
                           <div
                             className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-all ${
-                              isSelected
-                                ? "bg-reig-green border-reig-green text-white"
-                                : "border-gray-300"
+                              !isSelected ? "border-gray-300" : ""
                             }`}
+                            style={isSelected ? { background: accentColor, borderColor: accentColor, color: "#fff" } : {}}
                           >
                             {isSelected && <span className="text-xs">✓</span>}
                           </div>

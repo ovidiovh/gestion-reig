@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useZona } from "./layout";
 
 // ─── Tipos ───────────────────────────────────────────────
 const DENOMINACIONES = [200, 100, 50, 20, 10, 5] as const;
@@ -23,6 +24,13 @@ const hoy = () => new Date().toISOString().slice(0, 10);
 
 // ─── Componente principal ────────────────────────────────
 export default function RetiradasPage() {
+  const zona = useZona();
+  const isFarma = zona === "farmacia";
+  const CAJAS_DISPONIBLES = isFarma ? Array.from({ length: 10 }, (_, i) => i + 1) : [11];
+  const accentColor = isFarma ? "var(--color-reig-green)" : "var(--color-reig-optica)";
+  const accentDark  = isFarma ? "var(--color-reig-green-dark)" : "var(--color-reig-optica-dark)";
+  const accentLight = isFarma ? "var(--color-reig-green-light)" : "var(--color-reig-optica-light)";
+
   const [paso, setPaso] = useState<Paso>("cajas");
   const fecha = hoy(); // Siempre hoy, no editable
   const [cajasSeleccionadas, setCajasSeleccionadas] = useState<number[]>([]);
@@ -109,6 +117,7 @@ export default function RetiradasPage() {
       const body = {
         fecha,
         destino: "caja_fuerte",
+        origen: zona,
         cajas: cajasData.map((c) => ({
           num_caja: c.num_caja,
           b200: c.billetes[200], b100: c.billetes[100], b50: c.billetes[50],
@@ -148,10 +157,12 @@ export default function RetiradasPage() {
   // ─── RENDER ──────────────────────────────────────────
   return (
     <div className="max-w-2xl">
-      <h2 className="font-serif text-3xl text-reig-green mb-1">
-        Retiradas de Caja
+      <h2 className="font-serif text-3xl mb-1" style={{ color: accentColor }}>
+        Retiradas — {isFarma ? "Farmacia" : "Óptica"}
       </h2>
-      <p className="text-gray-500 mb-6">Registro de retiradas de efectivo</p>
+      <p className="text-gray-500 mb-6">
+        {isFarma ? "Cajas 1-10 · Registro de retiradas de efectivo" : "Caja 11 · Retirada de óptica"}
+      </p>
 
       {/* ── PASO 1: Selección de cajas ────────────────── */}
       {paso === "cajas" && cajaActual === null && (
@@ -171,18 +182,21 @@ export default function RetiradasPage() {
           <p className="text-sm font-medium text-gray-700 mb-3">
             Selecciona las cajas de las que vas a retirar:
           </p>
-          <div className="grid grid-cols-5 gap-2 mb-6">
-            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+          <div className={`grid gap-2 mb-6 ${isFarma ? "grid-cols-5" : "grid-cols-1 max-w-[200px]"}`}>
+            {CAJAS_DISPONIBLES.map((n) => (
               <button
                 key={n}
                 onClick={() => toggleCaja(n)}
-                className={`py-3 rounded-lg text-base sm:text-lg font-semibold transition-all ${
-                  cajasSeleccionadas.includes(n)
-                    ? "bg-reig-green text-white shadow-md"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
+                style={{
+                  padding: "12px", borderRadius: 8, fontSize: 16, fontWeight: 700,
+                  transition: "all 0.2s",
+                  background: cajasSeleccionadas.includes(n) ? accentColor : "#f3f4f6",
+                  color: cajasSeleccionadas.includes(n) ? "#fff" : "#666",
+                  boxShadow: cajasSeleccionadas.includes(n) ? "0 2px 8px rgba(0,0,0,0.15)" : "none",
+                  border: "none", cursor: "pointer",
+                }}
               >
-                {n}
+                {n === 11 ? "Óptica (11)" : n}
               </button>
             ))}
           </div>
@@ -190,10 +204,12 @@ export default function RetiradasPage() {
           {cajasSeleccionadas.length > 0 && (
             <button
               onClick={empezarConteo}
-              className="w-full py-3 bg-reig-green text-white rounded-lg font-semibold hover:bg-reig-green-dark transition-colors"
+              style={{ width: "100%", padding: "12px", background: accentColor, color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer", fontSize: 14 }}
             >
-              Empezar conteo ({cajasSeleccionadas.length} caja
-              {cajasSeleccionadas.length > 1 ? "s" : ""})
+              {isFarma
+                ? `Empezar conteo (${cajasSeleccionadas.length} caja${cajasSeleccionadas.length > 1 ? "s" : ""})`
+                : "Empezar conteo óptica"
+              }
             </button>
           )}
         </div>
@@ -209,7 +225,7 @@ export default function RetiradasPage() {
                 ({cajasSeleccionadas.indexOf(cajaActual) + 1}/{cajasSeleccionadas.length})
               </span>
             </h3>
-            <span className="text-xl sm:text-2xl font-mono font-bold text-reig-green">
+            <span className="text-xl sm:text-2xl font-mono font-bold" style={{ color: accentColor }}>
               {calcTotal(billetes).toFixed(2)} €
             </span>
           </div>
@@ -232,7 +248,7 @@ export default function RetiradasPage() {
                     setBillete(d, parseInt(e.target.value) || 0)
                   }
                   onFocus={(e) => e.target.select()}
-                  className="w-16 sm:w-20 text-center border border-gray-300 rounded-lg py-2 text-base sm:text-lg font-mono focus:border-reig-green focus:ring-1 focus:ring-reig-green outline-none"
+                  className="w-16 sm:w-20 text-center border border-gray-300 rounded-lg py-2 text-base sm:text-lg font-mono outline-none focus:ring-2"
                   inputMode="numeric"
                 />
                 <span className="text-gray-400 text-sm">=</span>
@@ -245,7 +261,7 @@ export default function RetiradasPage() {
 
           <button
             onClick={guardarCaja}
-            className="w-full mt-6 py-3 bg-reig-green text-white rounded-lg font-semibold hover:bg-reig-green-dark transition-colors"
+            style={{ width: "100%", marginTop: 24, padding: "12px", background: accentColor, color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer", fontSize: 14 }}
           >
             {cajasSeleccionadas.indexOf(cajaActual) <
             cajasSeleccionadas.length - 1
@@ -277,9 +293,9 @@ export default function RetiradasPage() {
               </div>
             ))}
           </div>
-          <div className="flex justify-between items-center bg-reig-green-light rounded-lg px-4 py-3 mb-6">
-            <span className="font-semibold text-reig-green">Total cajas</span>
-            <span className="font-mono font-bold text-xl text-reig-green">
+          <div className="flex justify-between items-center rounded-lg px-4 py-3 mb-6" style={{ background: accentLight }}>
+            <span className="font-semibold" style={{ color: accentColor }}>Total cajas</span>
+            <span className="font-mono font-bold text-xl" style={{ color: accentColor }}>
               {cajasData.reduce((s, c) => s + c.total, 0).toFixed(2)} €
             </span>
           </div>
@@ -287,7 +303,7 @@ export default function RetiradasPage() {
           <div className="flex gap-3">
             <button
               onClick={() => setPaso("audit")}
-              className="flex-1 py-3 bg-reig-green text-white rounded-lg font-semibold hover:bg-reig-green-dark transition-colors"
+              style={{ flex: 1, padding: "12px", background: accentColor, color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer", fontSize: 14 }}
             >
               Verificar (auditoría)
             </button>
@@ -333,7 +349,7 @@ export default function RetiradasPage() {
                     setAuditBillete(d, parseInt(e.target.value) || 0)
                   }
                   onFocus={(e) => e.target.select()}
-                  className="w-20 text-center border border-gray-300 rounded-lg py-2 text-lg font-mono focus:border-reig-green focus:ring-1 focus:ring-reig-green outline-none"
+                  className="w-20 text-center border border-gray-300 rounded-lg py-2 text-lg font-mono outline-none focus:ring-2"
                   inputMode="numeric"
                 />
                 <span className="text-gray-400">=</span>
@@ -356,7 +372,7 @@ export default function RetiradasPage() {
 
           <button
             onClick={ejecutarAudit}
-            className="w-full py-3 bg-reig-green text-white rounded-lg font-semibold hover:bg-reig-green-dark transition-colors"
+            style={{ width: "100%", padding: "12px", background: accentColor, color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer", fontSize: 14 }}
           >
             Comprobar
           </button>
@@ -412,7 +428,8 @@ export default function RetiradasPage() {
             <button
               onClick={guardarTodo}
               disabled={guardando}
-              className="flex-1 py-3 bg-reig-green text-white rounded-lg font-semibold hover:bg-reig-green-dark transition-colors disabled:opacity-50"
+              className="flex-1 py-3 text-white rounded-lg font-semibold transition-colors disabled:opacity-50"
+              style={{ background: accentColor }}
             >
               {guardando ? "Guardando..." : "Guardar retirada"}
             </button>

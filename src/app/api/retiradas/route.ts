@@ -27,9 +27,10 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { fecha, destino, cajas, audit } = body as {
+    const { fecha, destino, origen, cajas, audit } = body as {
       fecha: string;
       destino?: string;
+      origen?: string;
       cajas: Array<{
         num_caja: number;
         b200: number; b100: number; b50: number;
@@ -66,9 +67,10 @@ export async function POST(req: NextRequest) {
     const totalCajas = cajasConTotal.reduce((sum, c) => sum + c.total, 0);
 
     // Crear sesión
+    const origenVal = origen === "optica" ? "optica" : "farmacia";
     const sesionResult = await db.execute({
-      sql: `INSERT INTO retiradas_sesion (fecha, destino, total_cajas) VALUES (?, ?, ?)`,
-      args: [fecha, destino || "caja_fuerte", totalCajas],
+      sql: `INSERT INTO retiradas_sesion (fecha, destino, total_cajas, origen) VALUES (?, ?, ?, ?)`,
+      args: [fecha, destino || "caja_fuerte", totalCajas, origenVal],
     });
 
     const sesionId = Number(sesionResult.lastInsertRowid);

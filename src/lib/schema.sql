@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS retiradas_sesion (
   total_cajas   REAL NOT NULL DEFAULT 0,          -- suma automática de todas las cajas
   total_audit   REAL,                             -- suma del conteo de auditoría
   destino       TEXT NOT NULL DEFAULT 'caja_fuerte', -- caja_fuerte | entrega_bea | banco
+  origen        TEXT NOT NULL DEFAULT 'farmacia',    -- farmacia | optica
   remesa_id     INTEGER REFERENCES retiradas_remesa(id), -- NULL si no está en remesa
   auditada      INTEGER NOT NULL DEFAULT 0,       -- 0=pendiente, 1=cuadra, -1=descuadre
   notas         TEXT
@@ -20,7 +21,7 @@ CREATE TABLE IF NOT EXISTS retiradas_sesion (
 CREATE TABLE IF NOT EXISTS retiradas_caja (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   sesion_id     INTEGER NOT NULL REFERENCES retiradas_sesion(id),
-  num_caja      INTEGER NOT NULL CHECK(num_caja BETWEEN 1 AND 10),
+  num_caja      INTEGER NOT NULL CHECK(num_caja BETWEEN 1 AND 11),
   b200          INTEGER NOT NULL DEFAULT 0,       -- cantidad de billetes de 200€
   b100          INTEGER NOT NULL DEFAULT 0,
   b50           INTEGER NOT NULL DEFAULT 0,
