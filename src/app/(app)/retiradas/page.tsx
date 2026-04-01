@@ -1,132 +1,151 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useZona } from "./layout";
 
-// ─── Tipos ───────────────────────────────────────────────
-const DENOMINACIONES = [200, 100, 50, 20, 10, 5] as const;
-type Denom = (typeof DENOMINACIONES)[number];
-type Billetes = Record<Denom, number>;
+// ── Types ──
 
-interface CajaData {
-  num_caja: number;
-  billetes: Billetes;
-  total: number;
+interface CajaBilletes {
+  b200: number; b100: number; b50: number; b20: number; b10: number; b5: number;
 }
 
-type Paso = "cajas" | "resumen" | "audit" | "resultado";
+interface ConteoBilletes {
+  b500: number; b200: number; b100: number; b50: number; b20: number; b10: number; b5: number;
+}
 
-const emptyBilletes = (): Billetes => ({ 200: 0, 100: 0, 50: 0, 20: 0, 10: 0, 5: 0 });
-const calcTotal = (b: Billetes) =>
-  DENOMINACIONES.reduce((sum, d) => sum + d * b[d], 0);
+interface Movimiento {
+  tipo: "sacar" | "ingresar";
+  caja_num: number;
+  importe: number;
+  motivo: string;
+}
 
-const hoy = () => new Date().toISOString().slice(0, 10);
+const BILLETES_CAJA: { key: keyof CajaBilletes; label: string; valor: number }[] = [
+  { key: "b200", label: "200 €", valor: 200 },
+  { key: "b100", label: "100 €", valor: 100 },
+  { key: "b50",  label: "50 €",  valor: 50 },
+  { key: "b20",  label: "20 €",  valor: 20 },
+  { key: "b10",  label: "10 €",  valor: 10 },
+  { key: "b5",   label: "5 €",   valor: 5 },
+];
 
-// ─── Componente principal ────────────────────────────────
+const BILLETES_CONTEO: { key: keyof ConteoBilletes; label: string; valor: number }[] = [
+  { key: "b500", label: "500 €", valor: 500 },
+  { key: "b200", label: "200 €", valor: 200 },
+  { key: "b100", label: "100 €", valor: 100 },
+  { key: "b50",  label: "50 €",  valor: 50 },
+  { key: "b20",  label: "20 €",  valor: 20 },
+  { key: "b10",  label: "10 €",  valor: 10 },
+  { key: "b5",   label: "5 €",   valor: 5 },
+];
+
+const emptyCaja = (): CajaBilletes => ({ b200: 0, b100: 0, b50: 0, b20: 0, b10: 0, b5: 0 });
+const emptyConteo = (): ConteoBilletes => ({ b500: 0, b200: 0, b100: 0, b50: 0, b20: 0, b10: 0, b5: 0 });
+
+function totalCaja(c: CajaBilletes): number {
+  return c.b200 * 200 + c.b100 * 100 + c.b50 * 50 + c.b20 * 20 + c.b10 * 10 + c.b5 * 5;
+}
+
+function totalConteo(c: ConteoBilletes): number {
+  return c.b500 * 500 + c.b200 * 200 + c.b100 * 100 + c.b50 * 50 + c.b20 * 20 + c.b10 * 10 + c.b5 * 5;
+}
+
+const eur = (n: number) => n.toLocaleString("es-ES", { style: "currency", currency: "EUR" });
+
+// ── Styles ──
+
+const card: React.CSSProperties = {
+  background: "#fff", borderRadius: 12, padding: 20,
+  boxShadow: "0 1px 4px rgba(0,0,0,0.08)", marginBottom: 16,
+};
+const btnBase: React.CSSProperties = {
+  border: "none", borderRadius: 8, padding: "10px 20px",
+  fontWeight: 700, fontSize: 14, cursor: "pointer", transition: "all 0.15s",
+};
+
 export default function RetiradasPage() {
-  const zona = useZona();
-  const isFarma = zona === "farmacia";
-  const CAJAS_DISPONIBLES = isFarma ? Array.from({ length: 10 }, (_, i) => i + 1) : [11];
-  const accentColor = isFarma ? "var(--color-reig-green)" : "var(--color-reig-optica)";
-  const accentDark  = isFarma ? "var(--color-reig-green-dark)" : "var(--color-reig-optica-dark)";
-  const accentLight = isFarma ? "var(--color-reig-green-light)" : "var(--color-reig-optica-light)";
+  const [paso, setPaso] = useState<1 | 2 | 3>(1);
 
-  const [paso, setPaso] = useState<Paso>("cajas");
-  const fecha = hoy(); // Siempre hoy, no editable
-  const [cajasSeleccionadas, setCajasSeleccionadas] = useState<number[]>([]);
-  const [cajaActual, setCajaActual] = useState<number | null>(null);
-  const [cajasData, setCajasData] = useState<CajaData[]>([]);
-  const [billetes, setBilletes] = useState<Billetes>(emptyBilletes());
-  const [auditBilletes, setAuditBilletes] = useState<Billetes>(emptyBilletes());
-  const [guardando, setGuardando] = useState(false);
-  const [resultado, setResultado] = useState<{
-    ok: boolean;
-    cuadra: boolean;
-    totalCajas: number;
-    totalAudit: number;
-    detalle: { denom: Denom; cajas: number; audit: number; ok: boolean }[];
-  } | null>(null);
+  // Paso 1: cajas
+  const [cajasActivas, setCajasActivas] = useState<Set<number>>(new Set());
+  const [cajasData, setCajasData] = useState<Record<number, CajaBilletes>>({});
 
-  // ─── Selección de cajas ──────────────────────────────
+  // Paso 2: conteo
+  const [conteo, setConteo] = useState<ConteoBilletes>(emptyConteo());
+  const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
+  const [showModal, setShowModal] = useState<"sacar" | "ingresar" | null>(null);
+  const [modalCaja, setModalCaja] = useState(1);
+  const [modalImporte, setModalImporte] = useState(0);
+  const [modalMotivo, setModalMotivo] = useState("");
+
+  // Paso 3: resultado
+  const [resultado, setResultado] = useState<{ id: number; total: number } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  // ── Paso 1 helpers ──
+
   const toggleCaja = (n: number) => {
-    setCajasSeleccionadas((prev) =>
-      prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n].sort((a, b) => a - b)
-    );
-  };
-
-  const empezarConteo = () => {
-    if (cajasSeleccionadas.length === 0) return;
-    setCajaActual(cajasSeleccionadas[0]);
-    setBilletes(emptyBilletes());
-  };
-
-  // ─── Conteo por caja ────────────────────────────────
-  const setBillete = (denom: Denom, valor: number) => {
-    setBilletes((prev) => ({ ...prev, [denom]: Math.max(0, valor) }));
-  };
-
-  const guardarCaja = () => {
-    if (cajaActual === null) return;
-    const total = calcTotal(billetes);
-    const nueva: CajaData = { num_caja: cajaActual, billetes: { ...billetes }, total };
-
-    setCajasData((prev) => {
-      const sin = prev.filter((c) => c.num_caja !== cajaActual);
-      return [...sin, nueva].sort((a, b) => a.num_caja - b.num_caja);
+    setCajasActivas((prev) => {
+      const next = new Set(prev);
+      if (next.has(n)) { next.delete(n); } else { next.add(n); }
+      return next;
     });
-
-    // Siguiente caja o resumen
-    const idx = cajasSeleccionadas.indexOf(cajaActual);
-    if (idx < cajasSeleccionadas.length - 1) {
-      setCajaActual(cajasSeleccionadas[idx + 1]);
-      setBilletes(emptyBilletes());
-    } else {
-      setCajaActual(null);
-      setPaso("resumen");
-    }
+    if (!cajasData[n]) setCajasData((p) => ({ ...p, [n]: emptyCaja() }));
   };
 
-  // ─── Auditoría ───────────────────────────────────────
-  const setAuditBillete = (denom: Denom, valor: number) => {
-    setAuditBilletes((prev) => ({ ...prev, [denom]: Math.max(0, valor) }));
+  const updateBillete = (cajaNum: number, key: keyof CajaBilletes, val: number) => {
+    setCajasData((prev) => ({
+      ...prev,
+      [cajaNum]: { ...(prev[cajaNum] || emptyCaja()), [key]: Math.max(0, val) },
+    }));
   };
 
-  const sumarPorDenom = useCallback(
-    (denom: Denom) => cajasData.reduce((s, c) => s + c.billetes[denom], 0),
-    [cajasData]
+  const totalGlobal = Array.from(cajasActivas).reduce(
+    (s, n) => s + totalCaja(cajasData[n] || emptyCaja()), 0
   );
 
-  const ejecutarAudit = () => {
-    const totalCajas = cajasData.reduce((s, c) => s + c.total, 0);
-    const totalAudit = calcTotal(auditBilletes);
-    const detalle = DENOMINACIONES.map((d) => ({
-      denom: d,
-      cajas: sumarPorDenom(d),
-      audit: auditBilletes[d],
-      ok: sumarPorDenom(d) === auditBilletes[d],
-    }));
-    const cuadra = detalle.every((d) => d.ok);
-    setResultado({ ok: true, cuadra, totalCajas, totalAudit, detalle });
-    setPaso("resultado");
-  };
+  // ── Paso 2 helpers ──
 
-  // ─── Guardar en servidor ─────────────────────────────
-  const guardarTodo = async () => {
-    setGuardando(true);
+  const totalConteoVal = totalConteo(conteo);
+  const ajustesTotal = movimientos.reduce(
+    (s, m) => s + (m.tipo === "ingresar" ? m.importe : -m.importe), 0
+  );
+  const totalCajasAjustado = totalGlobal + ajustesTotal;
+  const diferencia = Math.round((totalConteoVal - totalCajasAjustado) * 100) / 100;
+  const cuadra = Math.abs(diferencia) < 0.01;
+
+  const addMovimiento = useCallback(() => {
+    if (modalImporte <= 0) return;
+    setMovimientos((prev) => [
+      ...prev,
+      { tipo: showModal!, caja_num: modalCaja, importe: modalImporte, motivo: modalMotivo },
+    ]);
+    setShowModal(null);
+    setModalImporte(0);
+    setModalMotivo("");
+  }, [showModal, modalCaja, modalImporte, modalMotivo]);
+
+  // ── Guardar ──
+
+  const guardar = async () => {
+    setSaving(true);
+    setError("");
     try {
+      const cajasArr = Array.from(cajasActivas).sort().map((n) => {
+        const c = cajasData[n] || emptyCaja();
+        return { caja_num: n, ...c, total: totalCaja(c) };
+      });
       const body = {
-        fecha,
-        destino: "caja_fuerte",
-        origen: zona,
-        cajas: cajasData.map((c) => ({
-          num_caja: c.num_caja,
-          b200: c.billetes[200], b100: c.billetes[100], b50: c.billetes[50],
-          b20: c.billetes[20], b10: c.billetes[10], b5: c.billetes[5],
-        })),
-        audit: {
-          b200: auditBilletes[200], b100: auditBilletes[100], b50: auditBilletes[50],
-          b20: auditBilletes[20], b10: auditBilletes[10], b5: auditBilletes[5],
+        fecha: new Date().toISOString().slice(0, 10),
+        cajas: cajasArr,
+        conteo: {
+          ...conteo,
+          total_conteo: totalConteoVal,
+          total_cajas: totalCajasAjustado,
+          diferencia,
+          cuadra,
         },
+        movimientos,
       };
       const res = await fetch("/api/retiradas", {
         method: "POST",
@@ -134,310 +153,375 @@ export default function RetiradasPage() {
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!data.ok) throw new Error(data.error);
-      alert("Retirada guardada correctamente");
-    } catch (err) {
-      alert("Error al guardar: " + String(err));
+      if (!res.ok || data.error) throw new Error(data.error || "Error al guardar");
+      setResultado({ id: data.id, total: data.total });
+      setPaso(3);
+    } catch (e) {
+      setError(String(e));
     } finally {
-      setGuardando(false);
+      setSaving(false);
     }
   };
 
+  // ── Reset ──
+
   const reset = () => {
-    setPaso("cajas");
-    // fecha se calcula siempre con hoy()
-    setCajasSeleccionadas([]);
-    setCajaActual(null);
-    setCajasData([]);
-    setBilletes(emptyBilletes());
-    setAuditBilletes(emptyBilletes());
+    setPaso(1);
+    setCajasActivas(new Set());
+    setCajasData({});
+    setConteo(emptyConteo());
+    setMovimientos([]);
     setResultado(null);
+    setError("");
   };
 
-  // ─── RENDER ──────────────────────────────────────────
+  // ════════════════════════════════════════════════════════════════
+  // RENDER
+  // ════════════════════════════════════════════════════════════════
+
   return (
-    <div className="max-w-2xl">
-      <h2 className="font-serif text-3xl mb-1" style={{ color: accentColor }}>
-        Retiradas — {isFarma ? "Farmacia" : "Óptica"}
-      </h2>
-      <p className="text-gray-500 mb-6">
-        {isFarma ? "Cajas 1-10 · Registro de retiradas de efectivo" : "Caja 11 · Retirada de óptica"}
+    <div style={{ maxWidth: 800, margin: "0 auto" }}>
+      <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Retiradas de caja</h1>
+      <p style={{ color: "#888", fontSize: 13, marginBottom: 20 }}>
+        Paso {paso} de 3 — {paso === 1 ? "Selecciona cajas y cuenta billetes" : paso === 2 ? "Conteo total y validación" : "Guardado"}
       </p>
 
-      {/* ── PASO 1: Selección de cajas ────────────────── */}
-      {paso === "cajas" && cajaActual === null && (
-        <div>
-          {/* Fecha: siempre hoy */}
-          <div className="mb-4 flex items-center gap-2 text-sm text-gray-500">
-            <span>Fecha:</span>
-            <span className="font-mono font-medium text-gray-800">
-              {new Date(fecha + "T12:00:00").toLocaleDateString("es-ES", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
+      {/* ═══════════ PASO 1: CAJAS ═══════════ */}
+      {paso === 1 && (
+        <>
+          {/* Selector de cajas */}
+          <div style={card}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Selecciona las cajas</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
+              {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
+                const active = cajasActivas.has(n);
+                return (
+                  <button
+                    key={n}
+                    onClick={() => toggleCaja(n)}
+                    style={{
+                      ...btnBase,
+                      padding: "14px 0",
+                      fontSize: 16,
+                      background: active ? "var(--color-reig-green, #16a34a)" : "#f3f4f6",
+                      color: active ? "#fff" : "#666",
+                    }}
+                  >
+                    {n}
+                  </button>
+                );
               })}
-            </span>
+            </div>
           </div>
 
-          <p className="text-sm font-medium text-gray-700 mb-3">
-            Selecciona las cajas de las que vas a retirar:
-          </p>
-          <div className={`grid gap-2 mb-6 ${isFarma ? "grid-cols-5" : "grid-cols-1 max-w-[200px]"}`}>
-            {CAJAS_DISPONIBLES.map((n) => (
-              <button
-                key={n}
-                onClick={() => toggleCaja(n)}
-                style={{
-                  padding: "12px", borderRadius: 8, fontSize: 16, fontWeight: 700,
-                  transition: "all 0.2s",
-                  background: cajasSeleccionadas.includes(n) ? accentColor : "#f3f4f6",
-                  color: cajasSeleccionadas.includes(n) ? "#fff" : "#666",
-                  boxShadow: cajasSeleccionadas.includes(n) ? "0 2px 8px rgba(0,0,0,0.15)" : "none",
-                  border: "none", cursor: "pointer",
-                }}
-              >
-                {n === 11 ? "Óptica (11)" : n}
-              </button>
-            ))}
-          </div>
+          {/* Formulario por caja */}
+          {Array.from(cajasActivas).sort().map((n) => {
+            const c = cajasData[n] || emptyCaja();
+            const t = totalCaja(c);
+            return (
+              <div key={n} style={card}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>Caja {n}</h3>
+                  <span style={{ fontWeight: 800, fontSize: 16, color: t > 0 ? "var(--color-reig-green, #16a34a)" : "#aaa" }}>
+                    {eur(t)}
+                  </span>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+                  {BILLETES_CAJA.map(({ key, label, valor }) => (
+                    <div key={key} style={{ textAlign: "center" }}>
+                      <label style={{ fontSize: 11, color: "#888", display: "block", marginBottom: 4 }}>{label}</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={c[key] || ""}
+                        onChange={(e) => updateBillete(n, key, parseInt(e.target.value) || 0)}
+                        style={{
+                          width: "100%", padding: "8px 4px", border: "1px solid #e0e0e0",
+                          borderRadius: 6, textAlign: "center", fontSize: 16, fontWeight: 600,
+                        }}
+                        placeholder="0"
+                      />
+                      {c[key] > 0 && (
+                        <div style={{ fontSize: 10, color: "#888", marginTop: 2 }}>{eur(c[key] * valor)}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
 
-          {cajasSeleccionadas.length > 0 && (
-            <button
-              onClick={empezarConteo}
-              style={{ width: "100%", padding: "12px", background: accentColor, color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer", fontSize: 14 }}
-            >
-              {isFarma
-                ? `Empezar conteo (${cajasSeleccionadas.length} caja${cajasSeleccionadas.length > 1 ? "s" : ""})`
-                : "Empezar conteo óptica"
-              }
-            </button>
+          {/* Resumen + Finalizar */}
+          {cajasActivas.size > 0 && (
+            <div style={{ ...card, background: "#f0fdf4", borderLeft: "4px solid var(--color-reig-green, #16a34a)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <div style={{ fontSize: 13, color: "#666" }}>{cajasActivas.size} caja{cajasActivas.size > 1 ? "s" : ""} seleccionada{cajasActivas.size > 1 ? "s" : ""}</div>
+                  <div style={{ fontSize: 24, fontWeight: 800, color: "var(--color-reig-green, #16a34a)" }}>{eur(totalGlobal)}</div>
+                </div>
+                <button
+                  onClick={() => { if (totalGlobal > 0) setPaso(2); }}
+                  disabled={totalGlobal <= 0}
+                  style={{
+                    ...btnBase,
+                    padding: "14px 32px",
+                    fontSize: 16,
+                    background: totalGlobal > 0 ? "var(--color-reig-green, #16a34a)" : "#ccc",
+                    color: "#fff",
+                  }}
+                >
+                  Finalizar
+                </button>
+              </div>
+            </div>
           )}
-        </div>
+        </>
       )}
 
-      {/* ── PASO 2: Conteo de billetes por caja ───────── */}
-      {paso === "cajas" && cajaActual !== null && (
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg sm:text-xl font-semibold">
-              Caja {cajaActual}
-              <span className="text-xs sm:text-sm text-gray-400 ml-2">
-                ({cajasSeleccionadas.indexOf(cajaActual) + 1}/{cajasSeleccionadas.length})
-              </span>
-            </h3>
-            <span className="text-xl sm:text-2xl font-mono font-bold" style={{ color: accentColor }}>
-              {calcTotal(billetes).toFixed(2)} €
-            </span>
+      {/* ═══════════ PASO 2: CONTEO ═══════════ */}
+      {paso === 2 && (
+        <>
+          {/* Referencia */}
+          <div style={{ ...card, background: "#f8fafc" }}>
+            <div style={{ fontSize: 13, color: "#666", marginBottom: 4 }}>Total suma de cajas</div>
+            <div style={{ fontSize: 22, fontWeight: 800 }}>{eur(totalCajasAjustado)}</div>
+            {ajustesTotal !== 0 && (
+              <div style={{ fontSize: 12, color: "#888", marginTop: 4 }}>
+                Original: {eur(totalGlobal)} {ajustesTotal > 0 ? "+" : ""}{eur(ajustesTotal)} ajustes
+              </div>
+            )}
           </div>
 
-          <div className="space-y-3">
-            {DENOMINACIONES.map((d) => (
-              <div
-                key={d}
-                className="flex items-center gap-2 sm:gap-4 bg-gray-50 rounded-lg p-2 sm:p-3"
+          {/* Conteo de billetes */}
+          <div style={card}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Conteo total de billetes</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+              {BILLETES_CONTEO.map(({ key, label, valor }) => (
+                <div key={key} style={{ textAlign: "center" }}>
+                  <label style={{ fontSize: 11, color: "#888", display: "block", marginBottom: 4 }}>{label}</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={conteo[key] || ""}
+                    onChange={(e) => setConteo((p) => ({ ...p, [key]: Math.max(0, parseInt(e.target.value) || 0) }))}
+                    style={{
+                      width: "100%", padding: "8px 4px", border: "1px solid #e0e0e0",
+                      borderRadius: 6, textAlign: "center", fontSize: 16, fontWeight: 600,
+                    }}
+                    placeholder="0"
+                  />
+                  {conteo[key] > 0 && (
+                    <div style={{ fontSize: 10, color: "#888", marginTop: 2 }}>{eur(conteo[key] * valor)}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div style={{ textAlign: "right", marginTop: 12, fontSize: 18, fontWeight: 800 }}>
+              Total conteo: {eur(totalConteoVal)}
+            </div>
+          </div>
+
+          {/* Resultado validación */}
+          {totalConteoVal > 0 && (
+            <div style={{
+              ...card,
+              background: cuadra ? "#f0fdf4" : "#fef2f2",
+              borderLeft: `4px solid ${cuadra ? "#16a34a" : "#dc2626"}`,
+            }}>
+              {cuadra ? (
+                <>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: "#16a34a", marginBottom: 8 }}>
+                    El conteo cuadra
+                  </div>
+                  <button
+                    onClick={guardar}
+                    disabled={saving}
+                    style={{
+                      ...btnBase,
+                      width: "100%",
+                      padding: "14px 0",
+                      fontSize: 16,
+                      background: saving ? "#aaa" : "var(--color-reig-green, #16a34a)",
+                      color: "#fff",
+                    }}
+                  >
+                    {saving ? "Guardando..." : "Confirmar y guardar"}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: "#dc2626", marginBottom: 4 }}>
+                    No cuadra — diferencia: {eur(diferencia)}
+                  </div>
+                  <p style={{ fontSize: 13, color: "#888", marginBottom: 12 }}>
+                    {diferencia > 0
+                      ? "El conteo tiene MAS dinero que la suma de cajas."
+                      : "El conteo tiene MENOS dinero que la suma de cajas."}
+                  </p>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      onClick={() => setShowModal("sacar")}
+                      style={{ ...btnBase, flex: 1, background: "#fee2e2", color: "#dc2626" }}
+                    >
+                      Sacar de una caja
+                    </button>
+                    <button
+                      onClick={() => setShowModal("ingresar")}
+                      style={{ ...btnBase, flex: 1, background: "#dbeafe", color: "#2563eb" }}
+                    >
+                      Ingresar en caja
+                    </button>
+                  </div>
+                  <div style={{ marginTop: 12 }}>
+                    <button
+                      onClick={guardar}
+                      disabled={saving}
+                      style={{
+                        ...btnBase,
+                        width: "100%",
+                        padding: "12px 0",
+                        fontSize: 14,
+                        background: saving ? "#aaa" : "#f59e0b",
+                        color: "#fff",
+                      }}
+                    >
+                      {saving ? "Guardando..." : "Guardar con diferencia"}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Movimientos registrados */}
+          {movimientos.length > 0 && (
+            <div style={card}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Ajustes realizados</h3>
+              {movimientos.map((m, i) => (
+                <div key={i} style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  padding: "6px 0", borderBottom: "1px solid #f0f0f0", fontSize: 13,
+                }}>
+                  <span>
+                    <span style={{ color: m.tipo === "ingresar" ? "#16a34a" : "#dc2626", fontWeight: 700 }}>
+                      {m.tipo === "ingresar" ? "+" : "-"}{eur(m.importe)}
+                    </span>
+                    {" "}Caja {m.caja_num} — {m.motivo || "Sin motivo"}
+                  </span>
+                  <button
+                    onClick={() => setMovimientos((p) => p.filter((_, j) => j !== i))}
+                    style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 16 }}
+                  >
+                    x
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Botón volver */}
+          <button
+            onClick={() => setPaso(1)}
+            style={{ ...btnBase, background: "#f3f4f6", color: "#666", marginBottom: 20 }}
+          >
+            Volver a cajas
+          </button>
+
+          {error && <div style={{ color: "#dc2626", fontSize: 13, marginTop: 8 }}>{error}</div>}
+
+          {/* Modal ajuste */}
+          {showModal && (
+            <div style={{
+              position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)",
+              display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
+            }}
+              onClick={() => setShowModal(null)}
+            >
+              <div style={{ background: "#fff", borderRadius: 16, padding: 24, width: 340, maxWidth: "90vw" }}
+                onClick={(e) => e.stopPropagation()}
               >
-                <span className="w-12 sm:w-16 text-right font-mono font-semibold text-base sm:text-lg">
-                  {d}€
-                </span>
-                <span className="text-gray-400 text-sm">×</span>
+                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>
+                  {showModal === "sacar" ? "Sacar de una caja" : "Ingresar en caja"}
+                </h3>
+                <label style={{ fontSize: 12, color: "#888" }}>Caja</label>
+                <select
+                  value={modalCaja}
+                  onChange={(e) => setModalCaja(Number(e.target.value))}
+                  style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #e0e0e0", marginBottom: 12 }}
+                >
+                  {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                    <option key={n} value={n}>Caja {n}</option>
+                  ))}
+                </select>
+                <label style={{ fontSize: 12, color: "#888" }}>Importe</label>
                 <input
                   type="number"
                   min={0}
-                  value={billetes[d] || ""}
-                  onChange={(e) =>
-                    setBillete(d, parseInt(e.target.value) || 0)
-                  }
-                  onFocus={(e) => e.target.select()}
-                  className="w-16 sm:w-20 text-center border border-gray-300 rounded-lg py-2 text-base sm:text-lg font-mono outline-none focus:ring-2"
-                  inputMode="numeric"
+                  step={0.01}
+                  value={modalImporte || ""}
+                  onChange={(e) => setModalImporte(parseFloat(e.target.value) || 0)}
+                  style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #e0e0e0", marginBottom: 12, fontSize: 16 }}
+                  placeholder="0.00"
                 />
-                <span className="text-gray-400 text-sm">=</span>
-                <span className="flex-1 text-right font-mono text-base sm:text-lg">
-                  {(d * billetes[d]).toFixed(0)}€
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <button
-            onClick={guardarCaja}
-            style={{ width: "100%", marginTop: 24, padding: "12px", background: accentColor, color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer", fontSize: 14 }}
-          >
-            {cajasSeleccionadas.indexOf(cajaActual) <
-            cajasSeleccionadas.length - 1
-              ? `Siguiente caja (${
-                  cajasSeleccionadas[cajasSeleccionadas.indexOf(cajaActual) + 1]
-                })`
-              : "Finalizar conteo"}
-          </button>
-        </div>
-      )}
-
-      {/* ── PASO 3: Resumen antes de auditoría ─────────── */}
-      {paso === "resumen" && (
-        <div>
-          <h3 className="text-xl font-semibold mb-2">Resumen de cajas</h3>
-          <p className="text-sm text-gray-500 mb-4">
-            {new Date(fecha + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "short" })} — Destino: Caja fuerte
-          </p>
-          <div className="space-y-2 mb-4">
-            {cajasData.map((c) => (
-              <div
-                key={c.num_caja}
-                className="flex justify-between items-center bg-gray-50 rounded-lg px-4 py-3"
-              >
-                <span className="font-medium">Caja {c.num_caja}</span>
-                <span className="font-mono font-bold">
-                  {c.total.toFixed(2)} €
-                </span>
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between items-center rounded-lg px-4 py-3 mb-6" style={{ background: accentLight }}>
-            <span className="font-semibold" style={{ color: accentColor }}>Total cajas</span>
-            <span className="font-mono font-bold text-xl" style={{ color: accentColor }}>
-              {cajasData.reduce((s, c) => s + c.total, 0).toFixed(2)} €
-            </span>
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={() => setPaso("audit")}
-              style={{ flex: 1, padding: "12px", background: accentColor, color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer", fontSize: 14 }}
-            >
-              Verificar (auditoría)
-            </button>
-            <button
-              onClick={() => {
-                setCajaActual(cajasSeleccionadas[0]);
-                setBilletes(emptyBilletes());
-                setCajasData([]);
-                setPaso("cajas");
-              }}
-              className="px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
-            >
-              Repetir
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── PASO 4: Auditoría ──────────────────────────── */}
-      {paso === "audit" && (
-        <div>
-          <h3 className="text-xl font-semibold mb-2">Verificación</h3>
-          <p className="text-sm text-gray-500 mb-4">
-            Cuenta todos los billetes juntos por denominación y pon la cantidad
-            total de cada tipo:
-          </p>
-
-          <div className="space-y-3">
-            {DENOMINACIONES.map((d) => (
-              <div
-                key={d}
-                className="flex items-center gap-4 bg-gray-50 rounded-lg p-3"
-              >
-                <span className="w-16 text-right font-mono font-semibold text-lg">
-                  {d} €
-                </span>
-                <span className="text-gray-400">×</span>
+                <label style={{ fontSize: 12, color: "#888" }}>Motivo</label>
                 <input
-                  type="number"
-                  min={0}
-                  value={auditBilletes[d] || ""}
-                  onChange={(e) =>
-                    setAuditBillete(d, parseInt(e.target.value) || 0)
-                  }
-                  onFocus={(e) => e.target.select()}
-                  className="w-20 text-center border border-gray-300 rounded-lg py-2 text-lg font-mono outline-none focus:ring-2"
-                  inputMode="numeric"
+                  type="text"
+                  value={modalMotivo}
+                  onChange={(e) => setModalMotivo(e.target.value)}
+                  style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #e0e0e0", marginBottom: 16 }}
+                  placeholder="Motivo del ajuste"
                 />
-                <span className="text-gray-400">=</span>
-                <span className="w-24 text-right font-mono text-lg">
-                  {(d * auditBilletes[d]).toFixed(2)} €
-                </span>
-                <span className="text-xs text-gray-400 hidden sm:inline">
-                  cajas: {sumarPorDenom(d)}
-                </span>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    onClick={() => setShowModal(null)}
+                    style={{ ...btnBase, flex: 1, background: "#f3f4f6", color: "#666" }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={addMovimiento}
+                    disabled={modalImporte <= 0}
+                    style={{
+                      ...btnBase, flex: 1,
+                      background: showModal === "ingresar" ? "#2563eb" : "#dc2626",
+                      color: "#fff",
+                      opacity: modalImporte <= 0 ? 0.5 : 1,
+                    }}
+                  >
+                    {showModal === "ingresar" ? "Ingresar" : "Sacar"}
+                  </button>
+                </div>
               </div>
-            ))}
-          </div>
-
-          <div className="flex justify-between items-center bg-gray-100 rounded-lg px-4 py-3 mt-4 mb-6">
-            <span className="font-medium">Total verificación</span>
-            <span className="font-mono font-bold text-xl">
-              {calcTotal(auditBilletes).toFixed(2)} €
-            </span>
-          </div>
-
-          <button
-            onClick={ejecutarAudit}
-            style={{ width: "100%", padding: "12px", background: accentColor, color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer", fontSize: 14 }}
-          >
-            Comprobar
-          </button>
-        </div>
+            </div>
+          )}
+        </>
       )}
 
-      {/* ── PASO 5: Resultado ──────────────────────────── */}
-      {paso === "resultado" && resultado && (
-        <div>
-          <div
-            className={`p-6 rounded-xl mb-6 text-center ${
-              resultado.cuadra
-                ? "bg-green-50 border-2 border-green-300"
-                : "bg-red-50 border-2 border-red-300"
-            }`}
-          >
-            <span className="text-4xl">
-              {resultado.cuadra ? "✓" : "✗"}
-            </span>
-            <h3
-              className={`text-2xl font-bold mt-2 ${
-                resultado.cuadra ? "text-green-700" : "text-red-700"
-              }`}
-            >
-              {resultado.cuadra ? "CUADRA" : "DESCUADRE"}
-            </h3>
-            <p className="text-sm mt-1 text-gray-600">
-              Cajas: {resultado.totalCajas.toFixed(2)} € — Verificación:{" "}
-              {resultado.totalAudit.toFixed(2)} €
-            </p>
+      {/* ═══════════ PASO 3: GUARDADO ═══════════ */}
+      {paso === 3 && resultado && (
+        <div style={{ ...card, textAlign: "center", padding: 40 }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>&#10003;</div>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--color-reig-green, #16a34a)", marginBottom: 8 }}>
+            Retirada guardada
+          </h2>
+          <div style={{ fontSize: 28, fontWeight: 800, marginBottom: 4 }}>{eur(resultado.total)}</div>
+          <div style={{ fontSize: 13, color: "#888", marginBottom: 24 }}>
+            {cajasActivas.size} caja{cajasActivas.size > 1 ? "s" : ""} — ID #{resultado.id}
           </div>
-
-          {/* Detalle por denominación */}
-          <div className="space-y-1 mb-6">
-            {resultado.detalle.map((d) => (
-              <div
-                key={d.denom}
-                className={`flex items-center justify-between px-4 py-2 rounded-lg text-sm ${
-                  d.ok ? "bg-gray-50" : "bg-red-50"
-                }`}
-              >
-                <span className="font-mono font-medium">{d.denom} €</span>
-                <span>
-                  Cajas: <strong>{d.cajas}</strong> — Conteo:{" "}
-                  <strong>{d.audit}</strong>
-                </span>
-                <span>{d.ok ? "✓" : `✗ (dif: ${d.audit - d.cajas})`}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={guardarTodo}
-              disabled={guardando}
-              className="flex-1 py-3 text-white rounded-lg font-semibold transition-colors disabled:opacity-50"
-              style={{ background: accentColor }}
-            >
-              {guardando ? "Guardando..." : "Guardar retirada"}
+          {!cuadra && (
+            <div style={{ fontSize: 13, color: "#f59e0b", marginBottom: 16 }}>
+              Guardada con diferencia de {eur(diferencia)}
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+            <button onClick={reset} style={{ ...btnBase, background: "var(--color-reig-green, #16a34a)", color: "#fff", padding: "12px 24px" }}>
+              Nueva retirada
             </button>
             <button
-              onClick={reset}
-              className="px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+              onClick={() => window.location.href = "/retiradas?view=historial"}
+              style={{ ...btnBase, background: "#f3f4f6", color: "#666", padding: "12px 24px" }}
             >
-              Nueva
+              Ver historial
             </button>
           </div>
         </div>
