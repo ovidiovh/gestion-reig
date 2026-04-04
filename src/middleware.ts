@@ -18,6 +18,7 @@ export default auth((req) => {
     pathname.startsWith("/api/crm/precalcular") ||
     pathname.startsWith("/api/crm/debug") ||
     pathname.startsWith("/api/ingresos/webhook") ||
+    pathname.startsWith("/api/reig-base/sync") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
     pathname === "/icon" ||
