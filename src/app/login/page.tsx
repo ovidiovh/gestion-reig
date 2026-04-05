@@ -10,7 +10,7 @@ function LoginContent() {
 
   const errorMessages: Record<string, string> = {
     desactivado: "Tu cuenta ha sido desactivada. Contacta con el administrador.",
-    AccessDenied: "Solo se permiten cuentas @farmaciareig.net",
+    AccessDenied: "Tu cuenta no tiene acceso autorizado. Contacta con el administrador.",
     OAuthSignin: "Error al conectar con Google. Inténtalo de nuevo.",
     default: "Error de autenticación. Inténtalo de nuevo.",
   };
@@ -105,7 +105,7 @@ function LoginContent() {
             className="text-xs text-center mt-4"
             style={{ color: "#9ca3af" }}
           >
-            Solo cuentas @farmaciareig.net
+            Acceso restringido a personal autorizado
           </p>
         </div>
 

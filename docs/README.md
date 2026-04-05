@@ -3,6 +3,16 @@
 > Plataforma de gestión interna de Farmacia Reig
 > Next.js 16 · Turso · Vercel
 
+| Campo | Valor |
+|-------|-------|
+| **Versión** | REIG-BASE v2.1 |
+| **Última actualización** | 2026-03-30 |
+| **Responsable** | Ovidio Vidal Hernández |
+| **Repo** | github.com/ovidiovh/gestion-reig |
+
+### Reglas de edición
+Antes de modificar esta documentación, consulta los protocolos en `docs/`. Cada cambio debe reflejarse con fecha y responsable en esta cabecera.
+
 ---
 
 ## Documentación de la App
