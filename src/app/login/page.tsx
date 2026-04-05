@@ -48,10 +48,10 @@ function LoginContent() {
                 fontFamily: "'DM Serif Display', serif",
               }}
             >
-              Gestión Reig
+              Gestión VR
             </h1>
             <p className="text-sm mt-1" style={{ color: "#5a615c" }}>
-              Farmacia Reig — Panel de Gestión
+              Panel de Gestión
             </p>
           </div>
 
@@ -113,7 +113,7 @@ function LoginContent() {
           className="text-center text-xs mt-6"
           style={{ color: "#5a615c" }}
         >
-          Farmacia Reig — C/ Guatiza 10, 35110 Vecindario
+          © Gestión VR
         </p>
       </div>
     </div>
