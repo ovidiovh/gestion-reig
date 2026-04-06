@@ -271,7 +271,7 @@ export async function detalleSesion(id: number) {
      FROM retiradas_caja WHERE sesion_id = ? ORDER BY caja_num`, [id]
   );
 
-  const [conteo] = await query<ConteoData & { cuadra: number }>(
+  const [conteo] = await query<Omit<ConteoData, 'cuadra'> & { cuadra: number }>(
     `SELECT b500, b200, b100, b50, b20, b10, b5,
             total_conteo, total_cajas, diferencia, cuadra
      FROM retiradas_conteo WHERE sesion_id = ?`, [id]

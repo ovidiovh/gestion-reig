@@ -97,19 +97,24 @@ function SesionDetalle({ sesionId, accentColor }: { sesionId: number; accentColo
     (async () => {
       try {
         const res = await fetch(`/api/retiradas?sesion_id=${sesionId}`);
-        const data = await res.json();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data: any = await res.json();
         if (data.ok) {
           // Soporta dos formatos: {ok, cajas, audit} o {ok, data: {cajas, conteo}}
-          const detalle = data.data || data;
-          const cajasRaw = detalle.cajas || [];
-          const cajasMapped: CajaDetalle[] = cajasRaw.map((c: Record<string, number>) => ({
-            num_caja: (c.num_caja ?? c.caja_num) as number,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const detalle: any = data.data || data;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const cajasRaw: any[] = detalle.cajas || [];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const cajasMapped: CajaDetalle[] = cajasRaw.map((c: any) => ({
+            num_caja: c.num_caja ?? c.caja_num,
             b200: c.b200, b100: c.b100, b50: c.b50,
             b20: c.b20, b10: c.b10, b5: c.b5,
             total: c.total,
           }));
           setCajas(cajasMapped);
-          const conteoRaw = detalle.audit || detalle.conteo;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const conteoRaw: any = detalle.audit || detalle.conteo;
           if (conteoRaw) {
             setAudit({
               b200: conteoRaw.b200, b100: conteoRaw.b100, b50: conteoRaw.b50,
