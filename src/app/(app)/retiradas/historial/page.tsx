@@ -99,8 +99,25 @@ function SesionDetalle({ sesionId, accentColor }: { sesionId: number; accentColo
         const res = await fetch(`/api/retiradas?sesion_id=${sesionId}`);
         const data = await res.json();
         if (data.ok) {
-          setCajas(data.cajas || []);
-          setAudit(data.audit || null);
+          // Soporta dos formatos: {ok, cajas, audit} o {ok, data: {cajas, conteo}}
+          const detalle = data.data || data;
+          const cajasRaw = detalle.cajas || [];
+          const cajasMapped: CajaDetalle[] = cajasRaw.map((c: Record<string, number>) => ({
+            num_caja: (c.num_caja ?? c.caja_num) as number,
+            b200: c.b200, b100: c.b100, b50: c.b50,
+            b20: c.b20, b10: c.b10, b5: c.b5,
+            total: c.total,
+          }));
+          setCajas(cajasMapped);
+          const conteoRaw = detalle.audit || detalle.conteo;
+          if (conteoRaw) {
+            setAudit({
+              b200: conteoRaw.b200, b100: conteoRaw.b100, b50: conteoRaw.b50,
+              b20: conteoRaw.b20, b10: conteoRaw.b10, b5: conteoRaw.b5,
+              total: conteoRaw.total ?? conteoRaw.total_conteo,
+              cuadra: conteoRaw.cuadra,
+            });
+          }
         }
       } catch { /* ignore */ }
       finally { setLoading(false); }
