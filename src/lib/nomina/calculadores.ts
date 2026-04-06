@@ -122,7 +122,14 @@ function calcFarmaceuticoNocturno(
   const fijas = emp.h_lab_complemento_mensual; // 9 h base (según §5.4 "9 días laborables")
   const extrasDiariasMes = diasTrabajados * emp.h_extra_diaria; // 0.5/día
   const diasGuardia = ctx.guardias_empleado.length;
-  const descuentoGuardia = emp.descuenta_media_en_guardia ? diasGuardia * 0.5 : 0;
+  // REGLA §5.4: el descuento de ½h sólo aplica a guardias de L-J (dow 1-4).
+  // Razón: María entra al día siguiente y la compensación es por "pisar"
+  // las dos jornadas. En V/S/D/festivo no trabaja al día siguiente → no hay
+  // descuento. Confirmado por Beatriz 2026-04-06.
+  const diasGuardiaLJ = ctx.guardias_empleado.filter(
+    (g) => g.dow >= 1 && g.dow <= 4 && !g.es_festivo
+  ).length;
+  const descuentoGuardia = emp.descuenta_media_en_guardia ? diasGuardiaLJ * 0.5 : 0;
 
   const { laborables: guardiaLab, festivas: guardiaFest, nocturnas: guardiaNoct } =
     horasGuardiasNocturnas(ctx.guardias_empleado);
@@ -137,6 +144,8 @@ function calcFarmaceuticoNocturno(
   r.desglose = {
     fijas_mes: fijas,
     extras_diarias_mes: extrasDiariasMes,
+    dias_guardia_total: diasGuardia,
+    dias_guardia_lj_con_descuento: diasGuardiaLJ,
     descuento_guardia_maria: descuentoGuardia,
     horas_guardia_laboral: guardiaLab,
     horas_guardia_festiva: guardiaFest,

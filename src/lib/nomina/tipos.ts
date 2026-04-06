@@ -98,6 +98,8 @@ export interface ResultadoNomina {
     valor_fijo_gestoria?: boolean;
     dias_laborables_trabajados?: number;
     viernes_trabajados?: number;
+    dias_guardia_total?: number;
+    dias_guardia_lj_con_descuento?: number;
   };
 
   /** Avisos (placeholder, dato faltante, fórmula estimada…). */
