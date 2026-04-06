@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { guardarSesion, listarSesiones } from "@/lib/retiradas";
+import { db } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   const user = await getUser();
@@ -84,6 +85,37 @@ export async function GET(req: NextRequest) {
     });
   } catch (e) {
     console.error("[api/retiradas] GET:", e);
+    return NextResponse.json({ ok: false, error: String(e) }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const user = await getUser();
+  if (!user) {
+    return NextResponse.json({ ok: false, error: "No autenticado" }, { status: 401 });
+  }
+
+  try {
+    const id = req.nextUrl.searchParams.get("id");
+    if (!id) {
+      return NextResponse.json({ ok: false, error: "Falta parámetro id" }, { status: 400 });
+    }
+    const sesionId = Number(id);
+
+    // Borrar en cascada: cajas, conteo, movimientos, sesión
+    await db.execute({ sql: `DELETE FROM retiradas_caja WHERE sesion_id = ?`, args: [sesionId] });
+    await db.execute({ sql: `DELETE FROM retiradas_conteo WHERE sesion_id = ?`, args: [sesionId] });
+    await db.execute({ sql: `DELETE FROM retiradas_movimiento WHERE sesion_id = ?`, args: [sesionId] });
+    const result = await db.execute({ sql: `DELETE FROM retiradas_sesion WHERE id = ?`, args: [sesionId] });
+
+    return NextResponse.json({
+      ok: true,
+      deleted: result.rowsAffected,
+      id: sesionId,
+      usuario: user.nombre,
+    });
+  } catch (e) {
+    console.error("[api/retiradas] DELETE:", e);
     return NextResponse.json({ ok: false, error: String(e) }, { status: 500 });
   }
 }
