@@ -1,11 +1,34 @@
 import { query, db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
-// GET /api/rrhh/empleados?incluir_inactivos=1
+// GET /api/rrhh/empleados?incluir_inactivos=1&para=vacaciones|nomina|planning
+//
+// Variantes:
+//   - (sin params)                → solo `activo = 1` (planning por defecto, retrocompatible).
+//   - incluir_inactivos=1         → todos los empleados sin filtro.
+//   - para=vacaciones             → activo = 1 OR incluir_vacaciones = 1 (incluye Tere/Dolores).
+//   - para=nomina                 → incluir_en_nomina = 1 (tabla del módulo de nóminas).
+//   - para=planning               → equivalente al default (activo = 1).
+//
+// Ver REIG-BASE → 06-OPERATIVA-FARMACIA/nominas-rrhh.md §3 sobre la distinción
+// entre "activo en planning", "activo en vacaciones" y "activo en nómina".
 export async function GET(req: NextRequest) {
   try {
     const incluirInactivos = req.nextUrl.searchParams.get("incluir_inactivos") === "1";
-    const whereClause = incluirInactivos ? "" : "WHERE activo = 1";
+    const para = req.nextUrl.searchParams.get("para");
+
+    let whereClause: string;
+    if (incluirInactivos) {
+      whereClause = "";
+    } else if (para === "vacaciones") {
+      whereClause = "WHERE activo = 1 OR incluir_vacaciones = 1";
+    } else if (para === "nomina") {
+      whereClause = "WHERE incluir_en_nomina = 1";
+    } else {
+      // planning por defecto
+      whereClause = "WHERE activo = 1";
+    }
+
     const empleados = await query(
       `SELECT * FROM rrhh_empleados ${whereClause} ORDER BY orden ASC`
     );
@@ -59,9 +82,15 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "id requerido" }, { status: 400 });
     }
 
-    const allowed = ["nombre", "categoria", "empresa", "farmaceutico", "hace_guardia", "cubre_nocturna",
-                     "complemento_mensual_eur", "h_lab_complemento_mensual", "activo", "orden", "guardias_manual", "departamento",
-                     "horario_inicio_a", "horario_fin_a", "horario_inicio_b", "horario_fin_b"];
+    const allowed = [
+      "nombre", "categoria", "empresa", "farmaceutico", "hace_guardia", "cubre_nocturna",
+      "complemento_mensual_eur", "h_lab_complemento_mensual", "activo", "orden", "guardias_manual", "departamento",
+      "horario_inicio_a", "horario_fin_a", "horario_inicio_b", "horario_fin_b",
+      // Campos del módulo de nóminas (ver REIG-BASE nominas-rrhh.md §3–§5 y §9)
+      "nombre_formal_nomina", "tipo_calculo",
+      "h_extras_fijas_mes", "h_extras_fijas_semana", "h_extra_diaria",
+      "descuenta_media_en_guardia", "incluir_en_nomina", "incluir_vacaciones",
+    ];
     const updates = Object.entries(fields).filter(([k]) => allowed.includes(k));
 
     if (updates.length === 0) {

@@ -1,3 +1,16 @@
+// Enum de tipos de cálculo para el módulo de nóminas.
+// Ver REIG-BASE → 06-OPERATIVA-FARMACIA/nominas-rrhh.md §5.
+export type TipoCalculoNomina =
+  | "auxiliar_rotativo"        // §5.1 — Ani, Dulce, Leti, Yoli
+  | "auxiliar_fijo_partido"    // §5.1 — Noelia
+  | "farmaceutico_diurno"      // §5.3 — Julio, Celia
+  | "farmaceutico_nocturno"    // §5.4 — María
+  | "apoyo_estudiante_optica"  // §5.6 — Zule/Zuleica
+  | "mirelus_mantenimiento"    // §5.5 — Javier
+  | "mirelus_limpieza_fija"    // §5.7 — Tere
+  | "mirelus_suplente"         // §5.7 — Dolores
+  | "mirelus_fija_gestoria";   // §5.7 — Luisa
+
 export interface Empleado {
   id: string;
   nombre: string;
@@ -19,6 +32,28 @@ export interface Empleado {
   horario_fin_a: number | null;
   horario_inicio_b: number | null;
   horario_fin_b: number | null;
+
+  // ── Campos del módulo de nóminas (sesión 5, 2026-04-06) ──
+  // Ver REIG-BASE → 06-OPERATIVA-FARMACIA/nominas-rrhh.md §3–§5 y §9.
+  //
+  // Nombre con el que la gestoría registra a la persona. Ej: Yoli ↔ "REYES Gregoria".
+  // null para empleados que no van a nómina (Ovidio, Bea, Davinia, etc.).
+  nombre_formal_nomina: string | null;
+  // Enum que dice qué función del engine de nóminas usar. null = no aplica.
+  tipo_calculo: TipoCalculoNomina | null;
+  // Horas extras fijas al mes (auxiliares farmacia: 4; Javier: 4; el resto: 0).
+  h_extras_fijas_mes: number;
+  // Horas extras fijas por semana cuando trabaja (Zule: 4 los viernes que cubre; el resto: 0).
+  h_extras_fijas_semana: number;
+  // Horas extras por día laborable trabajado (María: 0.5; Javier: 0.5; el resto: 0).
+  h_extra_diaria: number;
+  // Flag: los días de guardia no se paga la h_extra_diaria (solo María — ver §5.4 y §7).
+  descuenta_media_en_guardia: number;
+  // Flag: aparece en el PDF mensual de la gestoría. Distinto de `activo` (planning).
+  incluir_en_nomina: number;
+  // Flag: aparece en el módulo de vacaciones. Necesario porque Tere/Dolores no están en
+  // el planning pero sí deben poder tener vacaciones registradas.
+  incluir_vacaciones: number;
 }
 
 export interface Festivo {
