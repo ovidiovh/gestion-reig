@@ -139,6 +139,7 @@ export async function initRetiradas() {
   await addColIfMissing("retiradas_sesion", "conteo_cuadra INTEGER NOT NULL DEFAULT 0");
   await addColIfMissing("retiradas_sesion", "conteo_total REAL DEFAULT 0");
   await addColIfMissing("retiradas_sesion", "conteo_diferencia REAL DEFAULT 0");
+  await addColIfMissing("retiradas_sesion", "origen TEXT DEFAULT 'farmacia'");
 
   // retiradas_caja: schema antiguo tiene num_caja, schema nuevo usa caja_num.
   // Añadimos caja_num para los SELECTs nuevos. El INSERT (más abajo) escribe
@@ -214,17 +215,21 @@ export async function guardarSesion(input: SesionInput): Promise<{ id: number; t
 
 /* ── Listar sesiones ── */
 
-export async function listarSesiones(filtro: string = "todo") {
+export async function listarSesiones(filtroOrFecha: string = "todo") {
   await initRetiradas();
 
   let where = "";
   const args: string[] = [];
 
-  if (filtro === "hoy") {
+  // Si parece una fecha YYYY-MM-DD, filtrar desde esa fecha
+  if (/^\d{4}-\d{2}-\d{2}$/.test(filtroOrFecha)) {
+    where = `WHERE fecha >= ?`;
+    args.push(filtroOrFecha);
+  } else if (filtroOrFecha === "hoy") {
     where = `WHERE fecha = date('now')`;
-  } else if (filtro === "semana") {
+  } else if (filtroOrFecha === "semana") {
     where = `WHERE fecha >= date('now', '-7 days')`;
-  } else if (filtro === "mes") {
+  } else if (filtroOrFecha === "mes") {
     where = `WHERE fecha >= date('now', 'start of month')`;
   }
 
@@ -238,8 +243,10 @@ export async function listarSesiones(filtro: string = "todo") {
     conteo_cuadra: number;
     conteo_diferencia: number;
     created_at: string;
+    origen: string | null;
   }>(`SELECT id, fecha, total, num_cajas, destino, usuario_nombre,
-            conteo_cuadra, conteo_diferencia, created_at
+            conteo_cuadra, conteo_diferencia, created_at,
+            COALESCE(origen, 'farmacia') AS origen
       FROM retiradas_sesion ${where}
       ORDER BY created_at DESC
       LIMIT 50`, args);
