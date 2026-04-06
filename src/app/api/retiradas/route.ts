@@ -43,8 +43,37 @@ export async function GET(req: NextRequest) {
     // Si piden detalle de una sesión concreta
     if (sesionId) {
       const { detalleSesion } = await import("@/lib/retiradas");
-      const data = await detalleSesion(Number(sesionId));
-      return NextResponse.json({ ok: true, data });
+      const detalle = await detalleSesion(Number(sesionId));
+      if (!detalle) {
+        return NextResponse.json({ ok: false, error: "Sesión no encontrada" }, { status: 404 });
+      }
+      // Mapear cajas: caja_num → num_caja
+      const cajas = detalle.cajas.map((c) => ({
+        num_caja: c.caja_num,
+        b200: c.b200, b100: c.b100, b50: c.b50,
+        b20: c.b20, b10: c.b10, b5: c.b5,
+        total: c.total,
+      }));
+      // Mapear conteo → audit
+      const audit = detalle.conteo
+        ? {
+            b200: detalle.conteo.b200,
+            b100: detalle.conteo.b100,
+            b50: detalle.conteo.b50,
+            b20: detalle.conteo.b20,
+            b10: detalle.conteo.b10,
+            b5: detalle.conteo.b5,
+            total: detalle.conteo.total_conteo,
+            cuadra: detalle.conteo.cuadra,
+          }
+        : null;
+      return NextResponse.json({
+        ok: true,
+        sesion: detalle.sesion,
+        cajas,
+        audit,
+        movimientos: detalle.movimientos,
+      });
     }
 
     const data = await listarSesiones(desde || filtro);
