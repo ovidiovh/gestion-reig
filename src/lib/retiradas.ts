@@ -139,6 +139,11 @@ export async function initRetiradas() {
   await addColIfMissing("retiradas_sesion", "conteo_cuadra INTEGER NOT NULL DEFAULT 0");
   await addColIfMissing("retiradas_sesion", "conteo_total REAL DEFAULT 0");
   await addColIfMissing("retiradas_sesion", "conteo_diferencia REAL DEFAULT 0");
+
+  // retiradas_caja: schema antiguo tiene num_caja, schema nuevo usa caja_num.
+  // Añadimos caja_num para los SELECTs nuevos. El INSERT (más abajo) escribe
+  // en AMBAS columnas con el mismo valor para no violar NOT NULL del antiguo.
+  await addColIfMissing("retiradas_caja", "caja_num INTEGER");
 }
 
 /* ── Guardar sesión completa ── */
@@ -169,11 +174,15 @@ export async function guardarSesion(input: SesionInput): Promise<{ id: number; t
   const sesionId = sesion.id;
 
   // 2. Insertar cajas
+  // Insertamos en num_caja Y caja_num con el mismo valor por compatibilidad
+  // hacia atrás: las BD viejas (schema.sql original) tienen num_caja NOT NULL
+  // CHECK BETWEEN 1 AND 11; las BD nuevas usan caja_num. Escribir en ambas
+  // satisface ambos schemas.
   for (const c of input.cajas) {
     await query(
-      `INSERT INTO retiradas_caja (sesion_id, caja_num, b200, b100, b50, b20, b10, b5, total)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [sesionId, c.caja_num, c.b200, c.b100, c.b50, c.b20, c.b10, c.b5, c.total]
+      `INSERT INTO retiradas_caja (sesion_id, num_caja, caja_num, b200, b100, b50, b20, b10, b5, total)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [sesionId, c.caja_num, c.caja_num, c.b200, c.b100, c.b50, c.b20, c.b10, c.b5, c.total]
     );
   }
 
