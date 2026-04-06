@@ -1,8 +1,11 @@
 "use client";
 
 // Página /rrhh/nominas — Paso 2.0.
-// Selector de mes + dos tablas (Farmacia / Mirelus) con las 4 columnas que
-// espera la gestoría (laborables · festivos · nocturnas · complementos €).
+// Selector de mes + dos tablas (Farmacia / Mirelus) con las 5 columnas que
+// espera la gestoría: laborables · festivos · noct.lab · noct.fest · complemento €.
+// Las nocturnas laborables y festivas van en columnas separadas porque se pagan
+// con tarifas distintas (las noct. festivas son más caras). Nota: ambas son
+// SUBSECCIONES de sus columnas principales, NO aditivas.
 //
 // Esta pantalla NO guarda en BD ni genera PDFs. Solo muestra lo que devuelve
 // GET /api/rrhh/nominas?mes=YYYY-MM. Generar PDFs y persistir historial queda
@@ -19,10 +22,13 @@ interface Desglose {
   descuento_guardia_maria?: number;
   horas_guardia_laboral?: number;
   horas_guardia_festiva?: number;
-  horas_guardia_nocturnas?: number;
+  horas_guardia_nocturnas_lab?: number;
+  horas_guardia_nocturnas_fest?: number;
   valor_fijo_gestoria?: boolean;
   dias_laborables_trabajados?: number;
   viernes_trabajados?: number;
+  dias_guardia_total?: number;
+  dias_guardia_lj_con_descuento?: number;
 }
 
 interface ResultadoNomina {
@@ -33,7 +39,8 @@ interface ResultadoNomina {
   tipo_calculo: string | null;
   laborables: number;
   festivos: number;
-  nocturnas: number;
+  nocturnas_laborables: number;
+  nocturnas_festivas: number;
   complementos_eur: number;
   desglose: Desglose;
   warnings: string[];
@@ -93,7 +100,8 @@ function TablaNomina({
               <th style={{ padding: "8px 12px" }}>Nombre nómina</th>
               <th style={{ padding: "8px 12px", textAlign: "right" }}>Laborables</th>
               <th style={{ padding: "8px 12px", textAlign: "right" }}>Festivos</th>
-              <th style={{ padding: "8px 12px", textAlign: "right" }}>Nocturnas</th>
+              <th style={{ padding: "8px 12px", textAlign: "right" }} title="Subsección de Laborables. Pago con suplemento nocturno.">Noct. lab.</th>
+              <th style={{ padding: "8px 12px", textAlign: "right" }} title="Subsección de Festivos. Suplemento nocturno festivo (más caro).">Noct. fest.</th>
               <th style={{ padding: "8px 12px", textAlign: "right" }}>Complemento</th>
               <th style={{ padding: "8px 12px" }}>Notas</th>
             </tr>
@@ -117,7 +125,10 @@ function TablaNomina({
                     {fmtNum(r.festivos)}
                   </td>
                   <td style={{ padding: "8px 12px", textAlign: "right", fontVariantNumeric: "tabular-nums", color: "#888" }}>
-                    {fmtNum(r.nocturnas)}
+                    {fmtNum(r.nocturnas_laborables)}
+                  </td>
+                  <td style={{ padding: "8px 12px", textAlign: "right", fontVariantNumeric: "tabular-nums", color: "#888" }}>
+                    {fmtNum(r.nocturnas_festivas)}
                   </td>
                   <td style={{ padding: "8px 12px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
                     {fmtEur(r.complementos_eur)}

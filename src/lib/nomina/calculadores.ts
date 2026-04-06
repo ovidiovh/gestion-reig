@@ -20,7 +20,8 @@ function resultadoBase(emp: EmpleadoNomina): ResultadoNomina {
     tipo_calculo: emp.tipo_calculo,
     laborables: 0,
     festivos: 0,
-    nocturnas: 0,
+    nocturnas_laborables: 0,
+    nocturnas_festivas: 0,
     complementos_eur: 0,
     desglose: {},
     warnings: [],
@@ -35,18 +36,21 @@ function resultadoBase(emp: EmpleadoNomina): ResultadoNomina {
 function horasGuardiasNocturnas(guardias: GuardiaAsignada[]): {
   laborables: number;
   festivas: number;
-  nocturnas: number;
+  nocturnas_laborables: number;
+  nocturnas_festivas: number;
 } {
   let laborables = 0;
   let festivas = 0;
-  let nocturnas = 0;
+  let nocturnas_laborables = 0;
+  let nocturnas_festivas = 0;
   for (const g of guardias) {
     const h = horasGuardiaMaria(g.dow, g.es_festivo);
     laborables += h.laborables;
     festivas += h.festivas;
-    nocturnas += h.nocturnas;
+    nocturnas_laborables += h.nocturnas_laborables;
+    nocturnas_festivas += h.nocturnas_festivas;
   }
-  return { laborables, festivas, nocturnas };
+  return { laborables, festivas, nocturnas_laborables, nocturnas_festivas };
 }
 
 /**
@@ -131,15 +135,20 @@ function calcFarmaceuticoNocturno(
   ).length;
   const descuentoGuardia = emp.descuenta_media_en_guardia ? diasGuardiaLJ * 0.5 : 0;
 
-  const { laborables: guardiaLab, festivas: guardiaFest, nocturnas: guardiaNoct } =
-    horasGuardiasNocturnas(ctx.guardias_empleado);
+  const {
+    laborables: guardiaLab,
+    festivas: guardiaFest,
+    nocturnas_laborables: guardiaNoctLab,
+    nocturnas_festivas: guardiaNoctFest,
+  } = horasGuardiasNocturnas(ctx.guardias_empleado);
 
   const laborablesBase =
     fijas + extrasDiariasMes - descuentoGuardia;
 
   r.laborables = laborablesBase + guardiaLab;
   r.festivos = guardiaFest;
-  r.nocturnas = guardiaNoct;
+  r.nocturnas_laborables = guardiaNoctLab;
+  r.nocturnas_festivas = guardiaNoctFest;
   r.complementos_eur = emp.complemento_mensual_eur; // 180 €
   r.desglose = {
     fijas_mes: fijas,
@@ -149,7 +158,8 @@ function calcFarmaceuticoNocturno(
     descuento_guardia_maria: descuentoGuardia,
     horas_guardia_laboral: guardiaLab,
     horas_guardia_festiva: guardiaFest,
-    horas_guardia_nocturnas: guardiaNoct,
+    horas_guardia_nocturnas_lab: guardiaNoctLab,
+    horas_guardia_nocturnas_fest: guardiaNoctFest,
     dias_laborables_trabajados: diasTrabajados,
   };
   return r;
@@ -265,7 +275,8 @@ function calcFijaGestoria(
   }
   r.laborables = v.laborables;
   r.festivos = v.festivos;
-  r.nocturnas = v.nocturnas;
+  r.nocturnas_laborables = v.nocturnas_laborables;
+  r.nocturnas_festivas = v.nocturnas_festivas;
   r.complementos_eur = v.complementos_eur;
   r.desglose = { valor_fijo_gestoria: true };
   if (v.placeholder) {

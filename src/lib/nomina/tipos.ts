@@ -67,7 +67,7 @@ export interface ContextoMes {
 
 // ─── Salida ─────────────────────────────────────────────────────────────────
 
-/** Las 4 columnas que recibe la gestoría + metadatos de trazabilidad. */
+/** Las 5 columnas que recibe la gestoría + metadatos de trazabilidad. */
 export interface ResultadoNomina {
   empleado_id: string;
   nombre: string;
@@ -79,8 +79,16 @@ export interface ResultadoNomina {
   laborables: number;
   /** Horas en festivo (solo guardia festiva o domingo). */
   festivos: number;
-  /** Horas nocturnas — SUBSECCIÓN de laborables/festivos, NO aditiva. */
-  nocturnas: number;
+  /**
+   * Horas nocturnas en día laborable. SUBSECCIÓN de `laborables` (NO aditiva).
+   * Van en columna aparte porque la gestoría las paga con suplemento distinto.
+   */
+  nocturnas_laborables: number;
+  /**
+   * Horas nocturnas en día festivo/domingo. SUBSECCIÓN de `festivos` (NO aditiva).
+   * Se pagan más que las nocturnas laborables → columna aparte.
+   */
+  nocturnas_festivas: number;
   /** Complemento fijo mensual en €. */
   complementos_eur: number;
 
@@ -94,7 +102,8 @@ export interface ResultadoNomina {
     descuento_guardia_maria?: number;
     horas_guardia_laboral?: number;
     horas_guardia_festiva?: number;
-    horas_guardia_nocturnas?: number;
+    horas_guardia_nocturnas_lab?: number;
+    horas_guardia_nocturnas_fest?: number;
     valor_fijo_gestoria?: boolean;
     dias_laborables_trabajados?: number;
     viernes_trabajados?: number;
