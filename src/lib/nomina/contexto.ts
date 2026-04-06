@@ -47,6 +47,7 @@ export interface DatosMesGlobales {
   dias_laborables_calendario: number;
   dias_laborables_festivos: number;
   viernes_mes: number;
+  viernes_festivos_mes: number;
   festivosFechas: Set<string>;
   vacacionesPorEmpleado: Map<string, FilaVacacion[]>;
   guardiasPorEmpleado: Map<string, FilaGuardiaSlot[]>;
@@ -91,6 +92,9 @@ export async function cargarDatosMes(mes: string): Promise<DatosMesGlobales> {
     (f) => esDiaLV(f) && festivosFechas.has(f)
   ).length;
   const viernesMes = contarViernes(mes);
+  const viernesFestivosMes = fechasDelMes(mes).filter(
+    (f) => dowUTC(f) === 5 && festivosFechas.has(f)
+  ).length;
 
   // Indexar por empleado
   const vacacionesPorEmpleado = new Map<string, FilaVacacion[]>();
@@ -112,6 +116,7 @@ export async function cargarDatosMes(mes: string): Promise<DatosMesGlobales> {
     dias_laborables_calendario: diasLabCalendario,
     dias_laborables_festivos: diasLabFestivos,
     viernes_mes: viernesMes,
+    viernes_festivos_mes: viernesFestivosMes,
     festivosFechas,
     vacacionesPorEmpleado,
     guardiasPorEmpleado,
@@ -128,6 +133,7 @@ export function contextoPara(
     dias_laborables_calendario: datos.dias_laborables_calendario,
     dias_laborables_festivos: datos.dias_laborables_festivos,
     viernes_mes: datos.viernes_mes,
+    viernes_festivos_mes: datos.viernes_festivos_mes,
     dias_vacaciones_empleado_labs: 0,
     viernes_vacaciones_empleado: 0,
     guardias_empleado: [],

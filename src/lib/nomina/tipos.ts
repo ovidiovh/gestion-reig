@@ -55,6 +55,8 @@ export interface ContextoMes {
   dias_laborables_festivos: number;
   /** Número de viernes del mes (para cálculo de Zule). */
   viernes_mes: number;
+  /** Número de viernes del mes que caen en festivo oficial (no se trabajan → no cuentan extras). */
+  viernes_festivos_mes: number;
   /** Días laborables L-V que el empleado está de vacaciones. */
   dias_vacaciones_empleado_labs: number;
   /** Viernes del mes que el empleado está de vacaciones (Zule). */

@@ -166,42 +166,40 @@ function calcFarmaceuticoNocturno(
 }
 
 // ─── §5.6 Apoyo estudiante óptica (Zule / Zuleica) ─────────────────────────
-// Contrato media jornada: 16 h/sem L-J + 4 h base V + 4 h extras V.
-// Usamos viernes efectivamente trabajados (viernes del mes - viernes vacaciones).
-// NOTA: §5.6 marca como pendiente crítico cómo declarar las 16h/sem a gestoría.
-// Hasta resolverlo, el motor calcula horas EFECTIVAS del mes (opción 2 de las
-// tres enumeradas en el doc) y emite warning.
+// Contrato 24 h/sem: 4 h base × 5 días L-V + 4 h extras los viernes.
+// Confirmado por Beatriz 2026-04-06:
+//   "5 DIAS LABORABLES (4 HORAS) + 4 HORAS EXTRA EL VIERNES"
+//   "SIEMPRE Y CUANDO EL VIERNES TRABAJE"
+// → si el viernes es festivo o vacaciones, ni base ni extras de ese día.
+// → fórmula: dias_LV_efectivos × 4 + viernes_efectivos × 4
+// El error histórico de 96 h venía de un horario mal puesto (4:30→17:30 en vez
+// de 16:30→17:30 algún día) — confundió 4 con 16.
 function calcApoyoEstudianteOptica(
   emp: EmpleadoNomina,
   ctx: ContextoMes
 ): ResultadoNomina {
   const r = resultadoBase(emp);
 
-  // Horas L-J base: 16 h por semana, prorrateado por semanas efectivas del mes
-  // (aproximación: días L-J no festivos - días L-J vacaciones) * 4 h/día.
-  // Simplificación razonable: contamos L-J efectivos.
-  // TODO: mover a un helper dentro del contexto para que sea una constante
-  // precomputada y el motor no tenga que saber de calendario.
-  //
-  // Para un primer cálculo, asumimos 16h × 4 semanas = 64 h base (fijas mes).
-  // Cuando se resuelva el pendiente crítico se cambiará a la fórmula exacta.
-  const fijasBase = 64;
+  // Base: 4 h × días L-V efectivamente trabajados (resta festivos y vacaciones).
+  const diasLVTrabajados = diasLaborablesTrabajados(ctx);
+  const horasBase = diasLVTrabajados * 4;
 
-  const viernesTrabajados = ctx.viernes_mes - ctx.viernes_vacaciones_empleado;
-  const viernesBase = viernesTrabajados * 4;    // 4 h base por viernes
-  const viernesExtras = viernesTrabajados * 4;  // 4 h extras por viernes
+  // Extras: 4 h adicionales SOLO los viernes que realmente trabaja
+  // (no festivos, no vacaciones).
+  const viernesEfectivos = Math.max(
+    0,
+    ctx.viernes_mes - ctx.viernes_vacaciones_empleado - ctx.viernes_festivos_mes
+  );
+  const horasExtrasViernes = viernesEfectivos * 4;
 
-  r.laborables = fijasBase + viernesBase + viernesExtras;
+  r.laborables = horasBase + horasExtrasViernes;
   r.complementos_eur = 0;
   r.desglose = {
-    fijas_mes: fijasBase,
-    viernes_trabajados: viernesTrabajados,
-    extras_fijas_semana: viernesExtras,
+    fijas_mes: horasBase,
+    dias_laborables_trabajados: diasLVTrabajados,
+    viernes_trabajados: viernesEfectivos,
+    extras_fijas_semana: horasExtrasViernes,
   };
-  r.warnings.push(
-    "Cálculo Zule usa 64 h L-J base fijas (16h × 4 sem). Pendiente crítico §5.6: confirmar " +
-      "con Ovidio cómo declara la gestoría las 16h/sem base. Ajustar fijasBase cuando se resuelva."
-  );
   return r;
 }
 
