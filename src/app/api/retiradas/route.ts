@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
     const sesionId = req.nextUrl.searchParams.get("sesion_id");
     const filtro = req.nextUrl.searchParams.get("filtro") || "todo";
 
-    // Si piden detalle de una sesión concreta
+    // Si piden detalle de una sesión concreta (v2)
     if (sesionId) {
       const { detalleSesion } = await import("@/lib/retiradas");
       const detalle = await detalleSesion(Number(sesionId));
