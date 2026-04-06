@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  Empleado, HorarioAsignacion, TurnoConfig,
+  Empleado, HorarioAsignacion, TurnoConfig, TipoCalculoNomina,
   GREEN, GREEN_DARK, GREEN_LIGHT,
   TURNO_LABELS, TURNO_SHORT, TURNO_COLORS,
   EMPLEADOS_ROTATIVOS, EMPLEADOS_ESPECIALES,
@@ -32,6 +32,20 @@ const CATEGORIA_JORNADA: Record<string, string> = {
 // Zuleica es auxiliar con jornada especial — se sobreescribe por id
 const JORNADA_ESPECIAL: Record<string, string> = {
   zuleica: "24h / sem.",
+};
+
+// Labels de los tipos de cálculo de nómina (enum TipoCalculoNomina).
+// Ver REIG-BASE → 06-OPERATIVA-FARMACIA/nominas-rrhh.md §5.
+const TIPO_CALCULO_LABEL: Record<TipoCalculoNomina, string> = {
+  auxiliar_rotativo:       "Auxiliar rotativo (T1/T2/T3)",
+  auxiliar_fijo_partido:   "Auxiliar fijo partido (Noelia)",
+  farmaceutico_diurno:     "Farmacéutico diurno",
+  farmaceutico_nocturno:   "Farmacéutico nocturno (María)",
+  apoyo_estudiante_optica: "Apoyo estudiante óptica (Zule)",
+  mirelus_mantenimiento:   "Mirelus — Mantenimiento (Javi)",
+  mirelus_limpieza_fija:   "Mirelus — Limpieza fija 8h/mes (Tere)",
+  mirelus_suplente:        "Mirelus — Suplente de Tere (Dolores)",
+  mirelus_fija_gestoria:   "Mirelus — Fija gestoría (Luisa)",
 };
 
 type TabEquipo = "personal" | "horarios";
@@ -233,6 +247,15 @@ function EmpleadoRow({
     horario_fin_a: number | null;
     horario_inicio_b: number | null;
     horario_fin_b: number | null;
+    // ── Campos módulo nóminas (sesión 5) ──
+    nombre_formal_nomina: string;
+    tipo_calculo: string; // "" = null
+    h_extras_fijas_mes: number;
+    h_extras_fijas_semana: number;
+    h_extra_diaria: number;
+    descuenta_media_en_guardia: number;
+    incluir_en_nomina: number;
+    incluir_vacaciones: number;
   }>({
     categoria: emp.categoria || "auxiliar",
     farmaceutico: emp.farmaceutico,
@@ -245,6 +268,14 @@ function EmpleadoRow({
     horario_fin_a:    effFa,
     horario_inicio_b: effIb,
     horario_fin_b:    effFb,
+    nombre_formal_nomina:       emp.nombre_formal_nomina ?? "",
+    tipo_calculo:               emp.tipo_calculo ?? "",
+    h_extras_fijas_mes:         emp.h_extras_fijas_mes ?? 0,
+    h_extras_fijas_semana:      emp.h_extras_fijas_semana ?? 0,
+    h_extra_diaria:             emp.h_extra_diaria ?? 0,
+    descuenta_media_en_guardia: emp.descuenta_media_en_guardia ?? 0,
+    incluir_en_nomina:          emp.incluir_en_nomina ?? 0,
+    incluir_vacaciones:         emp.incluir_vacaciones ?? 1,
   });
   const [saving, setSaving]   = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -253,7 +284,15 @@ function EmpleadoRow({
     setSaving(true);
     setSaveMsg(null);
     try {
-      await onUpdate(emp.id, draft);
+      // Normalizar strings vacíos a null antes de enviar al backend.
+      // tipo_calculo "" → null (empleado sin tipo de cálculo definido).
+      // nombre_formal_nomina "" → null (no tiene nombre oficial distinto).
+      const toSave: Partial<Empleado> = {
+        ...draft,
+        nombre_formal_nomina: draft.nombre_formal_nomina.trim() || null,
+        tipo_calculo: (draft.tipo_calculo || null) as TipoCalculoNomina | null,
+      };
+      await onUpdate(emp.id, toSave);
       setSaveMsg({ ok: true, text: "✓ Guardado correctamente" });
       setTimeout(() => { setSaveMsg(null); setEditing(false); }, 1200);
     } catch (e) {
@@ -497,6 +536,109 @@ function EmpleadoRow({
                   style={fldStyle} />
               </div>
             </>)}
+
+            {/* ═══════════════════════════════════════════════════════════ */}
+            {/* Sección: Datos de nómina (módulo /rrhh/nominas — sesión 5)  */}
+            {/* Ver REIG-BASE → 06-OPERATIVA-FARMACIA/nominas-rrhh.md §3–§5 */}
+            {/* ═══════════════════════════════════════════════════════════ */}
+            <div style={{ gridColumn: "1 / -1", marginTop: 10, paddingTop: 14, borderTop: "1px dashed #86efac" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: GREEN_DARK, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                💰 Datos de nómina
+              </div>
+              <div style={{ fontSize: 10, color: "#6b7280", marginTop: 2 }}>
+                Campos del módulo <code style={{ background: "#ecfdf5", padding: "0 3px", borderRadius: 3 }}>/rrhh/nominas</code>. Determinan cómo el motor calcula la nómina mensual de cada persona.
+              </div>
+            </div>
+
+            <div style={{ gridColumn: "span 2" }}>
+              <label style={lblStyle}>Nombre formal en la gestoría</label>
+              <input type="text" value={draft.nombre_formal_nomina}
+                onChange={e => setDraft(d => ({ ...d, nombre_formal_nomina: e.target.value }))}
+                style={fldStyle}
+                placeholder="Ej: REYES Gregoria" />
+              <div style={{ fontSize: 9, color: "#888", marginTop: 3 }}>
+                Como aparece oficialmente en las nóminas (puede diferir del nombre común). Dejar vacío si no va a nómina.
+              </div>
+            </div>
+
+            <div style={{ gridColumn: "span 2" }}>
+              <label style={lblStyle}>Tipo de cálculo nómina</label>
+              <select value={draft.tipo_calculo}
+                onChange={e => setDraft(d => ({ ...d, tipo_calculo: e.target.value }))}
+                style={fldStyle}>
+                <option value="">— No aplica (no va a nómina) —</option>
+                {(Object.entries(TIPO_CALCULO_LABEL) as [TipoCalculoNomina, string][]).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+              <div style={{ fontSize: 9, color: "#888", marginTop: 3 }}>
+                Determina qué fórmula usa el motor. Ver nominas-rrhh.md §5.
+              </div>
+            </div>
+
+            <div>
+              <label style={lblStyle}>H. extras fijas / mes</label>
+              <input type="number" min={0} value={draft.h_extras_fijas_mes}
+                onChange={e => setDraft(d => ({ ...d, h_extras_fijas_mes: parseInt(e.target.value) || 0 }))}
+                style={fldStyle} />
+              <div style={{ fontSize: 9, color: "#888", marginTop: 3 }}>
+                Auxiliares farmacia: 4. Javier: 4. El resto: 0.
+              </div>
+            </div>
+
+            <div>
+              <label style={lblStyle}>H. extras fijas / semana</label>
+              <input type="number" min={0} value={draft.h_extras_fijas_semana}
+                onChange={e => setDraft(d => ({ ...d, h_extras_fijas_semana: parseInt(e.target.value) || 0 }))}
+                style={fldStyle} />
+              <div style={{ fontSize: 9, color: "#888", marginTop: 3 }}>
+                Zule: 4 (viernes que trabaja). El resto: 0.
+              </div>
+            </div>
+
+            <div>
+              <label style={lblStyle}>H. extras por día trabajado</label>
+              <input type="number" min={0} step={0.5} value={draft.h_extra_diaria}
+                onChange={e => setDraft(d => ({ ...d, h_extra_diaria: parseFloat(e.target.value) || 0 }))}
+                style={fldStyle} />
+              <div style={{ fontSize: 9, color: "#888", marginTop: 3 }}>
+                María: 0.5. Javier: 0.5. El resto: 0.
+              </div>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}
+                 title="Los días que hace guardia no acumula h_extra_diaria. Solo María — ver §5.4.">
+              <input type="checkbox" id={`dmg-${emp.id}`}
+                checked={draft.descuenta_media_en_guardia === 1}
+                disabled={draft.h_extra_diaria === 0}
+                onChange={e => setDraft(d => ({ ...d, descuenta_media_en_guardia: e.target.checked ? 1 : 0 }))} />
+              <label htmlFor={`dmg-${emp.id}`} style={{
+                ...lblStyle, margin: 0, textTransform: "none", letterSpacing: 0,
+                opacity: draft.h_extra_diaria === 0 ? 0.5 : 1,
+              }}>
+                No pagar h/día en guardia
+              </label>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}
+                 title="Aparece en la hoja mensual enviada a la gestoría. Distinto de 'activo' (que controla el planning).">
+              <input type="checkbox" id={`ien-${emp.id}`}
+                checked={draft.incluir_en_nomina === 1}
+                onChange={e => setDraft(d => ({ ...d, incluir_en_nomina: e.target.checked ? 1 : 0 }))} />
+              <label htmlFor={`ien-${emp.id}`} style={{ ...lblStyle, margin: 0, textTransform: "none", letterSpacing: 0 }}>
+                Incluir en nómina mensual
+              </label>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}
+                 title="Aparece en /rrhh/vacaciones. Necesario para Tere/Dolores que no están en el planning pero sí tienen vacaciones.">
+              <input type="checkbox" id={`iv-${emp.id}`}
+                checked={draft.incluir_vacaciones === 1}
+                onChange={e => setDraft(d => ({ ...d, incluir_vacaciones: e.target.checked ? 1 : 0 }))} />
+              <label htmlFor={`iv-${emp.id}`} style={{ ...lblStyle, margin: 0, textTransform: "none", letterSpacing: 0 }}>
+                Incluir en vacaciones
+              </label>
+            </div>
 
           </div>
 
@@ -863,7 +1005,9 @@ export default function EquipoPage() {
 
   const loadEmpleados = useCallback(async (inactivos = mostrarInactivos) => {
     // Auto-migrate versionado: si la versión de datos cambió, re-sincronizar
-    const MIGRATE_KEY = "rrhh_migrate_v6";
+    // v7 (sesión 5, 2026-04-06): 8 campos nuevos de nómina + alta Dolores.
+    // Bumpear este valor cada vez que cambien las columnas o el seed de rrhh_empleados.
+    const MIGRATE_KEY = "rrhh_migrate_v7";
     if (typeof window !== "undefined" && !localStorage.getItem(MIGRATE_KEY)) {
       try {
         const ctrl = new AbortController();
