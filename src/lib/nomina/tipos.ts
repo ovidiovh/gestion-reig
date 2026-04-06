@@ -45,6 +45,14 @@ export interface GuardiaAsignada {
   hora_fin2: number | null;
 }
 
+/** Una guardia con sus horas ya calculadas — para mostrar en el desglose por día. */
+export interface GuardiaDesglose {
+  fecha: string;      // YYYY-MM-DD
+  dow: number;
+  horas: number;      // horas totales de esa guardia (lab + fest, incluyendo nocturnas como subsección)
+  es_festivo: boolean;
+}
+
 /** Contexto precomputado para UN empleado en UN mes concreto. */
 export interface ContextoMes {
   /** Mes objetivo "YYYY-MM". */
@@ -115,6 +123,8 @@ export interface ResultadoNomina {
     num_guardias_asignadas?: number;
     /** Auxiliares: suma real de horas de los slots de las guardias asignadas. */
     horas_guardias_reales?: number;
+    /** Detalle por día de cada guardia asignada (visibilidad pantalla, no PDF). */
+    guardias_detalle?: GuardiaDesglose[];
   };
 
   /** Avisos (placeholder, dato faltante, fórmula estimada…). */

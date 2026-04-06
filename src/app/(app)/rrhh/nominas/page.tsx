@@ -13,6 +13,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+interface GuardiaDesglose {
+  fecha: string;
+  dow: number;
+  horas: number;
+  es_festivo: boolean;
+}
+
 interface Desglose {
   fijas_mes?: number;
   extras_fijas_mes?: number;
@@ -31,6 +38,7 @@ interface Desglose {
   dias_guardia_lj_con_descuento?: number;
   num_guardias_asignadas?: number;
   horas_guardias_reales?: number;
+  guardias_detalle?: GuardiaDesglose[];
 }
 
 interface ResultadoNomina {
@@ -77,6 +85,18 @@ function fmtEur(n: number): string {
   return `${fmtNum(n)} €`;
 }
 
+const DOW_ABREV = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+
+function fmtGuardiasDetalle(gs: GuardiaDesglose[]): string {
+  return gs
+    .map((g) => {
+      const dia = parseInt(g.fecha.slice(8, 10), 10);
+      const marca = g.es_festivo ? "★" : "";
+      return `${DOW_ABREV[g.dow]} ${dia}${marca} (${fmtNum(g.horas)})`;
+    })
+    .join(" + ");
+}
+
 /**
  * Construye la línea de desglose visible en pantalla — para que Beatriz pueda
  * validar a ojo cómo se ha llegado al total. NO sale en el PDF (eso son solo
@@ -96,23 +116,18 @@ function fmtDesglose(d: Desglose, tipo: string | null): string {
   }
   if (d.descuento_guardia_maria != null && d.descuento_guardia_maria > 0)
     partes.push(`−${fmtNum(d.descuento_guardia_maria)}h descuento guardia (L-J)`);
-  if (d.horas_guardia_laboral != null && d.horas_guardia_laboral > 0)
-    partes.push(`guardia lab ${fmtNum(d.horas_guardia_laboral)}h`);
-  if (d.horas_guardia_festiva != null && d.horas_guardia_festiva > 0)
-    partes.push(`guardia fest ${fmtNum(d.horas_guardia_festiva)}h`);
-  if (d.horas_guardia_nocturnas_lab != null && d.horas_guardia_nocturnas_lab > 0)
-    partes.push(`noct lab ${fmtNum(d.horas_guardia_nocturnas_lab)}h`);
-  if (d.horas_guardia_nocturnas_fest != null && d.horas_guardia_nocturnas_fest > 0)
-    partes.push(`noct fest ${fmtNum(d.horas_guardia_nocturnas_fest)}h`);
-  if (d.dias_guardia_total != null && d.dias_guardia_total > 0)
-    partes.push(`${d.dias_guardia_total} guardia(s)`);
 
-  // Auxiliares: visibilidad de guardias reales asignadas (vs estimación fija).
-  if (d.num_guardias_asignadas != null && d.num_guardias_asignadas > 0) {
-    partes.push(
-      `${d.num_guardias_asignadas} guardia(s) reales = ${fmtNum(d.horas_guardias_reales ?? 0)}h`
-    );
+  // Detalle día a día de guardias (sustituye el agregado anterior)
+  if (d.guardias_detalle && d.guardias_detalle.length > 0) {
+    partes.push(`guardias: ${fmtGuardiasDetalle(d.guardias_detalle)}`);
   }
+
+  // Subtotales nocturnas (solo María) — siguen apareciendo aparte porque las
+  // nocturnas son subsección no aditiva, importantes de validar a ojo.
+  if (d.horas_guardia_nocturnas_lab != null && d.horas_guardia_nocturnas_lab > 0)
+    partes.push(`${fmtNum(d.horas_guardia_nocturnas_lab)}h noct lab`);
+  if (d.horas_guardia_nocturnas_fest != null && d.horas_guardia_nocturnas_fest > 0)
+    partes.push(`${fmtNum(d.horas_guardia_nocturnas_fest)}h noct fest`);
 
   // Zule: muestra V trabajados explícitamente
   if (tipo === "apoyo_estudiante_optica") {

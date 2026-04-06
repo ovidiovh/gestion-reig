@@ -6,7 +6,7 @@
 // Ver REIG-BASE → 06-OPERATIVA-FARMACIA/nominas-rrhh.md §5 para las fórmulas.
 
 import type { TipoCalculoNomina } from "@/app/(app)/rrhh/types";
-import type { EmpleadoNomina, ContextoMes, ResultadoNomina, GuardiaAsignada } from "./tipos";
+import type { EmpleadoNomina, ContextoMes, ResultadoNomina, GuardiaAsignada, GuardiaDesglose } from "./tipos";
 import { horasGuardiaMaria, VALORES_FIJOS_GESTORIA } from "./constantes";
 
 // ─── Utilidad común ─────────────────────────────────────────────────────────
@@ -105,11 +105,19 @@ function calcAuxiliarRotativo(
     0
   );
 
+  const guardiasDetalle: GuardiaDesglose[] = ctx.guardias_empleado.map((g) => ({
+    fecha: g.fecha,
+    dow: g.dow,
+    horas: horasGuardiaSlots(g),
+    es_festivo: g.es_festivo,
+  }));
+
   r.desglose = {
     fijas_mes: fijas,
     extras_fijas_mes: extrasMes,
     num_guardias_asignadas: numGuardias,
     horas_guardias_reales: horasGuardiasReales,
+    guardias_detalle: guardiasDetalle,
   };
 
   // Warning solo si hay desviación significativa (> 2 h respecto al estimado).
@@ -181,6 +189,17 @@ function calcFarmaceuticoNocturno(
   r.nocturnas_laborables = guardiaNoctLab;
   r.nocturnas_festivas = guardiaNoctFest;
   r.complementos_eur = emp.complemento_mensual_eur; // 180 €
+  // Detalle día a día — usado por la pantalla para mostrar "sáb 4 (12) + jue 23 (9)…"
+  const guardiasDetalle: GuardiaDesglose[] = ctx.guardias_empleado.map((g) => {
+    const h = horasGuardiaMaria(g.dow, g.es_festivo);
+    return {
+      fecha: g.fecha,
+      dow: g.dow,
+      horas: h.totales,
+      es_festivo: g.es_festivo,
+    };
+  });
+
   r.desglose = {
     fijas_mes: fijas,
     extras_diarias_mes: extrasDiariasMes,
@@ -192,6 +211,7 @@ function calcFarmaceuticoNocturno(
     horas_guardia_nocturnas_lab: guardiaNoctLab,
     horas_guardia_nocturnas_fest: guardiaNoctFest,
     dias_laborables_trabajados: diasTrabajados,
+    guardias_detalle: guardiasDetalle,
   };
   return r;
 }
