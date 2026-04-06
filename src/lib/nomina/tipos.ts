@@ -111,6 +111,10 @@ export interface ResultadoNomina {
     viernes_trabajados?: number;
     dias_guardia_total?: number;
     dias_guardia_lj_con_descuento?: number;
+    /** Auxiliares: nº de guardias asignadas en el mes (visibilidad — no afecta cálculo). */
+    num_guardias_asignadas?: number;
+    /** Auxiliares: suma real de horas de los slots de las guardias asignadas. */
+    horas_guardias_reales?: number;
   };
 
   /** Avisos (placeholder, dato faltante, fórmula estimada…). */

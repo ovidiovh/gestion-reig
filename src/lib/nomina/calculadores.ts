@@ -54,6 +54,22 @@ function horasGuardiasNocturnas(guardias: GuardiaAsignada[]): {
 }
 
 /**
+ * Horas reales de UNA guardia (suma de los dos posibles slots).
+ * Las horas se almacenan en "media-horas desde medianoche" (cada unidad = 0.5 h),
+ * así que la duración en horas es (fin - inicio) * 0.5.
+ */
+function horasGuardiaSlots(g: GuardiaAsignada): number {
+  let h = 0;
+  if (g.hora_inicio != null && g.hora_fin != null) {
+    h += (g.hora_fin - g.hora_inicio) * 0.5;
+  }
+  if (g.hora_inicio2 != null && g.hora_fin2 != null) {
+    h += (g.hora_fin2 - g.hora_inicio2) * 0.5;
+  }
+  return h;
+}
+
+/**
  * Días laborables efectivamente trabajados = días L-V del mes - vacaciones L-V
  * - festivos L-V. Este es el "días_mes" que cita §5.4 y §5.5 de nominas-rrhh.md.
  */
@@ -75,19 +91,34 @@ function calcAuxiliarRotativo(
 ): ResultadoNomina {
   const r = resultadoBase(emp);
   const fijas = emp.h_lab_complemento_mensual;      // típicamente 9 h
-  const extrasMes = emp.h_extras_fijas_mes;         // típicamente 4 h
+  const extrasMes = emp.h_extras_fijas_mes;         // típicamente 4 h (estimación de guardias)
   r.laborables = fijas + extrasMes;
   r.complementos_eur = emp.complemento_mensual_eur;
+
+  // Visibilidad de guardias reales asignadas en el mes (no afecta al cálculo,
+  // solo deja a Beatriz comparar el estimado h_extras_fijas_mes contra lo real).
+  // §5.1 absorbe las guardias diurnas en una constante mensual; este desglose
+  // permite detectar meses con muchas más guardias de lo habitual.
+  const numGuardias = ctx.guardias_empleado.length;
+  const horasGuardiasReales = ctx.guardias_empleado.reduce(
+    (sum, g) => sum + horasGuardiaSlots(g),
+    0
+  );
+
   r.desglose = {
     fijas_mes: fijas,
     extras_fijas_mes: extrasMes,
-    horas_guardia_laboral: 0,
-    horas_guardia_festiva: 0,
+    num_guardias_asignadas: numGuardias,
+    horas_guardias_reales: horasGuardiasReales,
   };
-  r.warnings.push(
-    "Las horas de guardia diurna de auxiliares están absorbidas en h_extras_fijas_mes según §5.1. " +
-      "Verificar si hay guardias extraordinarias que haya que sumar manualmente."
-  );
+
+  // Warning solo si hay desviación significativa (> 2 h respecto al estimado).
+  if (numGuardias > 0 && Math.abs(horasGuardiasReales - extrasMes) > 2) {
+    r.warnings.push(
+      `Guardias reales este mes: ${numGuardias} (${horasGuardiasReales} h) ` +
+        `vs estimación fija ${extrasMes} h. Considera ajustar manualmente si procede.`
+    );
+  }
   return r;
 }
 

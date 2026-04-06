@@ -29,6 +29,8 @@ interface Desglose {
   viernes_trabajados?: number;
   dias_guardia_total?: number;
   dias_guardia_lj_con_descuento?: number;
+  num_guardias_asignadas?: number;
+  horas_guardias_reales?: number;
 }
 
 interface ResultadoNomina {
@@ -75,6 +77,53 @@ function fmtEur(n: number): string {
   return `${fmtNum(n)} €`;
 }
 
+/**
+ * Construye la línea de desglose visible en pantalla — para que Beatriz pueda
+ * validar a ojo cómo se ha llegado al total. NO sale en el PDF (eso son solo
+ * los totales). Se adapta al tipo de cálculo.
+ */
+function fmtDesglose(d: Desglose, tipo: string | null): string {
+  const partes: string[] = [];
+
+  if (d.valor_fijo_gestoria) return "valor fijo gestoría";
+
+  if (d.fijas_mes != null && d.fijas_mes > 0) partes.push(`fijas ${fmtNum(d.fijas_mes)}h`);
+  if (d.extras_fijas_mes != null && d.extras_fijas_mes > 0)
+    partes.push(`extras fijas ${fmtNum(d.extras_fijas_mes)}h`);
+  if (d.extras_diarias_mes != null && d.extras_diarias_mes > 0) {
+    const diasTxt = d.dias_laborables_trabajados != null ? ` (${d.dias_laborables_trabajados}d×0.5)` : "";
+    partes.push(`extras diarias ${fmtNum(d.extras_diarias_mes)}h${diasTxt}`);
+  }
+  if (d.descuento_guardia_maria != null && d.descuento_guardia_maria > 0)
+    partes.push(`−${fmtNum(d.descuento_guardia_maria)}h descuento guardia (L-J)`);
+  if (d.horas_guardia_laboral != null && d.horas_guardia_laboral > 0)
+    partes.push(`guardia lab ${fmtNum(d.horas_guardia_laboral)}h`);
+  if (d.horas_guardia_festiva != null && d.horas_guardia_festiva > 0)
+    partes.push(`guardia fest ${fmtNum(d.horas_guardia_festiva)}h`);
+  if (d.horas_guardia_nocturnas_lab != null && d.horas_guardia_nocturnas_lab > 0)
+    partes.push(`noct lab ${fmtNum(d.horas_guardia_nocturnas_lab)}h`);
+  if (d.horas_guardia_nocturnas_fest != null && d.horas_guardia_nocturnas_fest > 0)
+    partes.push(`noct fest ${fmtNum(d.horas_guardia_nocturnas_fest)}h`);
+  if (d.dias_guardia_total != null && d.dias_guardia_total > 0)
+    partes.push(`${d.dias_guardia_total} guardia(s)`);
+
+  // Auxiliares: visibilidad de guardias reales asignadas (vs estimación fija).
+  if (d.num_guardias_asignadas != null && d.num_guardias_asignadas > 0) {
+    partes.push(
+      `${d.num_guardias_asignadas} guardia(s) reales = ${fmtNum(d.horas_guardias_reales ?? 0)}h`
+    );
+  }
+
+  // Zule: muestra V trabajados explícitamente
+  if (tipo === "apoyo_estudiante_optica") {
+    const dl = d.dias_laborables_trabajados ?? 0;
+    const v = d.viernes_trabajados ?? 0;
+    return `${dl} días L-V × 4h base + ${v} V × 4h extras`;
+  }
+
+  return partes.length ? partes.join(" · ") : "—";
+}
+
 function TablaNomina({
   titulo,
   resultados,
@@ -116,6 +165,9 @@ function TablaNomina({
                     <div style={{ fontWeight: 600 }}>{nombre}</div>
                     <div style={{ fontSize: 11, color: "#888" }}>
                       {r.empleado_id} · {r.tipo_calculo || "sin tipo"}
+                    </div>
+                    <div style={{ fontSize: 11, color: GREEN_DARK, marginTop: 2, fontStyle: "italic" }}>
+                      {fmtDesglose(r.desglose, r.tipo_calculo)}
                     </div>
                   </td>
                   <td style={{ padding: "8px 12px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
