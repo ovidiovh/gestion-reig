@@ -22,12 +22,12 @@ export async function POST(req: NextRequest) {
     const {
       id, nombre, categoria = "auxiliar", empresa = "reig",
       farmaceutico = 0, hace_guardia = 0,
-      complemento_eur = 0, h_lab_complemento = 0, orden = 99,
+      complemento_mensual_eur = 0, h_lab_complemento_mensual = 0, orden = 99,
       departamento = "farmacia",
     } = body as {
       id: string; nombre: string; categoria?: string; empresa?: string;
       farmaceutico?: number; hace_guardia?: number;
-      complemento_eur?: number; h_lab_complemento?: number; orden?: number;
+      complemento_mensual_eur?: number; h_lab_complemento_mensual?: number; orden?: number;
       departamento?: string;
     };
 
@@ -37,9 +37,9 @@ export async function POST(req: NextRequest) {
 
     await db.execute({
       sql: `INSERT INTO rrhh_empleados
-            (id, nombre, categoria, empresa, farmaceutico, hace_guardia, complemento_eur, h_lab_complemento, orden, activo, departamento)
+            (id, nombre, categoria, empresa, farmaceutico, hace_guardia, complemento_mensual_eur, h_lab_complemento_mensual, orden, activo, departamento)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
-      args: [id, nombre, categoria, empresa, farmaceutico, hace_guardia, complemento_eur, h_lab_complemento, orden, departamento],
+      args: [id, nombre, categoria, empresa, farmaceutico, hace_guardia, complemento_mensual_eur, h_lab_complemento_mensual, orden, departamento],
     });
 
     const rows = await query(`SELECT * FROM rrhh_empleados WHERE id = ?`, [id]);
@@ -59,8 +59,8 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "id requerido" }, { status: 400 });
     }
 
-    const allowed = ["nombre", "categoria", "empresa", "farmaceutico", "hace_guardia",
-                     "complemento_eur", "h_lab_complemento", "activo", "orden", "guardias_manual", "departamento",
+    const allowed = ["nombre", "categoria", "empresa", "farmaceutico", "hace_guardia", "cubre_nocturna",
+                     "complemento_mensual_eur", "h_lab_complemento_mensual", "activo", "orden", "guardias_manual", "departamento",
                      "horario_inicio_a", "horario_fin_a", "horario_inicio_b", "horario_fin_b"];
     const updates = Object.entries(fields).filter(([k]) => allowed.includes(k));
 

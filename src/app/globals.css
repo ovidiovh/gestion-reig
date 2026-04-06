@@ -13,10 +13,12 @@
   --color-reig-green-light:  #E8F5E9;
   --color-reig-green-pale:   #F1F8F2;
 
-  /* ── Óptica (azul) ── */
+  /* ── Óptica (azul marino) ── */
   --color-reig-optica:       #1565C0;
+  --color-reig-optica-dark:  #0D47A1;
   --color-reig-optica-mid:   #1976D2;
   --color-reig-optica-light: #E3F2FD;
+  --color-reig-optica-pale:  #F0F7FF;
 
   /* ── Ortopedia (naranja) ── */
   --color-reig-orto:         #E65100;

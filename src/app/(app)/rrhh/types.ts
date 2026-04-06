@@ -5,8 +5,12 @@ export interface Empleado {
   empresa: "reig" | "mirelus";
   farmaceutico: number;
   hace_guardia: number;
-  complemento_eur: number;
-  h_lab_complemento: number;
+  cubre_nocturna: number;
+  // Complemento salarial MENSUAL fijo en €. NO depende de cuántas guardias se hagan.
+  // Ver REIG-BASE → 06-OPERATIVA-FARMACIA/nominas-rrhh.md §4.
+  complemento_mensual_eur: number;
+  // Horas laborables/mes asociadas al complemento mensual (Julio/Celia=19, aux=9, María=0).
+  h_lab_complemento_mensual: number;
   activo: number;
   orden: number;
   departamento: string;

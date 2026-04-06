@@ -56,9 +56,9 @@ function NuevoEmpleadoModal({ onSave, onClose }: {
   onSave: (data: Partial<Empleado> & { id: string; nombre: string }) => Promise<void>;
   onClose: () => void;
 }) {
-  const [form, setForm] = useState<{ id: string; nombre: string; categoria: string; empresa: "reig" | "mirelus"; farmaceutico: number; hace_guardia: number; complemento_eur: number; h_lab_complemento: number; departamento: string }>({
+  const [form, setForm] = useState<{ id: string; nombre: string; categoria: string; empresa: "reig" | "mirelus"; farmaceutico: number; hace_guardia: number; complemento_mensual_eur: number; h_lab_complemento_mensual: number; departamento: string }>({
     id: "", nombre: "", categoria: "auxiliar", empresa: "reig",
-    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0, h_lab_complemento: 0, departamento: "farmacia",
+    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0, h_lab_complemento_mensual: 0, departamento: "farmacia",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -140,12 +140,14 @@ function NuevoEmpleadoModal({ onSave, onClose }: {
             </select>
           </div>
           <div>
-            <label style={lbl}>Complemento guardia (€)</label>
-            <input type="number" style={inp} value={form.complemento_eur} onChange={e => setForm(f => ({ ...f, complemento_eur: parseInt(e.target.value) || 0 }))} />
+            <label style={lbl}>Complemento mensual fijo (€)</label>
+            <input type="number" style={inp} value={form.complemento_mensual_eur} onChange={e => setForm(f => ({ ...f, complemento_mensual_eur: parseInt(e.target.value) || 0 }))} />
+            <div style={{ fontSize: 9, color: "#888", marginTop: 2 }}>Salario fijo. No depende de las guardias.</div>
           </div>
           <div>
-            <label style={lbl}>Horas/guardia convenio</label>
-            <input type="number" style={inp} value={form.h_lab_complemento} onChange={e => setForm(f => ({ ...f, h_lab_complemento: parseInt(e.target.value) || 0 }))} />
+            <label style={lbl}>Horas laborables/mes (complemento)</label>
+            <input type="number" style={inp} value={form.h_lab_complemento_mensual} onChange={e => setForm(f => ({ ...f, h_lab_complemento_mensual: parseInt(e.target.value) || 0 }))} />
+            <div style={{ fontSize: 9, color: "#888", marginTop: 2 }}>Horas asociadas al complemento mensual.</div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <input type="checkbox" id="fma" checked={form.farmaceutico === 1} onChange={e => setForm(f => ({ ...f, farmaceutico: e.target.checked ? 1 : 0 }))} />
@@ -223,8 +225,9 @@ function EmpleadoRow({
     categoria: string;
     farmaceutico: number;
     hace_guardia: number;
-    complemento_eur: number;
-    h_lab_complemento: number;
+    cubre_nocturna: number;
+    complemento_mensual_eur: number;
+    h_lab_complemento_mensual: number;
     departamento: string;
     horario_inicio_a: number | null;
     horario_fin_a: number | null;
@@ -234,8 +237,9 @@ function EmpleadoRow({
     categoria: emp.categoria || "auxiliar",
     farmaceutico: emp.farmaceutico,
     hace_guardia: emp.hace_guardia,
-    complemento_eur: emp.complemento_eur,
-    h_lab_complemento: emp.h_lab_complemento,
+    cubre_nocturna: emp.cubre_nocturna ?? 0,
+    complemento_mensual_eur: emp.complemento_mensual_eur,
+    h_lab_complemento_mensual: emp.h_lab_complemento_mensual,
     departamento: emp.departamento || "farmacia",
     horario_inicio_a: effIa,
     horario_fin_a:    effFa,
@@ -314,9 +318,9 @@ function EmpleadoRow({
             fontWeight: horarioTxt !== "—" ? 600 : 400,
           }}>
             {horarioTxt}
-            {emp.complemento_eur > 0 && (
+            {emp.complemento_mensual_eur > 0 && (
               <span style={{ marginLeft: 8, fontSize: 10, color: "#6b7280", fontWeight: 400 }}>
-                +{emp.complemento_eur}€/guardia
+                +{emp.complemento_mensual_eur}€/mes
               </span>
             )}
           </div>
@@ -390,18 +394,31 @@ function EmpleadoRow({
               <label htmlFor={`hg-${emp.id}`} style={{ ...lblStyle, margin: 0, textTransform: "none", letterSpacing: 0 }}>Hace guardia</label>
             </div>
 
-            <div>
-              <label style={lblStyle}>Complemento guardia (€)</label>
-              <input type="number" value={draft.complemento_eur}
-                onChange={e => setDraft(d => ({ ...d, complemento_eur: parseInt(e.target.value) || 0 }))}
-                style={fldStyle} />
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }} title="Quien cubre la franja nocturna acumula 0,5 días de descanso compensatorio por guardia.">
+              <input type="checkbox" id={`cn-${emp.id}`} checked={draft.cubre_nocturna === 1}
+                disabled={draft.hace_guardia !== 1}
+                onChange={e => setDraft(d => ({ ...d, cubre_nocturna: e.target.checked ? 1 : 0 }))} />
+              <label htmlFor={`cn-${emp.id}`} style={{ ...lblStyle, margin: 0, textTransform: "none", letterSpacing: 0, opacity: draft.hace_guardia !== 1 ? 0.5 : 1 }}>Cubre franja nocturna</label>
             </div>
 
             <div>
-              <label style={lblStyle}>Horas convenio / guardia</label>
-              <input type="number" value={draft.h_lab_complemento}
-                onChange={e => setDraft(d => ({ ...d, h_lab_complemento: parseInt(e.target.value) || 0 }))}
+              <label style={lblStyle}>Complemento mensual fijo (€)</label>
+              <input type="number" value={draft.complemento_mensual_eur}
+                onChange={e => setDraft(d => ({ ...d, complemento_mensual_eur: parseInt(e.target.value) || 0 }))}
                 style={fldStyle} />
+              <div style={{ fontSize: 9, color: "#888", marginTop: 3 }}>
+                Salario fijo. No depende de las guardias hechas.
+              </div>
+            </div>
+
+            <div>
+              <label style={lblStyle}>Horas laborables/mes (complemento)</label>
+              <input type="number" value={draft.h_lab_complemento_mensual}
+                onChange={e => setDraft(d => ({ ...d, h_lab_complemento_mensual: parseInt(e.target.value) || 0 }))}
+                style={fldStyle} />
+              <div style={{ fontSize: 9, color: "#888", marginTop: 3 }}>
+                Horas asociadas al complemento mensual.
+              </div>
             </div>
 
             {/* ── Días L-V ── */}

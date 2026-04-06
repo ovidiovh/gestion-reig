@@ -33,11 +33,14 @@ function APStats(vacs: Vacacion[]) {
   return { done, conf, pend, avail: 2 - done - conf - pend };
 }
 
+// Sólo quien cubre la franja nocturna de la guardia (cubre_nocturna = 1) acumula
+// 0,5 días de descanso compensatorio por cada guardia realizada.
 function CompStats(vacs: Vacacion[], guardias: number) {
   const compUsed = vacs
     .filter(v => v.tipo === "comp")
     .reduce((a, v) => a + daysBetween(v.fecha_inicio, v.fecha_fin), 0);
-  return { guardias, earned: guardias, used: compUsed, balance: guardias - compUsed };
+  const earned = guardias * 0.5;
+  return { guardias, earned, used: compUsed, balance: earned - compUsed };
 }
 
 /** Devuelve el número efectivo de guardias: manual si está fijado, calculado si no */
@@ -207,7 +210,7 @@ export default function VacacionesTab({
     const stat = guardiaStats.find(g => g.empleado_id === selEmp);
     const guardCount = effectiveGuardias(stat);
     const comp = CompStats(empVacs, guardCount);
-    const isFarma = emp.farmaceutico === 1;
+    const cubreNocturna = emp.cubre_nocturna === 1;
 
     return (
       <div>
@@ -278,8 +281,8 @@ export default function VacacionesTab({
           </div>
         </div>
 
-        {/* Compensatorios — solo farmacéuticos */}
-        {isFarma && (
+        {/* Compensatorios — solo quien cubre franja nocturna (hoy: María) */}
+        {cubreNocturna && (
           <div style={{ padding: "14px 16px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0", marginBottom: 16 }}>
             <div style={{ fontSize: 10, fontWeight: 600, color: GREEN_DARK, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>
               Descansos compensatorios por guardia
@@ -313,7 +316,7 @@ export default function VacacionesTab({
               ))}
             </div>
             <div style={{ fontSize: 9, color: "#6b7280", marginTop: 8 }}>
-              Cada guardia nocturna genera 1 día de descanso compensatorio. Registra los días usados con tipo «Comp.» abajo.
+              Cada guardia con franja nocturna genera <strong>medio día</strong> de descanso compensatorio. Sólo aplica al farmacéutico/a que cubre la noche. Registra los días usados con tipo «Comp.» abajo.
             </div>
           </div>
         )}
@@ -336,7 +339,7 @@ export default function VacacionesTab({
                 style={{ border: "1px solid #ddd", borderRadius: 4, padding: "3px 6px", fontSize: 10 }}>
                 <option value="vac">Vacaciones</option>
                 <option value="ap">Asuntos propios</option>
-                {isFarma && <option value="comp">Comp. guardia</option>}
+                {cubreNocturna && <option value="comp">Comp. guardia</option>}
               </select>
               <label style={{ fontSize: 10, color: "#666" }}>
                 Desde:&nbsp;
@@ -389,7 +392,7 @@ export default function VacacionesTab({
         )}
 
         {/* Compensatorios */}
-        {isFarma && empVacs.filter(v => v.tipo === "comp").length > 0 && (
+        {cubreNocturna && empVacs.filter(v => v.tipo === "comp").length > 0 && (
           <div>
             <div style={{ fontSize: 9, fontWeight: 600, color: "#999", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Compensatorios guardia</div>
             {empVacs.filter(v => v.tipo === "comp").map(v => (

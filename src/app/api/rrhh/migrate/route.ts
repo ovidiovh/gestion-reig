@@ -20,25 +20,31 @@ const FESTIVOS_2026 = [
 
 // Horarios en media-horas: 8:30=17, 9:00=18, 11:30=23, 12:30=25, 13:00=26,
 //   14:00=28, 15:00=30, 15:30=31, 17:00=34, 18:30=37, 20:30=41
+//
+// IMPORTANTE — semántica de los complementos:
+//   complemento_mensual_eur   = € fijos al mes (NO depende de cuántas guardias se hagan).
+//   h_lab_complemento_mensual = horas laborables/mes asociadas a ese complemento mensual
+//                               (Julio/Celia: 19 h; Ani/Noelia/Dulce/Leti/Javier: 9 h).
+// Ver REIG-BASE → 06-OPERATIVA-FARMACIA/nominas-rrhh.md §4.
 const EMPLEADOS = [
-  { id: "ovidio",  nombre: "Ovidio",       categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_eur: 0,   h_lab_complemento: 0,  orden: 1,  departamento: "farmacia",  ia: 23,   fa: 41,   ib: null, fb: null },
-  { id: "bea",     nombre: "Bea",          categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 2,  departamento: "farmacia",  ia: 14,   fa: 31,   ib: null, fb: null },
-  { id: "maria",   nombre: "María N.",     categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_eur: 180, h_lab_complemento: 0,  orden: 3,  departamento: "farmacia",  ia: 25,   fa: 41,   ib: null, fb: null },
-  { id: "julio",   nombre: "Julio",        categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_eur: 280, h_lab_complemento: 19, orden: 4,  departamento: "farmacia",  ia: 18,   fa: 28,   ib: 34,   fb: 40   },
-  { id: "celia",   nombre: "Celia",        categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_eur: 280, h_lab_complemento: 19, orden: 5,  departamento: "farmacia",  ia: 18,   fa: 34,   ib: null, fb: null },
-  { id: "ani",     nombre: "Ani",          categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_eur: 30,  h_lab_complemento: 9,  orden: 6,  departamento: "farmacia",  ia: null, fa: null, ib: null, fb: null },
-  { id: "noelia",  nombre: "Noelia",       categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_eur: 30,  h_lab_complemento: 9,  orden: 7,  departamento: "farmacia",  ia: 18,   fa: 26,   ib: 30,   fb: 37   },
-  { id: "dulce",   nombre: "Dulce",        categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_eur: 30,  h_lab_complemento: 9,  orden: 8,  departamento: "farmacia",  ia: null, fa: null, ib: null, fb: null },
-  { id: "leti",    nombre: "Leti",         categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_eur: 30,  h_lab_complemento: 9,  orden: 9,  departamento: "farmacia",  ia: null, fa: null, ib: null, fb: null },
-  { id: "yoli",    nombre: "Yoli",         categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 10, departamento: "farmacia",  ia: null, fa: null, ib: null, fb: null },
-  { id: "davinia", nombre: "Davinia",      categoria: "practicas",    empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 11, departamento: "farmacia",  ia: 18,   fa: 28,   ib: null, fb: null },
-  { id: "zuleica", nombre: "Zuleica",      categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 12, departamento: "optica",    ia: 33,   fa: 41,   ib: null, fb: null },
-  { id: "miriam",  nombre: "Miriam",       categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 13, departamento: "optica",    ia: 18,   fa: 34,   ib: null, fb: null },
-  { id: "javier",  nombre: "Javier M.",   categoria: "mantenimiento", empresa: "mirelus", farmaceutico: 0, hace_guardia: 1, complemento_eur: 60,  h_lab_complemento: 9,  orden: 14, departamento: "optica",    ia: 18,   fa: 34,   ib: null, fb: null },
-  { id: "monica",  nombre: "Mónica",       categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 15, departamento: "ortopedia", ia: 18,   fa: 34,   ib: null, fb: null },
-  { id: "teresa",  nombre: "M. Teresa",    categoria: "limpieza",     empresa: "mirelus", farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 16, departamento: "otro",      ia: 17,   fa: 24,   ib: null, fb: null },
-  { id: "luisa",   nombre: "Luisa",        categoria: "otro",         empresa: "mirelus", farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 17, departamento: "otro",      ia: 17,   fa: 24,   ib: null, fb: null },
-  { id: "jenny",   nombre: "Jenny",        categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_eur: 0,   h_lab_complemento: 0,  orden: 18, departamento: "farmacia",  ia: 18,   fa: 34,   ib: null, fb: null },
+  { id: "ovidio",  nombre: "Ovidio",       categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  orden: 1,  departamento: "farmacia",  ia: 23,   fa: 41,   ib: null, fb: null },
+  { id: "bea",     nombre: "Bea",          categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  orden: 2,  departamento: "farmacia",  ia: 14,   fa: 31,   ib: null, fb: null },
+  { id: "maria",   nombre: "María N.",     categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_mensual_eur: 180, h_lab_complemento_mensual: 0,  orden: 3,  departamento: "farmacia",  ia: 25,   fa: 41,   ib: null, fb: null },
+  { id: "julio",   nombre: "Julio",        categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_mensual_eur: 280, h_lab_complemento_mensual: 19, orden: 4,  departamento: "farmacia",  ia: 18,   fa: 28,   ib: 34,   fb: 40   },
+  { id: "celia",   nombre: "Celia",        categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_mensual_eur: 280, h_lab_complemento_mensual: 19, orden: 5,  departamento: "farmacia",  ia: 18,   fa: 34,   ib: null, fb: null },
+  { id: "ani",     nombre: "Ani",          categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_mensual_eur: 30,  h_lab_complemento_mensual: 9,  orden: 6,  departamento: "farmacia",  ia: null, fa: null, ib: null, fb: null },
+  { id: "noelia",  nombre: "Noelia",       categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_mensual_eur: 30,  h_lab_complemento_mensual: 9,  orden: 7,  departamento: "farmacia",  ia: 18,   fa: 26,   ib: 30,   fb: 37   },
+  { id: "dulce",   nombre: "Dulce",        categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_mensual_eur: 30,  h_lab_complemento_mensual: 9,  orden: 8,  departamento: "farmacia",  ia: null, fa: null, ib: null, fb: null },
+  { id: "leti",    nombre: "Leti",         categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_mensual_eur: 30,  h_lab_complemento_mensual: 9,  orden: 9,  departamento: "farmacia",  ia: null, fa: null, ib: null, fb: null },
+  { id: "yoli",    nombre: "Yoli",         categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  orden: 10, departamento: "farmacia",  ia: null, fa: null, ib: null, fb: null },
+  { id: "davinia", nombre: "Davinia",      categoria: "practicas",    empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  orden: 11, departamento: "farmacia",  ia: 18,   fa: 28,   ib: null, fb: null },
+  { id: "zuleica", nombre: "Zuleica",      categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  orden: 12, departamento: "optica",    ia: 33,   fa: 41,   ib: null, fb: null },
+  { id: "miriam",  nombre: "Miriam",       categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  orden: 13, departamento: "optica",    ia: 18,   fa: 34,   ib: null, fb: null },
+  { id: "javier",  nombre: "Javier M.",   categoria: "mantenimiento", empresa: "mirelus", farmaceutico: 0, hace_guardia: 1, complemento_mensual_eur: 60,  h_lab_complemento_mensual: 9,  orden: 14, departamento: "optica",    ia: 18,   fa: 34,   ib: null, fb: null },
+  { id: "monica",  nombre: "Mónica",       categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  orden: 15, departamento: "ortopedia", ia: 18,   fa: 34,   ib: null, fb: null },
+  { id: "teresa",  nombre: "M. Teresa",    categoria: "limpieza",     empresa: "mirelus", farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  orden: 16, departamento: "otro",      ia: 17,   fa: 24,   ib: null, fb: null },
+  { id: "luisa",   nombre: "Luisa",        categoria: "otro",         empresa: "mirelus", farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  orden: 17, departamento: "otro",      ia: 17,   fa: 24,   ib: null, fb: null },
+  { id: "jenny",   nombre: "Jenny",        categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  orden: 18, departamento: "farmacia",  ia: 18,   fa: 34,   ib: null, fb: null },
 ];
 
 // Slots de guardia por defecto
@@ -66,8 +72,8 @@ export async function POST() {
         empresa             TEXT NOT NULL DEFAULT 'reig',
         farmaceutico        INTEGER NOT NULL DEFAULT 0,
         hace_guardia        INTEGER NOT NULL DEFAULT 0,
-        complemento_eur     INTEGER NOT NULL DEFAULT 0,
-        h_lab_complemento   INTEGER NOT NULL DEFAULT 0,
+        complemento_mensual_eur     INTEGER NOT NULL DEFAULT 0,
+        h_lab_complemento_mensual   INTEGER NOT NULL DEFAULT 0,
         activo              INTEGER NOT NULL DEFAULT 1,
         orden               INTEGER NOT NULL DEFAULT 99
       );
@@ -154,6 +160,16 @@ export async function POST() {
         inicio_b     INTEGER,
         fin_b        INTEGER
       );
+
+      CREATE TABLE IF NOT EXISTS audit_log (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        usuario_email  TEXT NOT NULL,
+        usuario_nombre TEXT NOT NULL DEFAULT '',
+        accion         TEXT NOT NULL,
+        modulo         TEXT NOT NULL,
+        detalle        TEXT,
+        fecha          TEXT NOT NULL DEFAULT (datetime('now'))
+      );
     `);
 
     // 1b. Migraciones idempotentes (añadir columnas si no existen)
@@ -172,6 +188,14 @@ export async function POST() {
       `ALTER TABLE rrhh_empleados ADD COLUMN horario_fin_a INTEGER`,
       `ALTER TABLE rrhh_empleados ADD COLUMN horario_inicio_b INTEGER`,
       `ALTER TABLE rrhh_empleados ADD COLUMN horario_fin_b INTEGER`,
+      // Cubre franja nocturna en guardias (genera 0,5 día compensatorio por guardia)
+      `ALTER TABLE rrhh_empleados ADD COLUMN cubre_nocturna INTEGER NOT NULL DEFAULT 0`,
+      // Rename: los antiguos nombres "complemento_eur" y "h_lab_complemento" daban
+      // a entender que el dinero era POR guardia. En realidad son complementos
+      // SALARIALES MENSUALES FIJOS, independientes de las guardias hechas.
+      // Ver REIG-BASE → 06-OPERATIVA-FARMACIA/nominas-rrhh.md §4.
+      `ALTER TABLE rrhh_empleados RENAME COLUMN complemento_eur TO complemento_mensual_eur`,
+      `ALTER TABLE rrhh_empleados RENAME COLUMN h_lab_complemento TO h_lab_complemento_mensual`,
     ];
     for (const sql of alterations) {
       try { await db.execute(sql); } catch { /* columna ya existe — ignorar */ }
@@ -181,14 +205,14 @@ export async function POST() {
     for (const e of EMPLEADOS) {
       await db.execute({
         sql: `INSERT INTO rrhh_empleados
-              (id, nombre, categoria, empresa, farmaceutico, hace_guardia, complemento_eur, h_lab_complemento, orden, departamento,
+              (id, nombre, categoria, empresa, farmaceutico, hace_guardia, complemento_mensual_eur, h_lab_complemento_mensual, orden, departamento,
                horario_inicio_a, horario_fin_a, horario_inicio_b, horario_fin_b)
               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
               ON CONFLICT(id) DO UPDATE SET
                 nombre            = excluded.nombre,
                 departamento      = excluded.departamento`,
         args: [e.id, e.nombre, e.categoria, e.empresa, e.farmaceutico, e.hace_guardia,
-               e.complemento_eur, e.h_lab_complemento, e.orden, e.departamento,
+               e.complemento_mensual_eur, e.h_lab_complemento_mensual, e.orden, e.departamento,
                e.ia, e.fa, e.ib, e.fb],
       });
     }
@@ -211,6 +235,12 @@ export async function POST() {
 
     // 2b. Desactivar empleados que no deben aparecer en el planning
     await db.execute({ sql: `UPDATE rrhh_empleados SET activo = 0 WHERE id IN ('luisa', 'teresa', 'jenny', 'mirelus')`, args: [] });
+
+    // 2c. Marcar quién cubre la franja nocturna de la guardia.
+    // Sólo quien hace la franja nocturna acumula 0,5 días de descanso compensatorio
+    // por guardia (regla XXV Convenio + práctica histórica de la farmacia).
+    // Hoy: sólo María. El campo es editable desde la página de Equipo.
+    await db.execute({ sql: `UPDATE rrhh_empleados SET cubre_nocturna = 1 WHERE id = 'maria'`, args: [] });
 
     // 3. Seed festivos 2026
     for (const f of FESTIVOS_2026) {
