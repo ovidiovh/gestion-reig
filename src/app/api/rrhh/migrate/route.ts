@@ -39,6 +39,12 @@ const FESTIVOS_2026 = [
 //   incluir_vacaciones         = flag: aparece en el módulo de vacaciones (distinto de `activo` que es planning).
 //
 // Ver REIG-BASE → 06-OPERATIVA-FARMACIA/nominas-rrhh.md §3–§5 y §9.
+//   tipo_horario               = "continuo" | "partido_lv" | "lj_distinto_v".
+//                                Ver rrhh/types.ts (TipoHorario) y nominas-rrhh.md §5.
+//                                Paso 1.4 (2026-04-06): introducido para que el form de
+//                                /rrhh/equipo pueda distinguir los 3 patrones reales sin
+//                                que la lógica del V "distinto" se contamine con los que
+//                                tienen un partido L-V normal (Julio, Noelia).
 type EmpleadoSeed = {
   id: string; nombre: string; nombre_formal_nomina: string | null;
   categoria: string; empresa: string; farmaceutico: number; hace_guardia: number;
@@ -49,39 +55,42 @@ type EmpleadoSeed = {
   incluir_en_nomina: number; incluir_vacaciones: number;
   orden: number; departamento: string;
   ia: number | null; fa: number | null; ib: number | null; fb: number | null;
+  tipo_horario: "continuo" | "partido_lv" | "lj_distinto_v";
 };
 
 const EMPLEADOS: EmpleadoSeed[] = [
   // ── Propietarios y prácticas (no van a nómina gestoría)
-  { id: "ovidio",  nombre: "Ovidio",    nombre_formal_nomina: null,              categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: null,                     h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 0, incluir_vacaciones: 1, orden: 1,  departamento: "farmacia",  ia: 23,   fa: 41,   ib: null, fb: null },
-  { id: "bea",     nombre: "Bea",       nombre_formal_nomina: null,              categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: null,                     h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 0, incluir_vacaciones: 1, orden: 2,  departamento: "farmacia",  ia: 14,   fa: 31,   ib: null, fb: null },
+  { id: "ovidio",  nombre: "Ovidio",    nombre_formal_nomina: null,              categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: null,                     h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 0, incluir_vacaciones: 1, orden: 1,  departamento: "farmacia",  ia: 23,   fa: 41,   ib: null, fb: null, tipo_horario: "continuo" },
+  { id: "bea",     nombre: "Bea",       nombre_formal_nomina: null,              categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: null,                     h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 0, incluir_vacaciones: 1, orden: 2,  departamento: "farmacia",  ia: 14,   fa: 31,   ib: null, fb: null, tipo_horario: "continuo" },
 
   // ── Farmacéuticos adjuntos con nómina
-  { id: "maria",   nombre: "María N.",  nombre_formal_nomina: "NARANJO María",   categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_mensual_eur: 180, h_lab_complemento_mensual: 0,  tipo_calculo: "farmaceutico_nocturno",  h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0.5, descuenta_media_en_guardia: 1, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 3,  departamento: "farmacia",  ia: 25,   fa: 41,   ib: null, fb: null },
-  { id: "julio",   nombre: "Julio",     nombre_formal_nomina: "AUYANET Julio",   categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_mensual_eur: 280, h_lab_complemento_mensual: 19, tipo_calculo: "farmaceutico_diurno",    h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 4,  departamento: "farmacia",  ia: 18,   fa: 28,   ib: 34,   fb: 40   },
-  { id: "celia",   nombre: "Celia",     nombre_formal_nomina: "BAUBY, Celia",    categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_mensual_eur: 280, h_lab_complemento_mensual: 19, tipo_calculo: "farmaceutico_diurno",    h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 5,  departamento: "farmacia",  ia: 18,   fa: 34,   ib: null, fb: null },
+  { id: "maria",   nombre: "María N.",  nombre_formal_nomina: "NARANJO María",   categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_mensual_eur: 180, h_lab_complemento_mensual: 0,  tipo_calculo: "farmaceutico_nocturno",  h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0.5, descuenta_media_en_guardia: 1, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 3,  departamento: "farmacia",  ia: 25,   fa: 41,   ib: null, fb: null, tipo_horario: "continuo" },
+  { id: "julio",   nombre: "Julio",     nombre_formal_nomina: "AUYANET Julio",   categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_mensual_eur: 280, h_lab_complemento_mensual: 19, tipo_calculo: "farmaceutico_diurno",    h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 4,  departamento: "farmacia",  ia: 18,   fa: 28,   ib: 34,   fb: 40,   tipo_horario: "partido_lv" },
+  { id: "celia",   nombre: "Celia",     nombre_formal_nomina: "BAUBY, Celia",    categoria: "farmaceutico", empresa: "reig",    farmaceutico: 1, hace_guardia: 1, complemento_mensual_eur: 280, h_lab_complemento_mensual: 19, tipo_calculo: "farmaceutico_diurno",    h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 5,  departamento: "farmacia",  ia: 18,   fa: 34,   ib: null, fb: null, tipo_horario: "continuo" },
 
   // ── Auxiliares de farmacia con nómina
-  { id: "ani",     nombre: "Ani",       nombre_formal_nomina: "LORENZO Ana",     categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_mensual_eur: 30,  h_lab_complemento_mensual: 9,  tipo_calculo: "auxiliar_rotativo",      h_extras_fijas_mes: 4, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 6,  departamento: "farmacia",  ia: null, fa: null, ib: null, fb: null },
-  { id: "noelia",  nombre: "Noelia",    nombre_formal_nomina: "LORENZO Noelia",  categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_mensual_eur: 30,  h_lab_complemento_mensual: 9,  tipo_calculo: "auxiliar_fijo_partido",  h_extras_fijas_mes: 4, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 7,  departamento: "farmacia",  ia: 18,   fa: 26,   ib: 30,   fb: 37   },
-  { id: "dulce",   nombre: "Dulce",     nombre_formal_nomina: "MORALES Dulce",   categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_mensual_eur: 30,  h_lab_complemento_mensual: 9,  tipo_calculo: "auxiliar_rotativo",      h_extras_fijas_mes: 4, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 8,  departamento: "farmacia",  ia: null, fa: null, ib: null, fb: null },
-  { id: "leti",    nombre: "Leti",      nombre_formal_nomina: "Ruiz, Leticia",   categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_mensual_eur: 30,  h_lab_complemento_mensual: 9,  tipo_calculo: "auxiliar_rotativo",      h_extras_fijas_mes: 4, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 9,  departamento: "farmacia",  ia: null, fa: null, ib: null, fb: null },
-  { id: "yoli",    nombre: "Yoli",      nombre_formal_nomina: "REYES Gregoria",  categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: "auxiliar_rotativo",      h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 10, departamento: "farmacia",  ia: null, fa: null, ib: null, fb: null },
+  { id: "ani",     nombre: "Ani",       nombre_formal_nomina: "LORENZO Ana",     categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_mensual_eur: 30,  h_lab_complemento_mensual: 9,  tipo_calculo: "auxiliar_rotativo",      h_extras_fijas_mes: 4, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 6,  departamento: "farmacia",  ia: null, fa: null, ib: null, fb: null, tipo_horario: "continuo" },
+  { id: "noelia",  nombre: "Noelia",    nombre_formal_nomina: "LORENZO Noelia",  categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_mensual_eur: 30,  h_lab_complemento_mensual: 9,  tipo_calculo: "auxiliar_fijo_partido",  h_extras_fijas_mes: 4, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 7,  departamento: "farmacia",  ia: 18,   fa: 26,   ib: 30,   fb: 37,   tipo_horario: "partido_lv" },
+  { id: "dulce",   nombre: "Dulce",     nombre_formal_nomina: "MORALES Dulce",   categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_mensual_eur: 30,  h_lab_complemento_mensual: 9,  tipo_calculo: "auxiliar_rotativo",      h_extras_fijas_mes: 4, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 8,  departamento: "farmacia",  ia: null, fa: null, ib: null, fb: null, tipo_horario: "continuo" },
+  { id: "leti",    nombre: "Leti",      nombre_formal_nomina: "Ruiz, Leticia",   categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 1, complemento_mensual_eur: 30,  h_lab_complemento_mensual: 9,  tipo_calculo: "auxiliar_rotativo",      h_extras_fijas_mes: 4, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 9,  departamento: "farmacia",  ia: null, fa: null, ib: null, fb: null, tipo_horario: "continuo" },
+  { id: "yoli",    nombre: "Yoli",      nombre_formal_nomina: "REYES Gregoria",  categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: "auxiliar_rotativo",      h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 10, departamento: "farmacia",  ia: null, fa: null, ib: null, fb: null, tipo_horario: "continuo" },
 
   // ── Prácticas (sin nómina)
-  { id: "davinia", nombre: "Davinia",   nombre_formal_nomina: null,              categoria: "practicas",    empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: null,                     h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 0, incluir_vacaciones: 1, orden: 11, departamento: "farmacia",  ia: 18,   fa: 28,   ib: null, fb: null },
+  { id: "davinia", nombre: "Davinia",   nombre_formal_nomina: null,              categoria: "practicas",    empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: null,                     h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 0, incluir_vacaciones: 1, orden: 11, departamento: "farmacia",  ia: 18,   fa: 28,   ib: null, fb: null, tipo_horario: "continuo" },
 
-  // ── Zule / Zuleica: misma persona. L-J 16:30-20:30 + 4 h extras viernes variables.
-  //    Ver nominas-rrhh.md §5.6 — contrato de las 16 h/sem base pendiente de confirmar con gestoría.
-  { id: "zuleica", nombre: "Zuleica",   nombre_formal_nomina: "Cruz, Zule",      categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: "apoyo_estudiante_optica", h_extras_fijas_mes: 0, h_extras_fijas_semana: 4, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 12, departamento: "optica",    ia: 33,   fa: 41,   ib: null, fb: null },
+  // ── Zule / Zuleica: misma persona. Contrato media jornada.
+  //    L-J 16:30-20:30 (16 h base) + V 9:00-17:30 (4 h base + 4 h extras).
+  //    Ver nominas-rrhh.md §5.6. tipo_horario = "lj_distinto_v" porque el V es un bloque
+  //    completamente distinto (no es la misma forma L-V). Las horas de V se guardan en _b.
+  { id: "zuleica", nombre: "Zuleica",   nombre_formal_nomina: "Cruz, Zule",      categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: "apoyo_estudiante_optica", h_extras_fijas_mes: 0, h_extras_fijas_semana: 4, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 12, departamento: "optica",    ia: 33,   fa: 41,   ib: null, fb: null, tipo_horario: "lj_distinto_v" },
 
   // ── Óptica / ortopedia (sin nómina)
-  { id: "miriam",  nombre: "Miriam",    nombre_formal_nomina: null,              categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: null,                     h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 0, incluir_vacaciones: 1, orden: 13, departamento: "optica",    ia: 18,   fa: 34,   ib: null, fb: null },
-  { id: "monica",  nombre: "Mónica",    nombre_formal_nomina: null,              categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: null,                     h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 0, incluir_vacaciones: 1, orden: 15, departamento: "ortopedia", ia: 18,   fa: 34,   ib: null, fb: null },
+  { id: "miriam",  nombre: "Miriam",    nombre_formal_nomina: null,              categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: null,                     h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 0, incluir_vacaciones: 1, orden: 13, departamento: "optica",    ia: 18,   fa: 34,   ib: null, fb: null, tipo_horario: "continuo" },
+  { id: "monica",  nombre: "Mónica",    nombre_formal_nomina: null,              categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: null,                     h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 0, incluir_vacaciones: 1, orden: 15, departamento: "ortopedia", ia: 18,   fa: 34,   ib: null, fb: null, tipo_horario: "continuo" },
 
   // ── Personal Mirelus
   //    Javi: único activo en horarios. Mantenimiento. h_extra_diaria = 0.5 h (ver §5.5).
-  { id: "javier",  nombre: "Javier M.", nombre_formal_nomina: "Martel, Javier",  categoria: "mantenimiento", empresa: "mirelus", farmaceutico: 0, hace_guardia: 1, complemento_mensual_eur: 60,  h_lab_complemento_mensual: 9,  tipo_calculo: "mirelus_mantenimiento",  h_extras_fijas_mes: 4, h_extras_fijas_semana: 0, h_extra_diaria: 0.5, descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 14, departamento: "optica",    ia: 18,   fa: 34,   ib: null, fb: null },
+  { id: "javier",  nombre: "Javier M.", nombre_formal_nomina: "Martel, Javier",  categoria: "mantenimiento", empresa: "mirelus", farmaceutico: 0, hace_guardia: 1, complemento_mensual_eur: 60,  h_lab_complemento_mensual: 9,  tipo_calculo: "mirelus_mantenimiento",  h_extras_fijas_mes: 4, h_extras_fijas_semana: 0, h_extra_diaria: 0.5, descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 14, departamento: "optica",    ia: 18,   fa: 34,   ib: null, fb: null, tipo_horario: "continuo" },
   //    Tere: limpieza fija 8 h/mes. NO aparece en planning (activo=0) pero SÍ en vacaciones y nómina.
   //    NOTA: h_lab_complemento_mensual=8 es un overload semántico del campo (originalmente
   //    pensado para "horas laborables asociadas al complemento mensual" de farmacéuticos/auxiliares).
@@ -90,14 +99,14 @@ const EMPLEADOS: EmpleadoSeed[] = [
   //    caso borde y ya se renombró esta columna en sesión 2. El engine de nómina debe leer el
   //    campo como "horas fijas al mes" cuando tipo_calculo = 'mirelus_limpieza_fija'.
   //    Ver nominas-rrhh.md §3 — nota overload.
-  { id: "teresa",  nombre: "M. Teresa", nombre_formal_nomina: "Santana, M Teresa", categoria: "limpieza",   empresa: "mirelus", farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 8,  tipo_calculo: "mirelus_limpieza_fija",  h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 16, departamento: "otro",      ia: 17,   fa: 24,   ib: null, fb: null },
+  { id: "teresa",  nombre: "M. Teresa", nombre_formal_nomina: "Santana, M Teresa", categoria: "limpieza",   empresa: "mirelus", farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 8,  tipo_calculo: "mirelus_limpieza_fija",  h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 16, departamento: "otro",      ia: 17,   fa: 24,   ib: null, fb: null, tipo_horario: "continuo" },
   //    Dolores: suplente de Tere en sus vacaciones. Creada en sesión 5. Los meses que no sustituye aparece con 0 h.
-  { id: "dolores", nombre: "Dolores",   nombre_formal_nomina: "Estupiñán, Dolores", categoria: "limpieza", empresa: "mirelus", farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: "mirelus_suplente",       h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 17, departamento: "otro",      ia: null, fa: null, ib: null, fb: null },
+  { id: "dolores", nombre: "Dolores",   nombre_formal_nomina: "Estupiñán, Dolores", categoria: "limpieza", empresa: "mirelus", farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: "mirelus_suplente",       h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 17, departamento: "otro",      ia: null, fa: null, ib: null, fb: null, tipo_horario: "continuo" },
   //    Luisa: nómina fija ya conocida por la gestoría. Solo archivar — el motor devuelve valores fijos.
-  { id: "luisa",   nombre: "Luisa",     nombre_formal_nomina: "Schmidt, Luisa",  categoria: "otro",         empresa: "mirelus", farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: "mirelus_fija_gestoria",  h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 0, orden: 18, departamento: "otro",      ia: 17,   fa: 24,   ib: null, fb: null },
+  { id: "luisa",   nombre: "Luisa",     nombre_formal_nomina: "Schmidt, Luisa",  categoria: "otro",         empresa: "mirelus", farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: "mirelus_fija_gestoria",  h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 0, orden: 18, departamento: "otro",      ia: 17,   fa: 24,   ib: null, fb: null, tipo_horario: "continuo" },
 
   // ── Jenny: Ovidio confirmó 2026-04-06 sesión 5 que no sabe quién es. Fuera de nómina y vacaciones.
-  { id: "jenny",   nombre: "Jenny",     nombre_formal_nomina: null,              categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: null,                     h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 0, incluir_vacaciones: 0, orden: 19, departamento: "farmacia",  ia: 18,   fa: 34,   ib: null, fb: null },
+  { id: "jenny",   nombre: "Jenny",     nombre_formal_nomina: null,              categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: null,                     h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 0, incluir_vacaciones: 0, orden: 19, departamento: "farmacia",  ia: 18,   fa: 34,   ib: null, fb: null, tipo_horario: "continuo" },
 ];
 
 // Slots de guardia por defecto
@@ -274,6 +283,15 @@ export async function POST() {
       // Flag: aparece en el módulo de vacaciones. Distinto de `activo` (que es planning).
       // Necesario porque Tere/Dolores no están en el planning pero sí deben poder tener vacaciones.
       `ALTER TABLE rrhh_empleados ADD COLUMN incluir_vacaciones INTEGER NOT NULL DEFAULT 1`,
+
+      // ─── Sesión 5 — Paso 1.4 (2026-04-06) ───
+      // Tipo de horario base del empleado. Ver rrhh/types.ts (TipoHorario).
+      // Valores: 'continuo' | 'partido_lv' | 'lj_distinto_v'.
+      // Default 'continuo' — cubre el caso más común (un único bloque L-V).
+      // Motivación: el form anterior usaba el flag _b como "viernes distinto",
+      // lo que impedía registrar partidos L-V reales (Julio, Noelia).
+      // Ver nominas-rrhh.md §5 y diseno-modulo-nominas.md.
+      `ALTER TABLE rrhh_empleados ADD COLUMN tipo_horario TEXT NOT NULL DEFAULT 'continuo'`,
     ];
     for (const sql of alterations) {
       try { await db.execute(sql); } catch { /* columna ya existe — ignorar */ }
@@ -299,8 +317,9 @@ export async function POST() {
                horario_inicio_a, horario_fin_a, horario_inicio_b, horario_fin_b,
                nombre_formal_nomina, tipo_calculo,
                h_extras_fijas_mes, h_extras_fijas_semana, h_extra_diaria,
-               descuenta_media_en_guardia, incluir_en_nomina, incluir_vacaciones)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+               descuenta_media_en_guardia, incluir_en_nomina, incluir_vacaciones,
+               tipo_horario)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
               ON CONFLICT(id) DO UPDATE SET
                 nombre                     = excluded.nombre,
                 departamento               = excluded.departamento,
@@ -311,7 +330,8 @@ export async function POST() {
                 h_extra_diaria             = excluded.h_extra_diaria,
                 descuenta_media_en_guardia = excluded.descuenta_media_en_guardia,
                 incluir_en_nomina          = excluded.incluir_en_nomina,
-                incluir_vacaciones         = excluded.incluir_vacaciones`,
+                incluir_vacaciones         = excluded.incluir_vacaciones,
+                tipo_horario               = excluded.tipo_horario`,
         args: [
           e.id, e.nombre, e.categoria, e.empresa, e.farmaceutico, e.hace_guardia,
           e.complemento_mensual_eur, e.h_lab_complemento_mensual, e.orden, e.departamento,
@@ -319,6 +339,7 @@ export async function POST() {
           e.nombre_formal_nomina, e.tipo_calculo,
           e.h_extras_fijas_mes, e.h_extras_fijas_semana, e.h_extra_diaria,
           e.descuenta_media_en_guardia, e.incluir_en_nomina, e.incluir_vacaciones,
+          e.tipo_horario,
         ],
       });
     }

@@ -11,6 +11,23 @@ export type TipoCalculoNomina =
   | "mirelus_suplente"         // §5.7 — Dolores
   | "mirelus_fija_gestoria";   // §5.7 — Luisa
 
+// Tipo de horario base (semana sin guardia y sin rotación).
+// Ver REIG-BASE → 06-OPERATIVA-FARMACIA/nominas-rrhh.md §5 y planning.
+//   - "continuo":      un único bloque L-V (ej. Celia 9–17, Bea 7–15:30).
+//   - "partido_lv":    dos bloques iguales L-V mañana/tarde (ej. Julio, Noelia).
+//   - "lj_distinto_v": un bloque L-J + un bloque distinto el viernes (ej. Zule
+//                      media jornada: L-J 16:30–20:30 + V 9:00–17:30).
+// Los empleados rotativos (Ani, Yoli, Leti, Dulce) y los que no aplican
+// (Tere, Dolores, Luisa, etc.) se quedan con "continuo" por simplicidad —
+// su horario se gestiona por otros caminos (TURNO_HORARIO o HORARIO_DEFAULT).
+export type TipoHorario = "continuo" | "partido_lv" | "lj_distinto_v";
+
+export const TIPO_HORARIO_LABEL: Record<TipoHorario, string> = {
+  continuo:      "Continuo L-V",
+  partido_lv:    "Partido L-V (mañana + tarde)",
+  lj_distinto_v: "L-J + viernes distinto",
+};
+
 export interface Empleado {
   id: string;
   nombre: string;
@@ -32,6 +49,10 @@ export interface Empleado {
   horario_fin_a: number | null;
   horario_inicio_b: number | null;
   horario_fin_b: number | null;
+
+  // Tipo de horario base del empleado (ver TipoHorario arriba).
+  // Default BD: "continuo". El form en /rrhh/equipo permite cambiarlo.
+  tipo_horario: TipoHorario;
 
   // ── Campos del módulo de nóminas (sesión 5, 2026-04-06) ──
   // Ver REIG-BASE → 06-OPERATIVA-FARMACIA/nominas-rrhh.md §3–§5 y §9.

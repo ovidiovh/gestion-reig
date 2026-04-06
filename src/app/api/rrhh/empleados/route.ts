@@ -86,6 +86,9 @@ export async function PATCH(req: NextRequest) {
       "nombre", "categoria", "empresa", "farmaceutico", "hace_guardia", "cubre_nocturna",
       "complemento_mensual_eur", "h_lab_complemento_mensual", "activo", "orden", "guardias_manual", "departamento",
       "horario_inicio_a", "horario_fin_a", "horario_inicio_b", "horario_fin_b",
+      // Tipo de horario base (Paso 1.4 — 2026-04-06). Valores:
+      // 'continuo' | 'partido_lv' | 'lj_distinto_v'. Ver rrhh/types.ts.
+      "tipo_horario",
       // Campos del módulo de nóminas (ver REIG-BASE nominas-rrhh.md §3–§5 y §9)
       "nombre_formal_nomina", "tipo_calculo",
       "h_extras_fijas_mes", "h_extras_fijas_semana", "h_extra_diaria",

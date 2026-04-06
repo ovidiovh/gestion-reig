@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
       query(
         `SELECT id, nombre, categoria, empresa, farmaceutico, hace_guardia,
                 horario_inicio_a, horario_fin_a, horario_inicio_b, horario_fin_b,
+                tipo_horario,
                 departamento, orden, activo
          FROM rrhh_empleados WHERE activo = 1 ORDER BY orden ASC`
       ),

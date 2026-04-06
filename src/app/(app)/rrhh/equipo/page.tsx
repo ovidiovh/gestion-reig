@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Empleado, HorarioAsignacion, TurnoConfig, TipoCalculoNomina,
+  TipoHorario, TIPO_HORARIO_LABEL,
   GREEN, GREEN_DARK, GREEN_LIGHT,
   TURNO_LABELS, TURNO_SHORT, TURNO_COLORS,
   EMPLEADOS_ROTATIVOS, EMPLEADOS_ESPECIALES,
@@ -243,6 +244,7 @@ function EmpleadoRow({
     complemento_mensual_eur: number;
     h_lab_complemento_mensual: number;
     departamento: string;
+    tipo_horario: TipoHorario;
     horario_inicio_a: number | null;
     horario_fin_a: number | null;
     horario_inicio_b: number | null;
@@ -264,6 +266,7 @@ function EmpleadoRow({
     complemento_mensual_eur: emp.complemento_mensual_eur,
     h_lab_complemento_mensual: emp.h_lab_complemento_mensual,
     departamento: emp.departamento || "farmacia",
+    tipo_horario: (emp.tipo_horario as TipoHorario) ?? "continuo",
     horario_inicio_a: effIa,
     horario_fin_a:    effFa,
     horario_inicio_b: effIb,
@@ -460,67 +463,108 @@ function EmpleadoRow({
               </div>
             </div>
 
-            {/* ── Días L-V ── */}
-            <div style={{ gridColumn: "span 2" }}>
-              <label style={lblStyle}>Días laborables (L–V)</label>
-              <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
-                {(["L","M","X","J","V"] as const).map(dia => {
-                  const isDif = dia === "V" && (draft.horario_inicio_b != null || draft.horario_fin_b != null);
-                  return (
-                    <button
-                      key={dia}
-                      type="button"
-                      title={dia === "V" ? "Clic para asignar horario diferente el viernes" : undefined}
-                      onClick={() => {
-                        if (dia === "V") {
-                          if (draft.horario_inicio_b != null || draft.horario_fin_b != null) {
-                            setDraft(d => ({ ...d, horario_inicio_b: null, horario_fin_b: null }));
-                          } else {
-                            setDraft(d => ({ ...d, horario_inicio_b: d.horario_inicio_a, horario_fin_b: d.horario_fin_a }));
-                          }
-                        }
-                      }}
-                      style={{
-                        padding: "5px 11px", borderRadius: 6, border: "none",
-                        background: isDif ? "#f59e0b" : GREEN,
-                        color: "#fff", fontWeight: 700, fontSize: 12,
-                        cursor: dia === "V" ? "pointer" : "default",
-                        opacity: dia === "V" ? 1 : 0.85,
-                      }}
-                    >
-                      {dia}
-                    </button>
-                  );
-                })}
-              </div>
+            {/* ══════════════════════════════════════════════════════════════ */}
+            {/* ── Horario base — Paso 1.4 (2026-04-06) ──                      */}
+            {/* Selector de tipo + campos condicionales. Reemplaza el antiguo  */}
+            {/* toggle "V distinto" que no cubría partidos L-V reales.         */}
+            {/* ══════════════════════════════════════════════════════════════ */}
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={lblStyle}>Tipo de horario</label>
+              <select
+                value={draft.tipo_horario}
+                onChange={e => {
+                  const next = e.target.value as TipoHorario;
+                  setDraft(d => {
+                    // Transición a "continuo": limpiamos el bloque _b.
+                    if (next === "continuo") {
+                      return { ...d, tipo_horario: next, horario_inicio_b: null, horario_fin_b: null };
+                    }
+                    // Transición a "partido_lv" o "lj_distinto_v":
+                    //   si _b está vacío, lo inicializamos a partir de _a para que
+                    //   el usuario tenga un punto de partida y no pierda el foco.
+                    if (d.horario_inicio_b == null || d.horario_fin_b == null) {
+                      return { ...d, tipo_horario: next, horario_inicio_b: d.horario_inicio_a, horario_fin_b: d.horario_fin_a };
+                    }
+                    return { ...d, tipo_horario: next };
+                  });
+                }}
+                style={fldStyle}
+              >
+                {(Object.entries(TIPO_HORARIO_LABEL) as [TipoHorario, string][]).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
               <div style={{ fontSize: 9, color: "#888", marginTop: 3 }}>
-                Clic en <strong>V</strong> para asignar horario diferente el viernes
+                Continuo: un solo tramo L-V. Partido L-V: mañana y tarde iguales toda la semana. L-J + V distinto: el viernes tiene horario propio (caso Zule).
               </div>
             </div>
 
-            {/* ── Horario base (L-J, y V si no es diferente) ── */}
-            <div>
-              <label style={lblStyle}>
-                Entrada{(draft.horario_inicio_b != null || draft.horario_fin_b != null) ? " L-J" : " L-V"}
-              </label>
-              <input type="time" step={1800}
-                value={hhToTime(draft.horario_inicio_a)}
-                onChange={e => setDraft(d => ({ ...d, horario_inicio_a: timeToHh(e.target.value) }))}
-                style={fldStyle} />
-            </div>
+            {/* ── Caso A: horario continuo L-V (un único tramo) ── */}
+            {draft.tipo_horario === "continuo" && (<>
+              <div>
+                <label style={lblStyle}>Entrada L-V</label>
+                <input type="time" step={1800}
+                  value={hhToTime(draft.horario_inicio_a)}
+                  onChange={e => setDraft(d => ({ ...d, horario_inicio_a: timeToHh(e.target.value) }))}
+                  style={fldStyle} />
+              </div>
+              <div>
+                <label style={lblStyle}>Salida L-V</label>
+                <input type="time" step={1800}
+                  value={hhToTime(draft.horario_fin_a)}
+                  onChange={e => setDraft(d => ({ ...d, horario_fin_a: timeToHh(e.target.value) }))}
+                  style={fldStyle} />
+              </div>
+            </>)}
 
-            <div>
-              <label style={lblStyle}>
-                Salida{(draft.horario_inicio_b != null || draft.horario_fin_b != null) ? " L-J" : " L-V"}
-              </label>
-              <input type="time" step={1800}
-                value={hhToTime(draft.horario_fin_a)}
-                onChange={e => setDraft(d => ({ ...d, horario_fin_a: timeToHh(e.target.value) }))}
-                style={fldStyle} />
-            </div>
+            {/* ── Caso B: partido L-V (mañana + tarde iguales toda la semana) ── */}
+            {draft.tipo_horario === "partido_lv" && (<>
+              <div>
+                <label style={lblStyle}>Entrada mañana (L-V)</label>
+                <input type="time" step={1800}
+                  value={hhToTime(draft.horario_inicio_a)}
+                  onChange={e => setDraft(d => ({ ...d, horario_inicio_a: timeToHh(e.target.value) }))}
+                  style={fldStyle} />
+              </div>
+              <div>
+                <label style={lblStyle}>Salida mañana (L-V)</label>
+                <input type="time" step={1800}
+                  value={hhToTime(draft.horario_fin_a)}
+                  onChange={e => setDraft(d => ({ ...d, horario_fin_a: timeToHh(e.target.value) }))}
+                  style={fldStyle} />
+              </div>
+              <div>
+                <label style={lblStyle}>Entrada tarde (L-V)</label>
+                <input type="time" step={1800}
+                  value={hhToTime(draft.horario_inicio_b)}
+                  onChange={e => setDraft(d => ({ ...d, horario_inicio_b: timeToHh(e.target.value) }))}
+                  style={fldStyle} />
+              </div>
+              <div>
+                <label style={lblStyle}>Salida tarde (L-V)</label>
+                <input type="time" step={1800}
+                  value={hhToTime(draft.horario_fin_b)}
+                  onChange={e => setDraft(d => ({ ...d, horario_fin_b: timeToHh(e.target.value) }))}
+                  style={fldStyle} />
+              </div>
+            </>)}
 
-            {/* ── Horario viernes diferente ── */}
-            {(draft.horario_inicio_b != null || draft.horario_fin_b != null) && (<>
+            {/* ── Caso C: L-J + viernes distinto (caso Zule) ── */}
+            {draft.tipo_horario === "lj_distinto_v" && (<>
+              <div>
+                <label style={lblStyle}>Entrada L-J</label>
+                <input type="time" step={1800}
+                  value={hhToTime(draft.horario_inicio_a)}
+                  onChange={e => setDraft(d => ({ ...d, horario_inicio_a: timeToHh(e.target.value) }))}
+                  style={fldStyle} />
+              </div>
+              <div>
+                <label style={lblStyle}>Salida L-J</label>
+                <input type="time" step={1800}
+                  value={hhToTime(draft.horario_fin_a)}
+                  onChange={e => setDraft(d => ({ ...d, horario_fin_a: timeToHh(e.target.value) }))}
+                  style={fldStyle} />
+              </div>
               <div>
                 <label style={lblStyle}>Entrada Viernes</label>
                 <input type="time" step={1800}

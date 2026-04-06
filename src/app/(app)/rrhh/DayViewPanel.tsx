@@ -122,6 +122,30 @@ export default function DayViewPanel({
     const hFa = emp.horario_fin_a   ?? HORARIO_DEFAULT[emp.id]?.[1] ?? null;
     const hIb = emp.horario_inicio_b ?? HORARIO_DEFAULT[emp.id]?.[2] ?? null;
     const hFb = emp.horario_fin_b   ?? HORARIO_DEFAULT[emp.id]?.[3] ?? null;
+
+    // Paso 1.4 (2026-04-06): branch según tipo_horario.
+    //   - "continuo":      solo bloque _a, da igual el día L-V.
+    //   - "partido_lv":    dos bloques (_a mañana + _b tarde) todos los días L-V.
+    //   - "lj_distinto_v": _a de lunes a jueves (dow 1-4), _b el viernes (dow 5).
+    // Default fallback: si tipo_horario es null/undefined (BD antigua), se
+    // comporta como antes — dos bloques en el mismo día si existen.
+    const tipo = emp.tipo_horario ?? null;
+
+    if (tipo === "continuo") {
+      if (hIa == null || hFa == null) return [];
+      return [[hIa, hFa]];
+    }
+    if (tipo === "lj_distinto_v") {
+      // dow: 0=Dom 1=Lun ... 5=Vie 6=Sab. El filtro isWeekend ya descartó
+      // sábado y domingo, pero por seguridad dejamos la comprobación explícita.
+      if (dow === 5) {
+        if (hIb == null || hFb == null) return [];
+        return [[hIb, hFb]];
+      }
+      if (hIa == null || hFa == null) return [];
+      return [[hIa, hFa]];
+    }
+    // "partido_lv" o fallback legacy: dos bloques mismo día.
     if (hIa == null || hFa == null) return [];
     const b: [number, number][] = [[hIa, hFa]];
     if (hIb != null && hFb != null) b.push([hIb, hFb]);
