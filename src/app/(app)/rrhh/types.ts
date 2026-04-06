@@ -9,7 +9,8 @@ export type TipoCalculoNomina =
   | "mirelus_mantenimiento"    // §5.5 — Javier
   | "mirelus_limpieza_fija"    // §5.7 — Tere
   | "mirelus_suplente"         // §5.7 — Dolores
-  | "mirelus_fija_gestoria";   // §5.7 — Luisa
+  | "mirelus_fija_gestoria"    // §5.7 — Luisa
+  | "reig_fija_gestoria";      // §5.8 — Miriam, Mónica (óptica/ortopedia). Sí van al PDF de nómina, pero sin variables: la gestoría ya conoce los valores fijos, el motor devuelve hardcodeados.
 
 // Tipo de horario base (semana sin guardia y sin rotación).
 // Ver REIG-BASE → 06-OPERATIVA-FARMACIA/nominas-rrhh.md §5 y planning.

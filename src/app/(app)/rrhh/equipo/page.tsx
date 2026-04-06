@@ -47,6 +47,7 @@ const TIPO_CALCULO_LABEL: Record<TipoCalculoNomina, string> = {
   mirelus_limpieza_fija:   "Mirelus — Limpieza fija 8h/mes (Tere)",
   mirelus_suplente:        "Mirelus — Suplente de Tere (Dolores)",
   mirelus_fija_gestoria:   "Mirelus — Fija gestoría (Luisa)",
+  reig_fija_gestoria:      "Reig — Fija gestoría (Miriam, Mónica)",
 };
 
 type TabEquipo = "personal" | "horarios";

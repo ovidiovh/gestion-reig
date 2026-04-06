@@ -84,9 +84,13 @@ const EMPLEADOS: EmpleadoSeed[] = [
   //    completamente distinto (no es la misma forma L-V). Las horas de V se guardan en _b.
   { id: "zuleica", nombre: "Zuleica",   nombre_formal_nomina: "Cruz, Zule",      categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: "apoyo_estudiante_optica", h_extras_fijas_mes: 0, h_extras_fijas_semana: 4, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 12, departamento: "optica",    ia: 33,   fa: 41,   ib: null, fb: null, tipo_horario: "lj_distinto_v" },
 
-  // ── Óptica / ortopedia (sin nómina)
-  { id: "miriam",  nombre: "Miriam",    nombre_formal_nomina: null,              categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: null,                     h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 0, incluir_vacaciones: 1, orden: 13, departamento: "optica",    ia: 18,   fa: 34,   ib: null, fb: null, tipo_horario: "continuo" },
-  { id: "monica",  nombre: "Mónica",    nombre_formal_nomina: null,              categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: null,                     h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 0, incluir_vacaciones: 1, orden: 15, departamento: "ortopedia", ia: 18,   fa: 34,   ib: null, fb: null, tipo_horario: "continuo" },
+  // ── Óptica / ortopedia (nómina fija Reig — sin variables)
+  //    Miriam y Mónica: auxiliares no farmacéuticas (óptica / ortopedia), turno fijo
+  //    continuo de mañana. Van al PDF de nómina de Reig pero SIN variables: la gestoría
+  //    ya conoce los valores fijos, el motor devuelve hardcodeados (igual que Luisa con
+  //    mirelus_fija_gestoria). Ver nominas-rrhh.md §5.8. Paso 1.5 sesión 5 2026-04-06.
+  { id: "miriam",  nombre: "Miriam",    nombre_formal_nomina: null,              categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: "reig_fija_gestoria",     h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 13, departamento: "optica",    ia: 18,   fa: 34,   ib: null, fb: null, tipo_horario: "continuo" },
+  { id: "monica",  nombre: "Mónica",    nombre_formal_nomina: null,              categoria: "auxiliar",     empresa: "reig",    farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: "reig_fija_gestoria",     h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 15, departamento: "ortopedia", ia: 18,   fa: 34,   ib: null, fb: null, tipo_horario: "continuo" },
 
   // ── Personal Mirelus
   //    Javi: único activo en horarios. Mantenimiento. h_extra_diaria = 0.5 h (ver §5.5).
