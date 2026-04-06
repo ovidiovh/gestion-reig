@@ -50,6 +50,18 @@ export interface SesionInput {
 
 /* ── Migración / Init ── */
 
+/**
+ * Intenta añadir una columna; si ya existe, ignora el error.
+ * SQLite no soporta ADD COLUMN IF NOT EXISTS, así que lo simulamos así.
+ */
+async function addColIfMissing(table: string, columnDef: string) {
+  try {
+    await query(`ALTER TABLE ${table} ADD COLUMN ${columnDef}`);
+  } catch {
+    // ya existe, ignorar
+  }
+}
+
 export async function initRetiradas() {
   await batch([
     {
@@ -113,6 +125,20 @@ export async function initRetiradas() {
       )`,
     },
   ]);
+
+  // Migración idempotente: la tabla retiradas_sesion puede haber sido creada
+  // previamente con un schema antiguo (schema.sql / migrate/route.ts) que no
+  // tiene las columnas que el código nuevo necesita. Añadimos las que falten.
+  // Confirmado: error real en producción 2026-04-06
+  // "table retiradas_sesion has no column named total".
+  await addColIfMissing("retiradas_sesion", "total REAL NOT NULL DEFAULT 0");
+  await addColIfMissing("retiradas_sesion", "num_cajas INTEGER NOT NULL DEFAULT 0");
+  await addColIfMissing("retiradas_sesion", "usuario_email TEXT");
+  await addColIfMissing("retiradas_sesion", "usuario_nombre TEXT");
+  await addColIfMissing("retiradas_sesion", "confirmada INTEGER NOT NULL DEFAULT 0");
+  await addColIfMissing("retiradas_sesion", "conteo_cuadra INTEGER NOT NULL DEFAULT 0");
+  await addColIfMissing("retiradas_sesion", "conteo_total REAL DEFAULT 0");
+  await addColIfMissing("retiradas_sesion", "conteo_diferencia REAL DEFAULT 0");
 }
 
 /* ── Guardar sesión completa ── */
