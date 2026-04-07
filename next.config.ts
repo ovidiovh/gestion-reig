@@ -42,6 +42,12 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // pdfkit lee sus .afm en runtime desde node_modules/pdfkit/js/data/.
+  // Vercel hace tree-shaking agresivo y no detecta esos requires dinámicos,
+  // así que forzamos su inclusión en la traza del endpoint de PDFs.
+  outputFileTracingIncludes: {
+    "/api/rrhh/nominas/pdf": ["./node_modules/pdfkit/js/data/**/*"],
+  },
   async headers() {
     return [
       {
