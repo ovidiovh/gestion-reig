@@ -96,17 +96,27 @@ function calcAuxiliarRotativo(
   r.laborables = fijas + extrasMes;
   r.complementos_eur = emp.complemento_mensual_eur;
 
+  // Solo las guardias de FIN DE SEMANA o FESTIVO añaden horas reales por
+  // encima del turno habitual de la auxiliar. En L-V no festivo, "estar de
+  // guardia" significa simplemente que ese día le toca su turno normal — no
+  // genera ninguna hora extra. Los únicos con horario alterado en L-V son
+  // María (mañana + 21:00) y Javi (20:00-23:00), y ninguno es auxiliar.
+  // Confirmado por Ovidio 2026-04-07 (sesión nóminas).
+  const guardiasExtra = ctx.guardias_empleado.filter(
+    (g) => g.es_festivo || g.dow === 0 || g.dow === 6
+  );
+
   // Visibilidad de guardias reales asignadas en el mes (no afecta al cálculo,
   // solo deja a Beatriz comparar el estimado h_extras_fijas_mes contra lo real).
   // §5.1 absorbe las guardias diurnas en una constante mensual; este desglose
   // permite detectar meses con muchas más guardias de lo habitual.
-  const numGuardias = ctx.guardias_empleado.length;
-  const horasGuardiasReales = ctx.guardias_empleado.reduce(
+  const numGuardias = guardiasExtra.length;
+  const horasGuardiasReales = guardiasExtra.reduce(
     (sum, g) => sum + horasGuardiaSlots(g),
     0
   );
 
-  const guardiasDetalle: GuardiaDesglose[] = ctx.guardias_empleado.map((g) => ({
+  const guardiasDetalle: GuardiaDesglose[] = guardiasExtra.map((g) => ({
     fecha: g.fecha,
     dow: g.dow,
     horas: horasGuardiaSlots(g),
@@ -143,12 +153,15 @@ function calcAuxiliarFijoPartido(
 
 // ─── §5.3 Farmacéuticos diurnos (Julio, Celia) ─────────────────────────────
 // Base: 19 h fijas mensuales (h_lab_complemento_mensual) + complemento €.
-// ENCIMA de eso, cada guardia diurna realmente asignada en el mes se suma con
-// las horas reales de sus slots (helper horasGuardiaSlots), separando
-// laborables vs festivas según `g.es_festivo`. Sin nocturnas (eso es solo María)
-// y sin descuento de ½h (eso aplica solo a `descuenta_media_en_guardia=1`).
-// Confirmado por Beatriz 2026-04-07: las 19h NO absorbían las guardias,
-// había que sumarlas como horas extras visibles.
+// ENCIMA de eso, solo las guardias de FIN DE SEMANA o FESTIVO añaden horas
+// reales por encima del horario habitual. Las guardias L-V no festivas son
+// turno normal: Julio y Celia hacen el mismo horario que cualquier día —
+// "estar de guardia" en L-V no significa horas extra, igual que para las
+// auxiliares. Los únicos con horario alterado en L-V son María (mañana +
+// 21:00) y Javi (20:00-23:00). Confirmado por Ovidio 2026-04-07 (sesión
+// nóminas) — corrige el comportamiento del commit 90ee585 que sumaba todas.
+// Sin nocturnas (eso es solo María) y sin descuento de ½h (eso aplica solo
+// a `descuenta_media_en_guardia=1`).
 function calcFarmaceuticoDiurno(
   emp: EmpleadoNomina,
   ctx: ContextoMes
@@ -156,9 +169,13 @@ function calcFarmaceuticoDiurno(
   const r = resultadoBase(emp);
   const fijas = emp.h_lab_complemento_mensual; // 19
 
+  const guardiasExtra = ctx.guardias_empleado.filter(
+    (g) => g.es_festivo || g.dow === 0 || g.dow === 6
+  );
+
   let horasGuardiaLab = 0;
   let horasGuardiaFest = 0;
-  for (const g of ctx.guardias_empleado) {
+  for (const g of guardiasExtra) {
     const h = horasGuardiaSlots(g);
     if (g.es_festivo) horasGuardiaFest += h;
     else horasGuardiaLab += h;
@@ -168,7 +185,7 @@ function calcFarmaceuticoDiurno(
   r.festivos = horasGuardiaFest;
   r.complementos_eur = emp.complemento_mensual_eur; // 280
 
-  const guardiasDetalle: GuardiaDesglose[] = ctx.guardias_empleado.map((g) => ({
+  const guardiasDetalle: GuardiaDesglose[] = guardiasExtra.map((g) => ({
     fecha: g.fecha,
     dow: g.dow,
     horas: horasGuardiaSlots(g),
@@ -177,7 +194,7 @@ function calcFarmaceuticoDiurno(
 
   r.desglose = {
     fijas_mes: fijas,
-    num_guardias_asignadas: ctx.guardias_empleado.length,
+    num_guardias_asignadas: guardiasExtra.length,
     horas_guardia_laboral: horasGuardiaLab,
     horas_guardia_festiva: horasGuardiaFest,
     guardias_detalle: guardiasDetalle,
