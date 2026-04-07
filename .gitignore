@@ -40,3 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env*.local
+
+# reig-commit.bat — ficheros temporales de mensaje de commit
+/.commit-msg.txt
+/.commit-msg-*.txt
