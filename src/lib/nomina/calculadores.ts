@@ -55,16 +55,17 @@ function horasGuardiasNocturnas(guardias: GuardiaAsignada[]): {
 
 /**
  * Horas reales de UNA guardia (suma de los dos posibles slots).
- * Las horas se almacenan en "media-horas desde medianoche" (cada unidad = 0.5 h),
- * así que la duración en horas es (fin - inicio) * 0.5.
+ * Las horas se almacenan como ENTEROS = horas del día (ver migrate/route.ts:
+ * ani 9→14 = 5h, maría 21→33 = 12h), NO en media-horas. La duración es
+ * simplemente (fin - inicio).
  */
 function horasGuardiaSlots(g: GuardiaAsignada): number {
   let h = 0;
   if (g.hora_inicio != null && g.hora_fin != null) {
-    h += (g.hora_fin - g.hora_inicio) * 0.5;
+    h += g.hora_fin - g.hora_inicio;
   }
   if (g.hora_inicio2 != null && g.hora_fin2 != null) {
-    h += (g.hora_fin2 - g.hora_inicio2) * 0.5;
+    h += g.hora_fin2 - g.hora_inicio2;
   }
   return h;
 }
@@ -141,15 +142,46 @@ function calcAuxiliarFijoPartido(
 }
 
 // ─── §5.3 Farmacéuticos diurnos (Julio, Celia) ─────────────────────────────
-// Las 19 h fijas cubren toda su contribución de guardia. 0 festivos, 0 nocturnas.
+// Base: 19 h fijas mensuales (h_lab_complemento_mensual) + complemento €.
+// ENCIMA de eso, cada guardia diurna realmente asignada en el mes se suma con
+// las horas reales de sus slots (helper horasGuardiaSlots), separando
+// laborables vs festivas según `g.es_festivo`. Sin nocturnas (eso es solo María)
+// y sin descuento de ½h (eso aplica solo a `descuenta_media_en_guardia=1`).
+// Confirmado por Beatriz 2026-04-07: las 19h NO absorbían las guardias,
+// había que sumarlas como horas extras visibles.
 function calcFarmaceuticoDiurno(
   emp: EmpleadoNomina,
-  _ctx: ContextoMes
+  ctx: ContextoMes
 ): ResultadoNomina {
   const r = resultadoBase(emp);
-  r.laborables = emp.h_lab_complemento_mensual; // 19
+  const fijas = emp.h_lab_complemento_mensual; // 19
+
+  let horasGuardiaLab = 0;
+  let horasGuardiaFest = 0;
+  for (const g of ctx.guardias_empleado) {
+    const h = horasGuardiaSlots(g);
+    if (g.es_festivo) horasGuardiaFest += h;
+    else horasGuardiaLab += h;
+  }
+
+  r.laborables = fijas + horasGuardiaLab;
+  r.festivos = horasGuardiaFest;
   r.complementos_eur = emp.complemento_mensual_eur; // 280
-  r.desglose = { fijas_mes: emp.h_lab_complemento_mensual };
+
+  const guardiasDetalle: GuardiaDesglose[] = ctx.guardias_empleado.map((g) => ({
+    fecha: g.fecha,
+    dow: g.dow,
+    horas: horasGuardiaSlots(g),
+    es_festivo: g.es_festivo,
+  }));
+
+  r.desglose = {
+    fijas_mes: fijas,
+    num_guardias_asignadas: ctx.guardias_empleado.length,
+    horas_guardia_laboral: horasGuardiaLab,
+    horas_guardia_festiva: horasGuardiaFest,
+    guardias_detalle: guardiasDetalle,
+  };
   return r;
 }
 
