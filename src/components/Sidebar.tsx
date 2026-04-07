@@ -4,11 +4,13 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { puedeVerMarketingClientes } from "@/lib/marketing/permisos";
 
 /* ───── Tipos ───── */
 
 interface SidebarProps {
   userName: string;
+  userEmail?: string | null;
   userImage?: string | null;
   departamento?: "farmacia" | "optica" | "ambos";
   role?: "admin" | "usuario";
@@ -19,6 +21,8 @@ interface NavItem {
   href: string;
   activo: boolean;
   icon: React.ReactNode;
+  /** Si está definido, el item solo se muestra si la función devuelve true */
+  visibleSi?: (ctx: { email: string | null | undefined; role: string }) => boolean;
 }
 
 interface NavSection {
@@ -122,6 +126,13 @@ const sections: NavSection[] = [
     collapsible: true,
     items: [
       { label: "CRM", href: "/crm", activo: true, icon: icons.users },
+      {
+        label: "Clientes",
+        href: "/marketing/clientes",
+        activo: true,
+        icon: icons.chart,
+        visibleSi: ({ email }) => puedeVerMarketingClientes(email),
+      },
       { label: "Fichas producto", href: "/fichas", activo: false, icon: icons.tag },
     ],
   },
@@ -150,6 +161,7 @@ const sections: NavSection[] = [
 
 export default function Sidebar({
   userName,
+  userEmail,
   userImage,
   departamento = "farmacia",
   role = "admin",
@@ -165,13 +177,22 @@ export default function Sidebar({
     return pathname.startsWith(href);
   };
 
+  // Filtra los items por permiso individual (visibleSi) además del adminOnly de sección.
+  const visibleSections = useMemo(() => {
+    return sections
+      .filter((s) => !s.adminOnly || role === "admin")
+      .map((s) => ({
+        ...s,
+        items: s.items.filter(
+          (it) => !it.visibleSi || it.visibleSi({ email: userEmail, role })
+        ),
+      }))
+      .filter((s) => s.items.length > 0);
+  }, [userEmail, role]);
+
   // Auto-expand sections that contain the current active route
   const sectionHasActiveRoute = (section: NavSection) =>
     section.items.some((item) => isActive(item.href));
-
-  const visibleSections = sections.filter(
-    (s) => !s.adminOnly || role === "admin"
-  );
 
   // Initialize collapsed state: expanded if section has active route, collapsed otherwise
   const defaultCollapsed = useMemo(() => {

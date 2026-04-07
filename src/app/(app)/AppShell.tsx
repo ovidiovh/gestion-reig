@@ -5,6 +5,7 @@ import Sidebar from "@/components/Sidebar";
 interface AppShellProps {
   children: React.ReactNode;
   userName: string;
+  userEmail?: string | null;
   userImage?: string | null;
   departamento?: "farmacia" | "optica" | "ambos";
   role?: "admin" | "usuario";
@@ -13,6 +14,7 @@ interface AppShellProps {
 export default function AppShell({
   children,
   userName,
+  userEmail,
   userImage,
   departamento = "farmacia",
   role = "admin",
@@ -21,6 +23,7 @@ export default function AppShell({
     <div className="min-h-screen" style={{ background: "#f8faf9" }}>
       <Sidebar
         userName={userName}
+        userEmail={userEmail}
         userImage={userImage}
         departamento={departamento}
         role={role}

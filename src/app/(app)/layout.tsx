@@ -11,6 +11,7 @@ export default async function AuthenticatedLayout({
   return (
     <AppShell
       userName={user.nombre || user.email}
+      userEmail={user.email}
       userImage={user.image}
       departamento={user.departamento}
       role={user.role}

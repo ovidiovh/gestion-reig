@@ -42,9 +42,14 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  // pdfkit lee sus .afm en runtime desde node_modules/pdfkit/js/data/.
-  // Vercel hace tree-shaking agresivo y no detecta esos requires dinámicos,
-  // así que forzamos su inclusión en la traza del endpoint de PDFs.
+  // pdfkit es CommonJS y lee sus .afm en runtime desde node_modules/pdfkit/js/data/
+  // usando __dirname interno. Si Next lo bundlea, __dirname cambia y los .afm
+  // no se encuentran (ENOENT '/ROOT/node_modules/pdfkit/js/data/Helvetica.afm').
+  // Solución: marcar pdfkit como external para que se cargue como require() en
+  // runtime desde node_modules y la traza de Vercel incluya su carpeta entera.
+  serverExternalPackages: ["pdfkit"],
+  // Cinturón y tirantes: además forzamos los .afm en la traza del endpoint
+  // de PDFs por si Vercel no detecta el require dinámico de los datos.
   outputFileTracingIncludes: {
     "/api/rrhh/nominas/pdf": ["./node_modules/pdfkit/js/data/**/*"],
   },

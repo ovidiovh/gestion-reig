@@ -43,6 +43,16 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/login?error=desactivado", req.url));
   }
 
+  // Marketing → Clientes: whitelist hardcodeada (Ovidio + Beatriz).
+  // Decisión 2026-04-07: dashboard epidemiológico solo visible para gestión.
+  if (pathname.startsWith("/marketing/clientes")) {
+    const email = req.auth.user?.email?.toLowerCase();
+    const allow = email === "ovidio@farmaciareig.net" || email === "brs@farmaciareig.net";
+    if (!allow) {
+      return NextResponse.redirect(new URL("/?error=sin-permisos-marketing", req.url));
+    }
+  }
+
   return NextResponse.next();
 });
 
