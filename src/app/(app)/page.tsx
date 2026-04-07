@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { requireUser } from "@/lib/auth";
+import { puedeVerMarketingClientes } from "@/lib/marketing/permisos";
 
 /* ───── Tipos ───── */
 
@@ -8,6 +10,12 @@ interface ModuleCard {
   href: string;
   activo: boolean;
   icon: React.ReactNode;
+  /**
+   * Predicado opcional de visibilidad. Si se define y devuelve false,
+   * la card NO se renderiza para ese usuario (mismo patrón que el Sidebar).
+   * Para módulos abiertos a todo el equipo, dejar undefined.
+   */
+  visibleSi?: (ctx: { email: string | null | undefined }) => boolean;
 }
 
 interface DashboardSection {
@@ -76,6 +84,14 @@ const sections: DashboardSection[] = [
     title: "Marketing",
     items: [
       { title: "CRM", description: "Base de datos de clientes y analisis de ventas", href: "/crm", activo: true, icon: icons.users },
+      {
+        title: "Clientes",
+        description: "Estudio epidemiologico y segmentacion socioeconomica",
+        href: "/marketing/clientes",
+        activo: true,
+        icon: icons.users,
+        visibleSi: ({ email }) => puedeVerMarketingClientes(email),
+      },
       { title: "Fichas producto", description: "Fichas SEO para farmaciareig.net", href: "/fichas", activo: false, icon: icons.tag },
     ],
   },
@@ -96,7 +112,21 @@ const sections: DashboardSection[] = [
 
 /* ───── Componente ───── */
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Necesitamos el email para evaluar las cards con `visibleSi`
+  // (mismo patrón que el Sidebar, para que la home sea espejo coherente).
+  const user = await requireUser();
+  const email = user?.email ?? null;
+
+  // Filtramos primero por visibilidad y descartamos secciones que se quedan
+  // sin items (evita ver un título "Marketing" sin nada debajo).
+  const visibleSections = sections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((it) => (it.visibleSi ? it.visibleSi({ email }) : true)),
+    }))
+    .filter((section) => section.items.length > 0);
+
   return (
     <div>
       {/* Header */}
@@ -114,7 +144,7 @@ export default function HomePage() {
 
       {/* Sections */}
       <div className="space-y-8">
-        {sections.map((section) => (
+        {visibleSections.map((section) => (
           <div key={section.title}>
             <h2
               className="text-sm font-bold tracking-wide uppercase mb-3"
