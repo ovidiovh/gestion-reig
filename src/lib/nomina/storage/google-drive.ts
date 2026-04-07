@@ -84,11 +84,16 @@ async function ensureMonthFolder(mes: string): Promise<string> {
   const drive = getDrive();
   const rootId = getRootFolderId();
 
-  // Buscar primero por nombre dentro de la carpeta padre
+  // Buscar primero por nombre dentro de la carpeta padre.
+  // supportsAllDrives + includeItemsFromAllDrives son obligatorios para que
+  // la API mire dentro de Unidades Compartidas (Shared Drives). Sin ellos
+  // la cuenta de servicio no ve nada aunque sea miembro de la unidad.
   const list = await drive.files.list({
     q: `name = '${mes}' and mimeType = '${FOLDER_MIME}' and '${rootId}' in parents and trashed = false`,
     fields: "files(id, name)",
     pageSize: 1,
+    supportsAllDrives: true,
+    includeItemsFromAllDrives: true,
   });
 
   const found = list.data.files?.[0];
@@ -105,6 +110,7 @@ async function ensureMonthFolder(mes: string): Promise<string> {
       parents: [rootId],
     },
     fields: "id",
+    supportsAllDrives: true,
   });
 
   if (!created.data.id) {
@@ -138,7 +144,7 @@ export class GoogleDriveAdapter implements NominaStorageAdapter {
         body,
       },
       fields: "id, webViewLink",
-      supportsAllDrives: false,
+      supportsAllDrives: true,
     });
 
     if (!created.data.id) {
@@ -152,6 +158,7 @@ export class GoogleDriveAdapter implements NominaStorageAdapter {
       const re = await drive.files.get({
         fileId: created.data.id,
         fields: "webViewLink",
+        supportsAllDrives: true,
       });
       webViewLink = re.data.webViewLink || `https://drive.google.com/file/d/${created.data.id}/view`;
     }
@@ -165,13 +172,13 @@ export class GoogleDriveAdapter implements NominaStorageAdapter {
 
   async deletePdf(fileId: string): Promise<void> {
     const drive = getDrive();
-    await drive.files.delete({ fileId });
+    await drive.files.delete({ fileId, supportsAllDrives: true });
   }
 
   async downloadPdf(fileId: string): Promise<Buffer> {
     const drive = getDrive();
     const res = await drive.files.get(
-      { fileId, alt: "media" },
+      { fileId, alt: "media", supportsAllDrives: true },
       { responseType: "arraybuffer" }
     );
     // res.data es un ArrayBuffer cuando responseType es "arraybuffer"
