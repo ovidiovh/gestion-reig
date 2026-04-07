@@ -249,37 +249,36 @@ function calcFarmaceuticoNocturno(
 }
 
 // ─── §5.6 Apoyo estudiante óptica (Zule / Zuleica) ─────────────────────────
-// Contrato 24 h/sem: 4 h base × 5 días L-V + 4 h extras los viernes.
-// Confirmado por Beatriz 2026-04-06:
-//   "5 DIAS LABORABLES (4 HORAS) + 4 HORAS EXTRA EL VIERNES"
-//   "SIEMPRE Y CUANDO EL VIERNES TRABAJE"
-// → si el viernes es festivo o vacaciones, ni base ni extras de ese día.
-// → fórmula: dias_LV_efectivos × 4 + viernes_efectivos × 4
-// El error histórico de 96 h venía de un horario mal puesto (4:30→17:30 en vez
-// de 16:30→17:30 algún día) — confundió 4 con 16.
+// Contrato fijo de media jornada L-V: la base mensual la conoce la gestoría
+// desde el contrato y NO se reporta en la hoja de horas mensual. Lo único
+// VARIABLE mes a mes son las 4 h extras del viernes, y solo cuando Zule
+// efectivamente cubre ese viernes (no festivo, no vacaciones).
+//
+// Confirmado por Ovidio 2026-04-07 (sesión 6, durante el diseño del PDF):
+//   "Zule tiene un contrato fijo a media jornada de lunes a viernes, y los
+//    viernes tiene 4 horas extras. Solo hay que poner las 4 horas extras del
+//    viernes cuando lo trabaja."
+//
+// Esto sustituye la fórmula `dias_LV_trabajados × 4 + viernes × 4` del commit
+// 42109f1 (que sí enviaba las horas base a la gestoría — error). Mismo patrón
+// que Luisa/Miriam/Mónica (contrato fijo conocido por la gestoría), con la
+// diferencia de que Zule sí tiene un componente variable.
 function calcApoyoEstudianteOptica(
   emp: EmpleadoNomina,
   ctx: ContextoMes
 ): ResultadoNomina {
   const r = resultadoBase(emp);
 
-  // Base: 4 h × días L-V efectivamente trabajados (resta festivos y vacaciones).
-  const diasLVTrabajados = diasLaborablesTrabajados(ctx);
-  const horasBase = diasLVTrabajados * 4;
-
-  // Extras: 4 h adicionales SOLO los viernes que realmente trabaja
-  // (no festivos, no vacaciones).
+  // Solo los viernes que realmente trabaja: 4 h extras cada uno.
   const viernesEfectivos = Math.max(
     0,
     ctx.viernes_mes - ctx.viernes_vacaciones_empleado - ctx.viernes_festivos_mes
   );
   const horasExtrasViernes = viernesEfectivos * 4;
 
-  r.laborables = horasBase + horasExtrasViernes;
+  r.laborables = horasExtrasViernes;
   r.complementos_eur = 0;
   r.desglose = {
-    fijas_mes: horasBase,
-    dias_laborables_trabajados: diasLVTrabajados,
     viernes_trabajados: viernesEfectivos,
     extras_fijas_semana: horasExtrasViernes,
   };
