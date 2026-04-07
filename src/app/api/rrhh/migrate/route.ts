@@ -233,11 +233,11 @@ export async function POST() {
 
       -- ─── Sesión 9 (2026-04-07) — Paso 2.1: Histórico de PDFs de nóminas ───
       -- Una fila por (mes, empresa, version). Cada vez que Beatriz/Ovidio
-      -- pulsan "🔒 Cerrar mes" en /rrhh/nominas se incrementa `version` y se
+      -- pulsan "Cerrar mes" en /rrhh/nominas se incrementa la version y se
       -- crea una nueva fila — NUNCA se sobrescribe ni se borra. La auditoría
       -- depende de poder volver a cualquier versión histórica.
       --
-      -- `resumen_json` es el snapshot completo del ResumenMes del motor en el
+      -- El campo resumen_json es el snapshot completo del ResumenMes del motor en el
       -- momento del cierre, lo que permite regenerar el PDF determinísticamente
       -- y verificar que el hash coincide con el almacenado en Drive.
       --
