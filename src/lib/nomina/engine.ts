@@ -16,6 +16,11 @@ import { calcularNominaEmpleado } from "./calculadores";
 
 export interface ResumenMes {
   mes: string;
+  /**
+   * Días laborables L-V efectivos del mes (calendario menos festivos oficiales).
+   * Sale en la cabecera de la hoja de horas a la gestoría como "Días trabajados: N".
+   */
+  dias_laborables_mes: number;
   resultados: ResultadoNomina[];
   resultados_farmacia: ResultadoNomina[];
   resultados_mirelus: ResultadoNomina[];
@@ -57,6 +62,8 @@ export async function calcularNominaMes(mes: string): Promise<ResumenMes> {
 
   return {
     mes,
+    dias_laborables_mes:
+      datos.dias_laborables_calendario - datos.dias_laborables_festivos,
     resultados,
     resultados_farmacia: resultados.filter((r) => r.empresa === "reig"),
     resultados_mirelus: resultados.filter((r) => r.empresa === "mirelus"),

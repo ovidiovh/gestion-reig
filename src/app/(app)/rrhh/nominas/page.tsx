@@ -291,6 +291,40 @@ export default function NominasPage() {
         >
           {loading ? "Calculando…" : "Recalcular"}
         </button>
+        <a
+          href={`/api/rrhh/nominas/pdf?mes=${mes}&empresa=farmacia`}
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            padding: "6px 14px",
+            background: GREEN_DARK,
+            color: "white",
+            border: "none",
+            borderRadius: 6,
+            fontWeight: 600,
+            fontSize: 14,
+            textDecoration: "none",
+          }}
+        >
+          📄 PDF Farmacia
+        </a>
+        <a
+          href={`/api/rrhh/nominas/pdf?mes=${mes}&empresa=mirelus`}
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            padding: "6px 14px",
+            background: "#555",
+            color: "white",
+            border: "none",
+            borderRadius: 6,
+            fontWeight: 600,
+            fontSize: 14,
+            textDecoration: "none",
+          }}
+        >
+          📄 PDF Mirelus
+        </a>
         {data?.total !== undefined && (
           <span style={{ color: "#666", fontSize: 13 }}>
             {data.total} empleado(s) · mes {data.mes}
