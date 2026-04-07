@@ -218,7 +218,6 @@ export default function NominasPage() {
   const [data, setData] = useState<Respuesta | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showDebug, setShowDebug] = useState(false);
 
   const cargar = useCallback(async (m: string) => {
     setLoading(true);
@@ -375,38 +374,6 @@ export default function NominasPage() {
             </div>
           )}
 
-          <div>
-            <button
-              onClick={() => setShowDebug((v) => !v)}
-              style={{
-                background: "transparent",
-                border: `1px solid ${GREEN}`,
-                color: GREEN_DARK,
-                padding: "4px 10px",
-                borderRadius: 6,
-                fontSize: 12,
-                cursor: "pointer",
-              }}
-            >
-              {showDebug ? "Ocultar JSON" : "Ver JSON completo (debug)"}
-            </button>
-            {showDebug && (
-              <pre
-                style={{
-                  marginTop: 10,
-                  background: "#fafafa",
-                  border: "1px solid #ddd",
-                  padding: 12,
-                  borderRadius: 6,
-                  fontSize: 11,
-                  maxHeight: 400,
-                  overflow: "auto",
-                }}
-              >
-                {JSON.stringify(data, null, 2)}
-              </pre>
-            )}
-          </div>
         </>
       )}
     </div>
