@@ -1,15 +1,20 @@
 "use client";
 
-// Página /rrhh/nominas — Paso 2.0.
+// Página /rrhh/nominas — Paso 2.0 + Paso 2.1.
 // Selector de mes + dos tablas (Farmacia / Mirelus) con las 5 columnas que
 // espera la gestoría: laborables · festivos · noct.lab · noct.fest · complemento €.
 // Las nocturnas laborables y festivas van en columnas separadas porque se pagan
 // con tarifas distintas (las noct. festivas son más caras). Nota: ambas son
 // SUBSECCIONES de sus columnas principales, NO aditivas.
 //
-// Esta pantalla NO guarda en BD ni genera PDFs. Solo muestra lo que devuelve
-// GET /api/rrhh/nominas?mes=YYYY-MM. Generar PDFs y persistir historial queda
-// para Paso 2.1. Ver REIG-BASE → nominas-rrhh.md §9 y §13.
+// Paso 2.1 (sesión 9, 2026-04-07): añadido botón "🔒 Cerrar mes y archivar"
+// que llama a POST /api/rrhh/nominas/cerrar-mes. Genera los dos PDFs (Farmacia
+// + Mirelus), los hashea, los sube a Google Drive (carpeta compartida) y crea
+// dos filas en `rrhh_nominas_historial`. Cada cierre incrementa `version` —
+// nunca sobrescribe. La sección "Historial del mes" debajo de las tablas
+// lista todas las versiones existentes con enlaces directos a Drive.
+//
+// Ver REIG-BASE → nominas-rrhh.md §9, §9.1, §13.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -64,6 +69,49 @@ interface Respuesta {
   resultados_farmacia?: ResultadoNomina[];
   resultados_mirelus?: ResultadoNomina[];
   warnings_globales?: string[];
+  error?: string;
+}
+
+interface VersionHistorial {
+  id: string;
+  mes: string;
+  empresa: "reig" | "mirelus";
+  version: number;
+  cerrado_at: string;
+  cerrado_por_email: string;
+  hash_pdf: string;
+  bytes_pdf: number;
+  drive_file_id: string;
+  drive_web_view_link: string;
+  notas: string | null;
+  obsoleto: number;
+}
+
+interface RespuestaHistorial {
+  ok: boolean;
+  mes?: string;
+  total?: number;
+  filas?: VersionHistorial[];
+  error?: string;
+}
+
+interface CierreEmpresaResultado {
+  empresa: "reig" | "mirelus";
+  version: number;
+  hash_pdf: string;
+  bytes_pdf: number;
+  drive_file_id: string;
+  drive_web_view_link: string;
+  filename: string;
+}
+
+interface RespuestaCierre {
+  ok: boolean;
+  mes?: string;
+  cerrado_por?: string;
+  cerrado_at?: string;
+  farmacia?: CierreEmpresaResultado;
+  mirelus?: CierreEmpresaResultado;
   error?: string;
 }
 
@@ -213,11 +261,40 @@ function TablaNomina({
   );
 }
 
+function fmtFechaCorta(iso: string): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function fmtBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(2)} MB`;
+}
+
 export default function NominasPage() {
   const [mes, setMes] = useState<string>(mesPorDefecto());
   const [data, setData] = useState<Respuesta | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // ── Histórico de PDFs (Paso 2.1) ─────────────────────────────────────
+  const [historial, setHistorial] = useState<VersionHistorial[]>([]);
+  const [historialLoading, setHistorialLoading] = useState(false);
+
+  // ── Modal de cierre de mes ───────────────────────────────────────────
+  const [cierreModalAbierto, setCierreModalAbierto] = useState(false);
+  const [cierreNotas, setCierreNotas] = useState("");
+  const [cierreLoading, setCierreLoading] = useState(false);
+  const [cierreError, setCierreError] = useState<string | null>(null);
+  const [cierreUltimo, setCierreUltimo] = useState<RespuestaCierre | null>(null);
+
+  // ── Verificación de integridad ───────────────────────────────────────
+  const [verificandoId, setVerificandoId] = useState<string | null>(null);
+  const [verificacionResultado, setVerificacionResultado] = useState<string | null>(null);
 
   const cargar = useCallback(async (m: string) => {
     setLoading(true);
@@ -235,9 +312,79 @@ export default function NominasPage() {
     }
   }, []);
 
+  const cargarHistorial = useCallback(async (m: string) => {
+    setHistorialLoading(true);
+    try {
+      const r = await fetch(`/api/rrhh/nominas/historial?mes=${m}`);
+      const j = (await r.json()) as RespuestaHistorial;
+      if (j.ok && j.filas) {
+        setHistorial(j.filas);
+      } else {
+        setHistorial([]);
+      }
+    } catch {
+      setHistorial([]);
+    } finally {
+      setHistorialLoading(false);
+    }
+  }, []);
+
+  const proximaVersion = useMemo(() => {
+    const versionesMes = historial.length > 0
+      ? Math.max(...historial.map((h) => h.version))
+      : 0;
+    return versionesMes + 1;
+  }, [historial]);
+
+  const cerrarMes = useCallback(async () => {
+    setCierreLoading(true);
+    setCierreError(null);
+    setCierreUltimo(null);
+    try {
+      const r = await fetch("/api/rrhh/nominas/cerrar-mes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mes, notas: cierreNotas.trim() || undefined }),
+      });
+      const j = (await r.json()) as RespuestaCierre;
+      if (!j.ok) throw new Error(j.error || "Error desconocido al cerrar mes");
+      setCierreUltimo(j);
+      setCierreNotas("");
+      setCierreModalAbierto(false);
+      // Recargar historial para que aparezca la nueva versión
+      await cargarHistorial(mes);
+    } catch (e) {
+      setCierreError(String(e));
+    } finally {
+      setCierreLoading(false);
+    }
+  }, [mes, cierreNotas, cargarHistorial]);
+
+  const verificarVersion = useCallback(async (id: string) => {
+    setVerificandoId(id);
+    setVerificacionResultado(null);
+    try {
+      const r = await fetch(`/api/rrhh/nominas/historial/${id}/verificar`);
+      const j = await r.json();
+      if (!j.ok) throw new Error(j.error || "Error verificando");
+      const matchDrive = j.match_drive ? "✅" : "❌";
+      const matchRegen = j.match_regenerado ? "✅" : "❌";
+      setVerificacionResultado(
+        `Hash almacenado: ${String(j.hash_almacenado).slice(0, 16)}…\n` +
+        `Hash en Drive:    ${j.hash_drive ? String(j.hash_drive).slice(0, 16) + "…" : "(error)"} ${matchDrive}\n` +
+        `Hash regenerado:  ${j.hash_regenerado ? String(j.hash_regenerado).slice(0, 16) + "…" : "(error)"} ${matchRegen}`
+      );
+    } catch (e) {
+      setVerificacionResultado(`Error: ${String(e)}`);
+    } finally {
+      setVerificandoId(null);
+    }
+  }, []);
+
   useEffect(() => {
     cargar(mes);
-  }, [mes, cargar]);
+    cargarHistorial(mes);
+  }, [mes, cargar, cargarHistorial]);
 
   const todosWarnings = useMemo(() => {
     if (!data?.resultados) return [];
@@ -324,6 +471,26 @@ export default function NominasPage() {
         >
           📄 PDF Mirelus
         </a>
+        <button
+          onClick={() => {
+            setCierreError(null);
+            setCierreModalAbierto(true);
+          }}
+          disabled={loading || cierreLoading || !data}
+          style={{
+            padding: "6px 14px",
+            background: "#a04a00",
+            color: "white",
+            border: "none",
+            borderRadius: 6,
+            fontWeight: 700,
+            fontSize: 14,
+            cursor: loading || cierreLoading ? "not-allowed" : "pointer",
+          }}
+          title="Genera y archiva los dos PDFs (Farmacia + Mirelus) en Google Drive con versión incremental. Para auditoría — no sobrescribe."
+        >
+          🔒 Cerrar mes y archivar
+        </button>
         {data?.total !== undefined && (
           <span style={{ color: "#666", fontSize: 13 }}>
             {data.total} empleado(s) · mes {data.mes}
@@ -374,7 +541,311 @@ export default function NominasPage() {
             </div>
           )}
 
+          {cierreUltimo?.ok && cierreUltimo.farmacia && cierreUltimo.mirelus && (
+            <div
+              style={{
+                background: "#e7f5ec",
+                border: "1px solid #1f6b4a",
+                borderRadius: 8,
+                padding: 16,
+                marginBottom: 16,
+                color: "#0c3320",
+                fontSize: 14,
+              }}
+            >
+              <strong>✅ Cierre completado.</strong>{" "}
+              Versión {cierreUltimo.farmacia.version} de Farmacia y versión{" "}
+              {cierreUltimo.mirelus.version} de Mirelus archivadas en Drive.{" "}
+              <a
+                href={cierreUltimo.farmacia.drive_web_view_link}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: GREEN_DARK, fontWeight: 600 }}
+              >
+                Abrir Farmacia
+              </a>
+              {" · "}
+              <a
+                href={cierreUltimo.mirelus.drive_web_view_link}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: GREEN_DARK, fontWeight: 600 }}
+              >
+                Abrir Mirelus
+              </a>
+            </div>
+          )}
+
+          {/* ── Sección histórico del mes ───────────────────────────── */}
+          <div style={{ marginTop: 32 }}>
+            <h2 style={{ color: GREEN_DARK, fontSize: 18, margin: "0 0 8px 0" }}>
+              📁 Historial de versiones del mes
+            </h2>
+            <p style={{ color: "#666", fontSize: 13, margin: "0 0 12px 0" }}>
+              Cada cierre crea una versión nueva — nunca sobrescribe. Los PDFs viven en
+              la carpeta Drive compartida con tu cuenta de Farmacia.
+            </p>
+
+            {historialLoading ? (
+              <p style={{ color: "#888", fontSize: 13 }}>Cargando historial…</p>
+            ) : historial.length === 0 ? (
+              <p
+                style={{
+                  color: "#888",
+                  fontSize: 13,
+                  fontStyle: "italic",
+                  padding: 12,
+                  background: "#f7f7f7",
+                  borderRadius: 6,
+                }}
+              >
+                Sin versiones archivadas para este mes. Pulsa <strong>🔒 Cerrar mes y archivar</strong> para crear la primera.
+              </p>
+            ) : (
+              <div style={{ overflowX: "auto", border: `1px solid ${GREEN_LIGHT}`, borderRadius: 8 }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: GREEN_LIGHT, color: GREEN_DARK, textAlign: "left" }}>
+                      <th style={{ padding: "8px 12px" }}>Empresa</th>
+                      <th style={{ padding: "8px 12px" }}>Versión</th>
+                      <th style={{ padding: "8px 12px" }}>Cerrado</th>
+                      <th style={{ padding: "8px 12px" }}>Por</th>
+                      <th style={{ padding: "8px 12px" }}>Tamaño</th>
+                      <th style={{ padding: "8px 12px" }}>Hash</th>
+                      <th style={{ padding: "8px 12px" }}>Notas</th>
+                      <th style={{ padding: "8px 12px" }}>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historial.map((h) => {
+                      const esUltima = !historial.some(
+                        (h2) => h2.empresa === h.empresa && h2.version > h.version
+                      );
+                      return (
+                        <tr
+                          key={h.id}
+                          style={{
+                            borderTop: `1px solid ${GREEN_LIGHT}`,
+                            opacity: h.obsoleto ? 0.5 : 1,
+                          }}
+                        >
+                          <td style={{ padding: "8px 12px", fontWeight: 600 }}>
+                            {h.empresa === "reig" ? "Farmacia" : "Mirelus"}
+                          </td>
+                          <td style={{ padding: "8px 12px" }}>
+                            <span
+                              style={{
+                                padding: "2px 8px",
+                                borderRadius: 999,
+                                background: esUltima ? GREEN : "#999",
+                                color: "white",
+                                fontWeight: 600,
+                                fontSize: 11,
+                              }}
+                            >
+                              v{h.version}
+                              {esUltima ? " · actual" : ""}
+                            </span>
+                          </td>
+                          <td style={{ padding: "8px 12px", fontVariantNumeric: "tabular-nums" }}>
+                            {fmtFechaCorta(h.cerrado_at)}
+                          </td>
+                          <td style={{ padding: "8px 12px", fontSize: 12, color: "#666" }}>
+                            {h.cerrado_por_email}
+                          </td>
+                          <td style={{ padding: "8px 12px", fontVariantNumeric: "tabular-nums" }}>
+                            {fmtBytes(h.bytes_pdf)}
+                          </td>
+                          <td
+                            style={{
+                              padding: "8px 12px",
+                              fontFamily: "monospace",
+                              fontSize: 11,
+                              color: "#888",
+                            }}
+                            title={h.hash_pdf}
+                          >
+                            {h.hash_pdf.slice(0, 12)}…
+                          </td>
+                          <td style={{ padding: "8px 12px", fontSize: 12, color: "#555", maxWidth: 200 }}>
+                            {h.notas || "—"}
+                          </td>
+                          <td style={{ padding: "8px 12px" }}>
+                            <a
+                              href={h.drive_web_view_link}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{
+                                color: GREEN_DARK,
+                                fontWeight: 600,
+                                textDecoration: "none",
+                                marginRight: 12,
+                              }}
+                            >
+                              Abrir Drive
+                            </a>
+                            <button
+                              onClick={() => verificarVersion(h.id)}
+                              disabled={verificandoId === h.id}
+                              style={{
+                                background: "transparent",
+                                border: `1px solid ${GREEN}`,
+                                color: GREEN_DARK,
+                                padding: "2px 8px",
+                                borderRadius: 4,
+                                fontSize: 11,
+                                cursor: verificandoId === h.id ? "wait" : "pointer",
+                              }}
+                            >
+                              {verificandoId === h.id ? "Verificando…" : "Verificar"}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {verificacionResultado && (
+              <pre
+                style={{
+                  marginTop: 12,
+                  padding: 12,
+                  background: "#f7f7f7",
+                  border: "1px solid #ddd",
+                  borderRadius: 6,
+                  fontSize: 12,
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {verificacionResultado}
+              </pre>
+            )}
+          </div>
         </>
+      )}
+
+      {/* ── Modal de confirmación de cierre ─────────────────────────── */}
+      {cierreModalAbierto && (
+        <div
+          onClick={() => !cierreLoading && setCierreModalAbierto(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "white",
+              padding: 24,
+              borderRadius: 12,
+              maxWidth: 520,
+              width: "90%",
+              boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
+            }}
+          >
+            <h2 style={{ margin: "0 0 12px 0", color: GREEN_DARK, fontSize: 20 }}>
+              🔒 Cerrar mes {mes}
+            </h2>
+            <p style={{ margin: "0 0 12px 0", fontSize: 14, color: "#444" }}>
+              Vas a crear la <strong>versión {proximaVersion}</strong> del mes <strong>{mes}</strong>.
+              Se generarán dos PDFs (Farmacia + Mirelus), se hashearán con SHA-256
+              y se subirán a la carpeta Drive compartida.
+            </p>
+            {historial.length > 0 && (
+              <p
+                style={{
+                  margin: "0 0 12px 0",
+                  fontSize: 13,
+                  color: "#666",
+                  background: "#f7f7f7",
+                  padding: 8,
+                  borderRadius: 6,
+                }}
+              >
+                Ya existen {historial.length} versión(es) previa(s). La más reciente es del{" "}
+                {fmtFechaCorta(historial[0]?.cerrado_at || "")} por {historial[0]?.cerrado_por_email}. Las
+                versiones anteriores quedan accesibles abajo en el histórico — no se borran.
+              </p>
+            )}
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: GREEN_DARK, marginBottom: 4 }}>
+              Notas (opcional)
+            </label>
+            <textarea
+              value={cierreNotas}
+              onChange={(e) => setCierreNotas(e.target.value)}
+              placeholder='Ej: "Corregido horario de Julio del día 28"'
+              rows={3}
+              style={{
+                width: "100%",
+                padding: 8,
+                border: `1px solid ${GREEN}`,
+                borderRadius: 6,
+                fontSize: 13,
+                fontFamily: "inherit",
+                resize: "vertical",
+                marginBottom: 16,
+                boxSizing: "border-box",
+              }}
+            />
+            {cierreError && (
+              <div
+                style={{
+                  background: "#fee",
+                  border: "1px solid #c33",
+                  color: "#900",
+                  padding: 10,
+                  borderRadius: 6,
+                  marginBottom: 12,
+                  fontSize: 13,
+                }}
+              >
+                {cierreError}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setCierreModalAbierto(false)}
+                disabled={cierreLoading}
+                style={{
+                  padding: "8px 16px",
+                  background: "transparent",
+                  border: "1px solid #999",
+                  color: "#444",
+                  borderRadius: 6,
+                  cursor: cierreLoading ? "not-allowed" : "pointer",
+                  fontSize: 14,
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={cerrarMes}
+                disabled={cierreLoading}
+                style={{
+                  padding: "8px 16px",
+                  background: "#a04a00",
+                  border: "none",
+                  color: "white",
+                  borderRadius: 6,
+                  cursor: cierreLoading ? "wait" : "pointer",
+                  fontWeight: 700,
+                  fontSize: 14,
+                }}
+              >
+                {cierreLoading ? "Generando y subiendo…" : `Crear versión ${proximaVersion}`}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

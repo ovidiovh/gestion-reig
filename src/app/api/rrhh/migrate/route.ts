@@ -230,6 +230,44 @@ export async function POST() {
         detalle        TEXT,
         fecha          TEXT NOT NULL DEFAULT (datetime('now'))
       );
+
+      -- ─── Sesión 9 (2026-04-07) — Paso 2.1: Histórico de PDFs de nóminas ───
+      -- Una fila por (mes, empresa, version). Cada vez que Beatriz/Ovidio
+      -- pulsan "🔒 Cerrar mes" en /rrhh/nominas se incrementa `version` y se
+      -- crea una nueva fila — NUNCA se sobrescribe ni se borra. La auditoría
+      -- depende de poder volver a cualquier versión histórica.
+      --
+      -- `resumen_json` es el snapshot completo del ResumenMes del motor en el
+      -- momento del cierre, lo que permite regenerar el PDF determinísticamente
+      -- y verificar que el hash coincide con el almacenado en Drive.
+      --
+      -- Storage físico de los PDFs: Google Drive (carpeta compartida del
+      -- propietario), implementado en src/lib/nomina/storage/google-drive.ts.
+      -- La interfaz NominaStorageAdapter permite migrar a OneDrive sin tocar
+      -- nada de esta tabla.
+      --
+      -- Ver REIG-BASE → 06-OPERATIVA-FARMACIA/nominas-rrhh.md §9.1.
+      CREATE TABLE IF NOT EXISTS rrhh_nominas_historial (
+        id                  TEXT PRIMARY KEY,
+        mes                 TEXT NOT NULL,
+        empresa             TEXT NOT NULL,
+        version             INTEGER NOT NULL,
+        cerrado_at          TEXT NOT NULL,
+        cerrado_por_email   TEXT NOT NULL,
+        hash_pdf            TEXT NOT NULL,
+        bytes_pdf           INTEGER NOT NULL,
+        drive_file_id       TEXT NOT NULL,
+        drive_web_view_link TEXT NOT NULL,
+        drive_folder_id     TEXT NOT NULL,
+        resumen_json        TEXT NOT NULL,
+        notas               TEXT,
+        obsoleto            INTEGER NOT NULL DEFAULT 0,
+        UNIQUE (mes, empresa, version)
+      );
+      CREATE INDEX IF NOT EXISTS idx_historial_mes
+        ON rrhh_nominas_historial(mes);
+      CREATE INDEX IF NOT EXISTS idx_historial_empresa_mes
+        ON rrhh_nominas_historial(empresa, mes);
     `);
 
     // 1b. Migraciones idempotentes (añadir columnas si no existen)
@@ -400,6 +438,7 @@ export async function POST() {
         "rrhh_guardia_slots", "rrhh_guardia_defaults",
         "rrhh_vacaciones", "rrhh_ausencias", "rrhh_horarios_asignacion",
         "rrhh_banco_horas", "rrhh_turnos_config",
+        "rrhh_nominas_historial",
       ],
       empleados: EMPLEADOS.length,
       festivos: FESTIVOS_2026.length,

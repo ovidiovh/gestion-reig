@@ -44,3 +44,8 @@ next-env.d.ts
 # reig-commit.bat — ficheros temporales de mensaje de commit
 /.commit-msg.txt
 /.commit-msg-*.txt
+
+# secretos (service accounts, claves privadas) — defensa en profundidad
+.secrets/
+*service-account*.json
+*-credentials.json

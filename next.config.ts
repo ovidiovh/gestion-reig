@@ -47,11 +47,20 @@ const nextConfig: NextConfig = {
   // no se encuentran (ENOENT '/ROOT/node_modules/pdfkit/js/data/Helvetica.afm').
   // Solución: marcar pdfkit como external para que se cargue como require() en
   // runtime desde node_modules y la traza de Vercel incluya su carpeta entera.
-  serverExternalPackages: ["pdfkit"],
+  //
+  // googleapis (sesión 9, Paso 2.1): librería oficial de Google con módulos
+  // dinámicos pesados. Marcarla external evita que Next la bundlee y deja que
+  // Vercel la cargue por require() desde node_modules. Lo usa el storage adapter
+  // de Drive para subir los PDFs históricos de nóminas.
+  serverExternalPackages: ["pdfkit", "googleapis"],
   // Cinturón y tirantes: además forzamos los .afm en la traza del endpoint
   // de PDFs por si Vercel no detecta el require dinámico de los datos.
   outputFileTracingIncludes: {
     "/api/rrhh/nominas/pdf": ["./node_modules/pdfkit/js/data/**/*"],
+    "/api/rrhh/nominas/cerrar-mes": ["./node_modules/pdfkit/js/data/**/*"],
+    "/api/rrhh/nominas/historial/**/verificar": [
+      "./node_modules/pdfkit/js/data/**/*",
+    ],
   },
   async headers() {
     return [
