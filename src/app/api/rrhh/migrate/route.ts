@@ -95,15 +95,9 @@ const EMPLEADOS: EmpleadoSeed[] = [
   // ── Personal Mirelus
   //    Javi: único activo en horarios. Mantenimiento. h_extra_diaria = 0.5 h (ver §5.5).
   { id: "javier",  nombre: "Javier M.", nombre_formal_nomina: "Martel, Javier",  categoria: "mantenimiento", empresa: "mirelus", farmaceutico: 0, hace_guardia: 1, complemento_mensual_eur: 60,  h_lab_complemento_mensual: 9,  tipo_calculo: "mirelus_mantenimiento",  h_extras_fijas_mes: 4, h_extras_fijas_semana: 0, h_extra_diaria: 0.5, descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 14, departamento: "optica",    ia: 18,   fa: 34,   ib: null, fb: null, tipo_horario: "continuo" },
-  //    Tere: limpieza fija 8 h/mes. NO aparece en planning (activo=0) pero SÍ en vacaciones y nómina.
-  //    NOTA: h_lab_complemento_mensual=8 es un overload semántico del campo (originalmente
-  //    pensado para "horas laborables asociadas al complemento mensual" de farmacéuticos/auxiliares).
-  //    En el caso de Tere no hay complemento (0€) pero el campo se reutiliza para guardar sus
-  //    horas fijas mensuales. Decidido así en sesión 5 (2026-04-06) por pragmatismo: es el único
-  //    caso borde y ya se renombró esta columna en sesión 2. El engine de nómina debe leer el
-  //    campo como "horas fijas al mes" cuando tipo_calculo = 'mirelus_limpieza_fija'.
-  //    Ver nominas-rrhh.md §3 — nota overload.
-  { id: "teresa",  nombre: "M. Teresa", nombre_formal_nomina: "Santana, M Teresa", categoria: "limpieza",   empresa: "mirelus", farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 8,  tipo_calculo: "mirelus_limpieza_fija",  h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 16, departamento: "otro",      ia: 17,   fa: 24,   ib: null, fb: null, tipo_horario: "continuo" },
+  //    Tere: limpieza fija 8 h extras al mes. NO aparece en planning (activo=0) pero SÍ en vacaciones y nómina.
+  //    Confirmado por Beatriz 2026-04-07: son 8 horas extras fijas al mes → h_extras_fijas_mes=8.
+  { id: "teresa",  nombre: "M. Teresa", nombre_formal_nomina: "Santana, M Teresa", categoria: "limpieza",   empresa: "mirelus", farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: "mirelus_limpieza_fija",  h_extras_fijas_mes: 8, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 16, departamento: "otro",      ia: 17,   fa: 24,   ib: null, fb: null, tipo_horario: "continuo" },
   //    Dolores: suplente de Tere en sus vacaciones. Creada en sesión 5. Los meses que no sustituye aparece con 0 h.
   { id: "dolores", nombre: "Dolores",   nombre_formal_nomina: "Estupiñán, Dolores", categoria: "limpieza", empresa: "mirelus", farmaceutico: 0, hace_guardia: 0, complemento_mensual_eur: 0,   h_lab_complemento_mensual: 0,  tipo_calculo: "mirelus_suplente",       h_extras_fijas_mes: 0, h_extras_fijas_semana: 0, h_extra_diaria: 0,   descuenta_media_en_guardia: 0, incluir_en_nomina: 1, incluir_vacaciones: 1, orden: 17, departamento: "otro",      ia: null, fa: null, ib: null, fb: null, tipo_horario: "continuo" },
   //    Luisa: nómina fija ya conocida por la gestoría. Solo archivar — el motor devuelve valores fijos.

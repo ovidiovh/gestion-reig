@@ -311,16 +311,15 @@ function calcMirelusMantenimiento(
 }
 
 // ─── §5.7 Mirelus limpieza fija (Tere) ─────────────────────────────────────
-// h_lab_complemento_mensual = 8 (overload semántico: son "horas fijas al mes",
-// NO "horas asociadas a complemento"). Ver §3 nota overload.
+// 8 horas extras fijas al mes → h_extras_fijas_mes = 8. Sin complemento.
 function calcMirelusLimpiezaFija(
   emp: EmpleadoNomina,
   _ctx: ContextoMes
 ): ResultadoNomina {
   const r = resultadoBase(emp);
-  r.laborables = emp.h_lab_complemento_mensual; // 8
+  r.laborables = emp.h_extras_fijas_mes; // 8
   r.complementos_eur = 0;
-  r.desglose = { fijas_mes: emp.h_lab_complemento_mensual };
+  r.desglose = { extras_fijas_mes: emp.h_extras_fijas_mes };
   return r;
 }
 

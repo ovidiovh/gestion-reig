@@ -27,7 +27,7 @@ export interface EmpleadoNomina {
   cubre_nocturna: number;
   tipo_calculo: TipoCalculoNomina | null;
   complemento_mensual_eur: number;
-  h_lab_complemento_mensual: number; // ver overload §3 para mirelus_limpieza_fija
+  h_lab_complemento_mensual: number;
   h_extras_fijas_mes: number;
   h_extras_fijas_semana: number;
   h_extra_diaria: number;
