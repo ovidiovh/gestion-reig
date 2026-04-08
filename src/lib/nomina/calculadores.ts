@@ -102,14 +102,21 @@ function calcAuxiliarRotativo(
   // genera ninguna hora extra. Los únicos con horario alterado en L-V son
   // María (mañana + 21:00) y Javi (20:00-23:00), y ninguno es auxiliar.
   // Confirmado por Ovidio 2026-04-07 (sesión nóminas).
+  //
+  // Sesión 10i (2026-04-08, Beatriz): además se descartan las guardias que
+  // caen dentro de un tramo de IT larga / vacaciones / ausencia descontable
+  // — regla §7.1 de ausencias-y-permisos.md: "las guardias festivas/fin de
+  // semana no cubiertas no se pagan".
   const guardiasExtra = ctx.guardias_empleado.filter(
-    (g) => g.es_festivo || g.dow === 0 || g.dow === 6
+    (g) =>
+      (g.es_festivo || g.dow === 0 || g.dow === 6) &&
+      !ctx.fechas_descontables.has(g.fecha)
   );
 
-  // Sesión 10h (2026-04-08, Beatriz): las horas reales de guardia de fin
-  // de semana / festivo SUMAN encima de `fijas + extrasMes`, no absorbidas.
+  // Sesión 10h: las horas reales de guardia de fin de semana / festivo SUMAN
+  // encima de `fijas + extrasMes`, no absorbidas.
   // Ejemplo Ani abril: 9 fijas + 4 extras + 5 sábado 4 = 18 laborables.
-  // Las guardias en día festivo van al cubo `festivas`, las de sábado/domingo
+  // Las guardias en día festivo van al cubo `festivos`, las de sábado/domingo
   // no festivo van al cubo `laborables`.
   let horasGuardiaLab = 0;
   let horasGuardiaFest = 0;
@@ -119,7 +126,24 @@ function calcAuxiliarRotativo(
     else horasGuardiaLab += h;
   }
 
-  r.laborables = fijas + extrasMes + horasGuardiaLab;
+  // Sesión 10i (2026-04-08): prorrateo del bloque 9+4 por IT larga u otras
+  // ausencias descontables. Factor = días L-V trabajados / días L-V del mes
+  // (excluyendo festivos del calendario). Si no hay ausencia, factor = 1.
+  const diasLVMes = Math.max(
+    1,
+    ctx.dias_laborables_calendario - ctx.dias_laborables_festivos
+  );
+  const diasLVTrabajados = Math.max(
+    0,
+    ctx.dias_laborables_calendario -
+      ctx.dias_laborables_festivos -
+      ctx.dias_vacaciones_empleado_labs
+  );
+  const factorPresencia = diasLVTrabajados / diasLVMes;
+  const fijasProrrateadas = fijas * factorPresencia;
+  const extrasProrrateados = extrasMes * factorPresencia;
+
+  r.laborables = fijasProrrateadas + extrasProrrateados + horasGuardiaLab;
   r.festivos = horasGuardiaFest;
 
   const guardiasDetalle: GuardiaDesglose[] = guardiasExtra.map((g) => ({
@@ -168,8 +192,11 @@ function calcFarmaceuticoDiurno(
   const r = resultadoBase(emp);
   const fijas = emp.h_lab_complemento_mensual; // 19
 
+  // Sesión 10i: filtrar guardias dentro de tramo IT larga / ausencia descontable.
   const guardiasExtra = ctx.guardias_empleado.filter(
-    (g) => g.es_festivo || g.dow === 0 || g.dow === 6
+    (g) =>
+      (g.es_festivo || g.dow === 0 || g.dow === 6) &&
+      !ctx.fechas_descontables.has(g.fecha)
   );
 
   let horasGuardiaLab = 0;
@@ -180,7 +207,23 @@ function calcFarmaceuticoDiurno(
     else horasGuardiaLab += h;
   }
 
-  r.laborables = fijas + horasGuardiaLab;
+  // Sesión 10i: prorratear las 19 h fijas por factor de presencia (días L-V
+  // trabajados / días L-V del mes) cuando hay IT larga u otra ausencia que
+  // reduce base. Si no hay, factor = 1.
+  const diasLVMes = Math.max(
+    1,
+    ctx.dias_laborables_calendario - ctx.dias_laborables_festivos
+  );
+  const diasLVTrabajados = Math.max(
+    0,
+    ctx.dias_laborables_calendario -
+      ctx.dias_laborables_festivos -
+      ctx.dias_vacaciones_empleado_labs
+  );
+  const factorPresencia = diasLVTrabajados / diasLVMes;
+  const fijasProrrateadas = fijas * factorPresencia;
+
+  r.laborables = fijasProrrateadas + horasGuardiaLab;
   r.festivos = horasGuardiaFest;
   r.complementos_eur = emp.complemento_mensual_eur; // 280
 

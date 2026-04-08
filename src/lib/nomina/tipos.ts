@@ -82,6 +82,15 @@ export interface ContextoMes {
    *    directamente NO se reducen — solo el fijo de base.
    */
   dias_vacaciones_empleado_labs: number;
+  /**
+   * Conjunto de fechas naturales (YYYY-MM-DD) dentro del mes en las que el
+   * empleado está de ausencia que reduce base salarial (vac, ap, comp,
+   * permiso_parental, IT larga ≥7 días). Incluye sábados/domingos/festivos
+   * si caen en el rango de la ausencia — se usa para descartar guardias de
+   * fin de semana que el empleado no llegó a cubrir (sesión 10h, regla
+   * §7.1 de ausencias-y-permisos.md).
+   */
+  fechas_descontables: Set<string>;
   /** Viernes del mes que el empleado está de vacaciones (Zule). */
   viernes_vacaciones_empleado: number;
   /**

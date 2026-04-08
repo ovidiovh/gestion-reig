@@ -210,6 +210,7 @@ export function contextoPara(
     viernes_mes: datos.viernes_mes,
     viernes_festivos_mes: datos.viernes_festivos_mes,
     dias_vacaciones_empleado_labs: 0,
+    fechas_descontables: new Set<string>(),
     viernes_vacaciones_empleado: 0,
     notas_ausencias: [],
     guardias_empleado: [],
@@ -256,10 +257,14 @@ export function contextoPara(
 
     if (!descuenta) continue;
 
-    // Interseccionar con el mes y contar días L-V descontables
+    // Interseccionar con el mes y contar días L-V descontables + registrar
+    // TODAS las fechas naturales descontables (incluidos sábados/domingos/
+    // festivos) en fechas_descontables, para que los calculadores puedan
+    // descartar guardias de fin de semana que el empleado no llegó a cubrir.
     const ini = a.fecha_inicio > mesIni ? a.fecha_inicio : mesIni;
     const fin = a.fecha_fin < mesFin ? a.fecha_fin : mesFin;
     for (let f = ini; f <= fin; f = siguienteDia(f)) {
+      ctx.fechas_descontables.add(f);
       if (esDiaLV(f)) {
         diasDescuentoLV++;
         if (dowUTC(f) === 5) viernesDescuento++;
