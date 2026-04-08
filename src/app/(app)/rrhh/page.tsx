@@ -53,13 +53,13 @@ export default function RRHHPage() {
       fetch("/api/rrhh/empleados").then(r => r.json()),
       fetch("/api/rrhh/festivos?year=2026").then(r => r.json()),
       fetch("/api/rrhh/guardias?year=2026").then(r => r.json()),
-      fetch("/api/rrhh/vacaciones?year=2026").then(r => r.json()),
+      fetch("/api/rrhh/ausencias?year=2026").then(r => r.json()),
       fetch("/api/rrhh/guardias/stats?year=2026").then(r => r.json()),
     ]);
     if (e.ok) setEmpleados(e.empleados);
     if (f.ok) setFestivos(f.festivos);
     if (g.ok) setGuardias(g.guardias);
-    if (v.ok) setVacaciones(v.vacaciones);
+    if (v.ok) setVacaciones(v.ausencias);
     if (gs.ok) setGuardiaStats(gs.stats);
     return e.ok;
   }, []);
@@ -161,29 +161,29 @@ export default function RRHHPage() {
     );
   };
 
-  // ── Vacaciones handlers ────────────────────────────────────────────────────
+  // ── Ausencias handlers (antiguas "vacaciones") ─────────────────────────────
   const addVacacion = async (empId: string, desde: string, hasta: string, estado: string, tipo: string) => {
-    await fetch("/api/rrhh/vacaciones", {
+    await fetch("/api/rrhh/ausencias", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ empleado_id: empId, fecha_inicio: desde, fecha_fin: hasta, estado, tipo }),
     });
-    const d = await fetch("/api/rrhh/vacaciones?year=2026").then(r => r.json());
-    if (d.ok) setVacaciones(d.vacaciones);
+    const d = await fetch("/api/rrhh/ausencias?year=2026").then(r => r.json());
+    if (d.ok) setVacaciones(d.ausencias);
   };
 
   const updateEstadoVac = async (id: number, estado: string) => {
-    await fetch(`/api/rrhh/vacaciones/${id}`, {
-      method: "PUT",
+    await fetch(`/api/rrhh/ausencias?id=${id}`, {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ estado }),
     });
-    const d = await fetch("/api/rrhh/vacaciones?year=2026").then(r => r.json());
-    if (d.ok) setVacaciones(d.vacaciones);
+    const d = await fetch("/api/rrhh/ausencias?year=2026").then(r => r.json());
+    if (d.ok) setVacaciones(d.ausencias);
   };
 
   const deleteVacacion = async (id: number) => {
-    await fetch(`/api/rrhh/vacaciones/${id}`, { method: "DELETE" });
+    await fetch(`/api/rrhh/ausencias?id=${id}`, { method: "DELETE" });
     setVacaciones(prev => prev.filter(v => v.id !== id));
   };
 

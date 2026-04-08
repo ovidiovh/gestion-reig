@@ -1,7 +1,68 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Empleado, Vacacion, GuardiaStats, BancoHoras, GREEN, GREEN_DARK, fmtDate, daysBetween } from "./types";
+import { Empleado, Vacacion, BolsaVacaciones, GuardiaStats, BancoHoras, GREEN, GREEN_DARK, fmtDate, daysBetween } from "./types";
+
+// Tipos agrupados para el selector de alta de ausencia.
+// El motor de nómina (src/lib/nomina/contexto.ts) clasifica así:
+//   - TIEMPO_LIBRE → descuenta base (vac, ap, comp, permiso_parental)
+//   - IT           → solo descuenta si ≥7 días
+//   - RETRIBUIDO   → NO descuenta base (permisos del art. 37 ET)
+//   - NO_RETRIB    → descuenta base completa
+const GRUPOS_TIPO_AUSENCIA: Array<{
+  label: string;
+  color: string;
+  opciones: Array<{ value: string; label: string }>;
+}> = [
+  {
+    label: "Tiempo libre",
+    color: "#15803d",
+    opciones: [
+      { value: "vac",              label: "Vacaciones" },
+      { value: "ap",               label: "Asuntos propios" },
+      { value: "comp",             label: "Comp. guardia" },
+      { value: "permiso_parental", label: "Permiso parental (no retrib.)" },
+    ],
+  },
+  {
+    label: "Incapacidad temporal (solo ≥7 días descuenta)",
+    color: "#b91c1c",
+    opciones: [
+      { value: "it_enf",                  label: "IT enfermedad común" },
+      { value: "it_acc",                  label: "IT accidente no laboral" },
+      { value: "it_acc_laboral",          label: "IT accidente laboral" },
+      { value: "it_enfermedad_profesional", label: "IT enfermedad profesional" },
+    ],
+  },
+  {
+    label: "Permisos retribuidos (art. 37 ET, no descuentan)",
+    color: "#7c3aed",
+    opciones: [
+      { value: "matrimonio",      label: "Matrimonio / pareja de hecho" },
+      { value: "fallecimiento",   label: "Fallecimiento familiar" },
+      { value: "hospitalizacion", label: "Hospitalización familiar" },
+      { value: "mudanza",         label: "Mudanza" },
+      { value: "deber_publico",   label: "Deber inexcusable público" },
+      { value: "examen_prenatal", label: "Examen prenatal" },
+      { value: "lactancia",       label: "Lactancia" },
+      { value: "consulta_medica", label: "Consulta médica" },
+    ],
+  },
+  {
+    label: "Otras",
+    color: "#6b7280",
+    opciones: [
+      { value: "no_retribuido", label: "Permiso no retribuido" },
+      { value: "otro",          label: "Otro" },
+    ],
+  },
+];
+
+const LABEL_TIPO: Record<string, string> = (() => {
+  const m: Record<string, string> = {};
+  for (const g of GRUPOS_TIPO_AUSENCIA) for (const o of g.opciones) m[o.value] = o.label;
+  return m;
+})();
 
 interface Props {
   empleados: Empleado[];
@@ -151,8 +212,11 @@ export default function VacacionesTab({
   const [desde, setDesde]     = useState("");
   const [hasta, setHasta]     = useState("");
   const [estado, setEstado]   = useState("pend");
-  const [tipoAdd, setTipoAdd] = useState<"vac" | "comp" | "ap">("vac");
+  const [tipoAdd, setTipoAdd] = useState<string>("vac");
   const [saving, setSaving]   = useState(false);
+
+  // ── Bolsa de vacaciones arrastradas (art. 38.3 ET) ─────────────────────────
+  const [bolsas, setBolsas] = useState<BolsaVacaciones[]>([]);
 
   // ── Banco de horas ─────────────────────────────────────────────────────────
   const [bancoHoras, setBancoHoras]     = useState<BancoHoras[]>([]);
@@ -164,10 +228,14 @@ export default function VacacionesTab({
   const [savingBH, setSavingBH]         = useState(false);
 
   useEffect(() => {
-    if (!selEmp) return;
+    if (!selEmp) { setBolsas([]); return; }
     fetch(`/api/rrhh/banco-horas?empleado_id=${selEmp}`)
       .then(r => r.json())
       .then(d => { if (d.ok) setBancoHoras(d.entradas); })
+      .catch(() => undefined);
+    fetch(`/api/rrhh/bolsa-vacaciones?empleado_id=${selEmp}&estado=activa`)
+      .then(r => r.json())
+      .then(d => { if (d.ok) setBolsas(d.bolsas); })
       .catch(() => undefined);
   }, [selEmp]);
 
@@ -229,6 +297,28 @@ export default function VacacionesTab({
           </span>
         </div>
 
+        {/* Alerta roja desde el 1 de noviembre si quedan vacaciones pendientes */}
+        {(() => {
+          const hoy = new Date();
+          const limite = new Date(hoy.getFullYear(), 10, 1); // 1 noviembre
+          if (hoy < limite) return null;
+          if (st.pend + st.conf + st.avail <= 0) return null;
+          const pendDias = st.avail + st.pend;
+          if (pendDias <= 0) return null;
+          return (
+            <div style={{
+              padding: "10px 14px", background: "#fef2f2", border: "1px solid #fecaca",
+              borderLeft: "4px solid #ef4444", borderRadius: 8, marginBottom: 12,
+              fontSize: 11, color: "#991b1b",
+            }}>
+              <b>⚠ Atención:</b> estamos en el último tramo del año y a {emp.nombre} le quedan{" "}
+              <b>{pendDias} días</b> sin disfrutar. Recuerda que las vacaciones del año en curso
+              caducan el 31 de diciembre salvo casos de IT, riesgo durante el embarazo o cuidado
+              del menor (art. 38.3 ET), que se pasan a la Bolsa de arrastres.
+            </div>
+          );
+        })()}
+
         {/* Vacaciones ordinarias */}
         <div style={{ fontSize: 10, fontWeight: 600, color: "#666", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Vacaciones ordinarias (30 días)</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6, marginBottom: 10 }}>
@@ -252,6 +342,48 @@ export default function VacacionesTab({
           <div style={{ width: `${(st.conf / 30) * 100}%`, background: "#3b82f6" }} />
           <div style={{ width: `${(st.pend / 30) * 100}%`, background: "#f59e0b" }} />
         </div>
+
+        {/* Bolsa de vacaciones arrastradas (art. 38.3 ET) */}
+        {bolsas.length > 0 && (
+          <div style={{ padding: "14px 16px", background: "#fffbeb", borderRadius: 8, border: "1px solid #fde68a", marginBottom: 16 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: "#92400e", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>
+              Bolsa de vacaciones arrastradas (art. 38.3 ET)
+            </div>
+            {(() => {
+              const totalDias   = bolsas.reduce((s, b) => s + b.dias, 0);
+              const totalUsados = bolsas.reduce((s, b) => s + b.dias_usados, 0);
+              const disponibles = totalDias - totalUsados;
+              return (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginBottom: 8 }}>
+                  {([
+                    ["Total arrastrados", totalDias,   "#92400e"],
+                    ["Ya disfrutados",    totalUsados, "#6b7280"],
+                    ["Disponibles",       disponibles, disponibles > 0 ? "#b45309" : "#9ca3af"],
+                  ] as [string, number, string][]).map(([l, v, c]) => (
+                    <div key={l} style={{ textAlign: "center", padding: "8px 4px", background: "#fff", borderRadius: 8, border: "1px solid #fde68a" }}>
+                      <div style={{ fontSize: 20, fontWeight: 700, color: c, fontFamily: "'JetBrains Mono', monospace" }}>{v}</div>
+                      <div style={{ fontSize: 8, color: "#6b7280", marginTop: 2 }}>{l}</div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+            <div style={{ marginTop: 6 }}>
+              {bolsas.map(b => (
+                <div key={b.id} style={{ fontSize: 10, color: "#78350f", padding: "3px 0", borderTop: "1px dashed #fde68a" }}>
+                  <b>{b.anio_origen}</b> · {b.dias} días ({b.motivo ?? "arrastre"})
+                  {b.dias_usados > 0 && <span style={{ color: "#6b7280" }}> · usados {b.dias_usados}</span>}
+                  {b.caduca_en && <span style={{ color: "#6b7280" }}> · caduca {b.caduca_en}</span>}
+                  {b.notas && <span style={{ color: "#9ca3af" }}> · {b.notas}</span>}
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize: 9, color: "#92400e", marginTop: 8 }}>
+              Solo pueden arrastrarse días no disfrutados por IT, riesgo durante el embarazo,
+              lactancia natural o cuidado del menor afectado por cáncer u otra enfermedad grave.
+            </div>
+          </div>
+        )}
 
         {/* Asuntos propios (2 días/año — Convenio Oficinas de Farmacia) */}
         <div style={{ padding: "14px 16px", background: "#faf5ff", borderRadius: 8, border: "1px solid #e9d5ff", marginBottom: 16 }}>
@@ -335,11 +467,17 @@ export default function VacacionesTab({
         {showAdd && (
           <div style={{ padding: 12, background: "#f9fafb", borderRadius: 8, border: "1px solid #e5e7eb", marginBottom: 10 }}>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const, alignItems: "center" }}>
-              <select value={tipoAdd} onChange={e => setTipoAdd(e.target.value as "vac" | "comp" | "ap")}
-                style={{ border: "1px solid #ddd", borderRadius: 4, padding: "3px 6px", fontSize: 10 }}>
-                <option value="vac">Vacaciones</option>
-                <option value="ap">Asuntos propios</option>
-                {cubreNocturna && <option value="comp">Comp. guardia</option>}
+              <select value={tipoAdd} onChange={e => setTipoAdd(e.target.value)}
+                style={{ border: "1px solid #ddd", borderRadius: 4, padding: "3px 6px", fontSize: 10, minWidth: 200 }}>
+                {GRUPOS_TIPO_AUSENCIA.map(grupo => (
+                  <optgroup key={grupo.label} label={grupo.label}>
+                    {grupo.opciones
+                      .filter(o => o.value !== "comp" || cubreNocturna)
+                      .map(o => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                  </optgroup>
+                ))}
               </select>
               <label style={{ fontSize: 10, color: "#666" }}>
                 Desde:&nbsp;
@@ -351,12 +489,12 @@ export default function VacacionesTab({
                 <input type="date" value={hasta} onChange={e => setHasta(e.target.value)}
                   style={{ border: "1px solid #ddd", borderRadius: 4, padding: "3px 6px", fontSize: 10 }} />
               </label>
-              {(tipoAdd === "vac" || tipoAdd === "ap") && (
+              {tipoAdd !== "comp" && (
                 <select value={estado} onChange={e => setEstado(e.target.value)}
                   style={{ border: "1px solid #ddd", borderRadius: 4, padding: "3px 6px", fontSize: 10 }}>
-                  <option value="pend">Pedidas</option>
-                  <option value="conf">Confirmadas</option>
-                  <option value="done">Disfrutadas</option>
+                  <option value="pend">Pendiente</option>
+                  <option value="conf">Confirmada</option>
+                  <option value="done">Disfrutada</option>
                 </select>
               )}
               <button onClick={handleAdd} disabled={saving || !desde || !hasta}
@@ -397,6 +535,16 @@ export default function VacacionesTab({
             <div style={{ fontSize: 9, fontWeight: 600, color: "#999", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Compensatorios guardia</div>
             {empVacs.filter(v => v.tipo === "comp").map(v => (
               <VacRow key={v.id} v={v} onUpdate={onUpdateEstado} onDelete={onDeleteVacacion} isComp />
+            ))}
+          </div>
+        )}
+
+        {/* Otras ausencias: IT, permisos retribuidos, etc. */}
+        {empVacs.filter(v => !["vac", "ap", "comp"].includes(v.tipo)).length > 0 && (
+          <div style={{ marginTop: 8 }}>
+            <div style={{ fontSize: 9, fontWeight: 600, color: "#b91c1c", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Otras ausencias (IT, permisos)</div>
+            {empVacs.filter(v => !["vac", "ap", "comp"].includes(v.tipo)).map(v => (
+              <VacRow key={v.id} v={v} onUpdate={onUpdateEstado} onDelete={onDeleteVacacion} tipoLabel={LABEL_TIPO[v.tipo] ?? v.tipo} />
             ))}
           </div>
         )}
@@ -606,15 +754,18 @@ export default function VacacionesTab({
   );
 }
 
-function VacRow({ v, onUpdate, onDelete, isComp = false, isAP = false }: {
+function VacRow({ v, onUpdate, onDelete, isComp = false, isAP = false, tipoLabel }: {
   v: Vacacion;
   onUpdate: (id: number, estado: string) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
   isComp?: boolean;
   isAP?: boolean;
+  tipoLabel?: string;
 }) {
-  const color = isComp ? GREEN : isAP ? "#7c3aed" : STATUS_COLOR[v.estado];
-  const label = isComp ? "Compensatorio" : isAP ? STATUS_LABEL[v.estado] : STATUS_LABEL[v.estado];
+  const color = tipoLabel
+    ? "#b91c1c"
+    : isComp ? GREEN : isAP ? "#7c3aed" : STATUS_COLOR[v.estado];
+  const label = tipoLabel ?? (isComp ? "Compensatorio" : STATUS_LABEL[v.estado]);
 
   return (
     <div style={{

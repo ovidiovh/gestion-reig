@@ -107,15 +107,56 @@ export interface GuardiaSlot {
   empresa: string;
 }
 
-export interface Vacacion {
+// Tipos de ausencia soportados por el motor de nómina y el módulo RRHH.
+// Ver src/lib/nomina/contexto.ts para la clasificación (descuentan / IT / retribuidas).
+export type TipoAusencia =
+  // Tiempo libre (descuenta base salarial)
+  | "vac" | "ap" | "comp" | "permiso_parental"
+  // Incapacidad temporal (solo descuenta si ≥7 días)
+  | "it_enf" | "it_acc" | "it_acc_laboral" | "it_enfermedad_profesional"
+  // Permisos retribuidos (no descuentan base)
+  | "matrimonio" | "fallecimiento" | "hospitalizacion" | "mudanza"
+  | "deber_publico" | "examen_prenatal" | "lactancia" | "consulta_medica"
+  // Otros
+  | "no_retribuido" | "otro";
+
+export interface Ausencia {
   id: number;
   empleado_id: string;
   fecha_inicio: string;
   fecha_fin: string;
+  hora_inicio: number | null;
+  hora_fin: number | null;
+  tipo: TipoAusencia;
   estado: "pend" | "conf" | "done";
-  tipo: "vac" | "comp" | "ap";
+  retribuida: number;
+  bolsa_id: number | null;
+  banco_horas_id: number | null;
+  notas: string | null;
+  created_at?: string;
   nombre: string;
   farmaceutico: number;
+  empresa?: "reig" | "mirelus";
+}
+
+// Alias temporal mantenido para no romper imports existentes mientras
+// se migra la UI. Usar `Ausencia` en código nuevo.
+export type Vacacion = Ausencia;
+
+export interface BolsaVacaciones {
+  id: number;
+  empleado_id: string;
+  anio_origen: number;
+  dias: number;
+  dias_usados: number;
+  motivo: string | null;
+  estado: "activa" | "usada" | "caducada";
+  caduca_en: string | null;
+  notas: string | null;
+  created_at?: string;
+  nombre?: string;
+  farmaceutico?: number;
+  empresa?: "reig" | "mirelus";
 }
 
 export interface TurnoConfig {
