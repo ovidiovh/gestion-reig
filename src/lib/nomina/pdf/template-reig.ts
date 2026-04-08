@@ -2,14 +2,18 @@
 //
 // Diseño "corporativo light": cabecera con banda verde Reig, título y mes,
 // línea de "Días trabajados", tabla idéntica en estructura a la de Mirelus
-// (7 columnas: Empleado · Laborables · Noct.lab · Festivos · Noct.fest ·
-// Complemento · Notas) con el header en verde corporativo.
+// (7 columnas: Empleado · Lab. · N.lab. · Fest. · N.fest. · Compl. · Notas)
+// con el header en verde corporativo.
 //
 // Columna "Notas" añadida en sesión 10 (2026-04-08) para que la gestoría
 // vea de un vistazo las ausencias del mes que NO son vacaciones ordinarias
 // (IT, matrimonio, fallecimiento, hospitalización, etc.). Los tipos
 // vac/ap/comp NO salen en Notas porque ya se reflejan en los huecos del
 // cálculo de laborables. Ver ausencias-y-permisos.md §7 y §5.
+//
+// Sesión 10c (2026-04-08): los encabezados pasan a abreviaturas para que
+// no se trunquen, ganamos ancho en "Notas" y se añade una leyenda al pie
+// explicando cada abreviatura. Widths: 115/40/45/40/45/55/155 = 495 (A4).
 //
 // Recibe el ResumenMes del motor (src/lib/nomina/engine.ts) y devuelve un
 // Buffer con el PDF listo para descargar o archivar.
@@ -106,8 +110,19 @@ export function renderReigPDF(resumen: ResumenMes): Promise<Buffer> {
       // ── 3. Tabla ───────────────────────────────────────────────────
       drawTabla(doc, resumen.resultados_farmacia);
 
-      // ── 4. Pie ─────────────────────────────────────────────────────
-      doc.moveDown(2);
+      // ── 4. Leyenda de abreviaturas ─────────────────────────────────
+      doc.moveDown(0.8);
+      doc.font(FONT_REGULAR).fontSize(8).fillColor("#555555");
+      doc.text(
+        "Lab. = Días laborables   ·   N.lab. = Noches en día laborable   ·   " +
+        "Fest. = Días festivos   ·   N.fest. = Noches en día festivo   ·   " +
+        "Compl. = Complemento salarial mensual (€)",
+        MARGEN, doc.y,
+        { width: anchoUtil, align: "left" }
+      );
+
+      // ── 5. Pie ─────────────────────────────────────────────────────
+      doc.moveDown(1.4);
       doc.font(FONT_REGULAR).fontSize(8).fillColor("#666666");
       const ahora = new Date().toLocaleString("es-ES", {
         day: "2-digit", month: "2-digit", year: "numeric",
@@ -135,14 +150,16 @@ interface Columna {
 }
 
 function drawTabla(doc: InstanceType<typeof PDFDocument>, filas: ResultadoNomina[]) {
+  // Widths ajustados para que NADA se trunque y la columna Notas tenga
+  // espacio holgado (155pt ≈ 30 caracteres). Total = 495 = anchoUtil A4.
   const cols: Columna[] = [
-    { label: "Empleado",     width: 120, align: "left",  get: (r) => nombreEmpleado(r) },
-    { label: "Laborables",   width: 55,  align: "right", get: (r) => fmtNum(r.laborables) },
-    { label: "Noct. lab.",   width: 50,  align: "right", get: (r) => fmtNum(r.nocturnas_laborables) },
-    { label: "Festivos",     width: 50,  align: "right", get: (r) => fmtNum(r.festivos) },
-    { label: "Noct. fest.",  width: 50,  align: "right", get: (r) => fmtNum(r.nocturnas_festivas) },
-    { label: "Complemento",  width: 60,  align: "right", get: (r) => fmtEur(r.complementos_eur) },
-    { label: "Notas",        width: 110, align: "left",  get: (r) => r.notas_mes },
+    { label: "Empleado", width: 115, align: "left",  get: (r) => nombreEmpleado(r) },
+    { label: "Lab.",     width: 40,  align: "right", get: (r) => fmtNum(r.laborables) },
+    { label: "N.lab.",   width: 45,  align: "right", get: (r) => fmtNum(r.nocturnas_laborables) },
+    { label: "Fest.",    width: 40,  align: "right", get: (r) => fmtNum(r.festivos) },
+    { label: "N.fest.",  width: 45,  align: "right", get: (r) => fmtNum(r.nocturnas_festivas) },
+    { label: "Compl.",   width: 55,  align: "right", get: (r) => fmtEur(r.complementos_eur) },
+    { label: "Notas",    width: 155, align: "left",  get: (r) => r.notas_mes },
   ];
 
   const startX = MARGEN;

@@ -89,8 +89,22 @@ export function renderMirelusPDF(resumen: ResumenMes): Promise<Buffer> {
       const filas = resumen.resultados_mirelus;
       drawTabla(doc, filas);
 
-      // ── 3. Pie ─────────────────────────────────────────────────────
-      doc.moveDown(2);
+      // ── 3. Leyenda de abreviaturas ─────────────────────────────────
+      doc.moveDown(0.8);
+      {
+        const anchoUtilL = doc.page.width - 2 * MARGEN;
+        doc.font(FONT_REGULAR).fontSize(8).fillColor("#555555");
+        doc.text(
+          "Lab. = Días laborables   ·   N.lab. = Noches en día laborable   ·   " +
+          "Fest. = Días festivos   ·   N.fest. = Noches en día festivo   ·   " +
+          "Compl. = Complemento salarial mensual (€)",
+          MARGEN, doc.y,
+          { width: anchoUtilL, align: "left" }
+        );
+      }
+
+      // ── 4. Pie ─────────────────────────────────────────────────────
+      doc.moveDown(1.4);
       doc.font(FONT_REGULAR).fontSize(8).fillColor("#666666");
       const ahora = new Date().toLocaleString("es-ES", {
         day: "2-digit", month: "2-digit", year: "numeric",
@@ -122,14 +136,16 @@ function drawTabla(doc: InstanceType<typeof PDFDocument>, filas: ResultadoNomina
   // Columna "Notas" añadida en sesión 10 (2026-04-08) — ver template-reig.ts
   // para el razonamiento detallado. Mantiene espejo de anchos con el PDF de
   // Reig para que ambas hojas entren en A4 portrait.
+  // Widths espejo del template-reig (sesión 10c): abreviaturas para que
+  // nada se trunque y más aire para la columna Notas. Total = 495 (A4).
   const cols: Columna[] = [
-    { label: "Empleado",     width: 120, align: "left",  get: (r) => nombreEmpleado(r) },
-    { label: "Laborables",   width: 55,  align: "right", get: (r) => fmtNum(r.laborables) },
-    { label: "Noct. lab.",   width: 50,  align: "right", get: (r) => fmtNum(r.nocturnas_laborables) },
-    { label: "Festivos",     width: 50,  align: "right", get: (r) => fmtNum(r.festivos) },
-    { label: "Noct. fest.",  width: 50,  align: "right", get: (r) => fmtNum(r.nocturnas_festivas) },
-    { label: "Complemento",  width: 60,  align: "right", get: (r) => fmtEur(r.complementos_eur) },
-    { label: "Notas",        width: 110, align: "left",  get: (r) => r.notas_mes },
+    { label: "Empleado", width: 115, align: "left",  get: (r) => nombreEmpleado(r) },
+    { label: "Lab.",     width: 40,  align: "right", get: (r) => fmtNum(r.laborables) },
+    { label: "N.lab.",   width: 45,  align: "right", get: (r) => fmtNum(r.nocturnas_laborables) },
+    { label: "Fest.",    width: 40,  align: "right", get: (r) => fmtNum(r.festivos) },
+    { label: "N.fest.",  width: 45,  align: "right", get: (r) => fmtNum(r.nocturnas_festivas) },
+    { label: "Compl.",   width: 55,  align: "right", get: (r) => fmtEur(r.complementos_eur) },
+    { label: "Notas",    width: 155, align: "left",  get: (r) => r.notas_mes },
   ];
 
   const startX = MARGEN;

@@ -25,6 +25,7 @@ interface MockArgs {
   noct_fest?: number;
   festivos?: number;
   complementos?: number;
+  notas?: string;
   tipo: ResultadoNomina["tipo_calculo"];
 }
 
@@ -40,7 +41,7 @@ function mock(a: MockArgs): ResultadoNomina {
     nocturnas_festivas: a.noct_fest ?? 0,
     festivos: a.festivos ?? 0,
     complementos_eur: a.complementos ?? 0,
-    notas_mes: "",
+    notas_mes: a.notas ?? "",
     desglose: {},
     warnings: [],
   };
@@ -51,10 +52,10 @@ function mock(a: MockArgs): ResultadoNomina {
 // 22 días laborables, sin festivos especiales en abril 2026.
 const farmacia: ResultadoNomina[] = [
   mock({ id: "yoli",   nombre: "Yoli",    formal: "REYES Gregoria",     empresa: "reig", laborables: 4,            tipo: "auxiliar_rotativo" }),
-  mock({ id: "dulce",  nombre: "Dulce",   formal: "MORALES Dulce",      empresa: "reig", laborables: 13, complementos: 30, tipo: "auxiliar_rotativo" }),
+  mock({ id: "dulce",  nombre: "Dulce",   formal: "MORALES Dulce",      empresa: "reig", laborables: 13, complementos: 30, notas: "Hospitalización 2-6 abr", tipo: "auxiliar_rotativo" }),
   mock({ id: "ani",    nombre: "Ani",     formal: "LORENZO Ana",        empresa: "reig", laborables: 13, complementos: 30, tipo: "auxiliar_rotativo" }),
   mock({ id: "noelia", nombre: "Noelia",  formal: "LORENZO Noelia",     empresa: "reig", laborables: 13, complementos: 30, tipo: "auxiliar_fijo_partido" }),
-  mock({ id: "leti",   nombre: "Leti",    formal: "Ruiz, Leticia",      empresa: "reig", laborables: 13, complementos: 30, tipo: "auxiliar_rotativo" }),
+  mock({ id: "leti",   nombre: "Leti",    formal: "Ruiz, Leticia",      empresa: "reig", laborables: 13, complementos: 30, notas: "IT enf. 8-14 abr (7 d)", tipo: "auxiliar_rotativo" }),
   mock({ id: "maria",  nombre: "María",   formal: "NARANJO María",      empresa: "reig", laborables: 19, noct_lab: 8, complementos: 180, tipo: "farmaceutico_nocturno" }),
   mock({ id: "julio",  nombre: "Julio",   formal: "AUYANET Julio",      empresa: "reig", laborables: 19, complementos: 280, tipo: "farmaceutico_diurno" }),
   mock({ id: "celia",  nombre: "Celia",   formal: "BAUBY, Celia",       empresa: "reig", laborables: 19, complementos: 280, tipo: "farmaceutico_diurno" }),
