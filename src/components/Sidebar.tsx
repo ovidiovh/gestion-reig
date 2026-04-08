@@ -106,7 +106,6 @@ const sections: NavSection[] = [
     collapsible: false,
     items: [
       { label: "Inicio", href: "/", activo: true, icon: icons.home },
-      { label: "Horarios / Guardias", href: "/rrhh/horarios", activo: true, icon: icons.calendar },
     ],
   },
   {
