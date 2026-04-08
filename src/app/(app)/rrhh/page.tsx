@@ -6,7 +6,7 @@ import {
   HorarioAsignacion,
   calcGuardDates, MESES, DIAS_SEMANA,
   GREEN, GREEN_DARK, GREEN_LIGHT,
-  toDateStr, getWeekStart,
+  toDateStr, getWeekStart, colorAusencia,
 } from "./types";
 import GuardiaPanel from "./GuardiaPanel";
 import VacacionesTab from "./VacacionesTab";
@@ -276,14 +276,17 @@ export default function RRHHPage() {
         {size === "full" && vacsH.slice(0, 2).map(v => {
           const emp = empleados.find(e => e.id === v.empleado_id);
           if (!emp) return null;
+          const col = colorAusencia(v.tipo, emp.farmaceutico === 1);
+          const esOtra = col.label !== "Vac.";
           return (
             <div key={v.id} style={{
               fontSize: 7, marginTop: 1, padding: "1px 3px", borderRadius: 3,
-              background: emp.farmaceutico ? "#fdecea" : "#dbeafe",
-              color: emp.farmaceutico ? "#c0392b" : "#1d4ed8",
+              background: col.bg,
+              color: col.fg,
+              fontWeight: esOtra ? 700 : 500,
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const,
             }}>
-              {emp.nombre}
+              {emp.nombre}{esOtra ? ` · ${col.label}` : ""}
             </div>
           );
         })}
@@ -306,10 +309,11 @@ export default function RRHHPage() {
             {vacsH.slice(0, 4).map(v => {
               const emp = empleados.find(e => e.id === v.empleado_id);
               if (!emp) return null;
+              const col = colorAusencia(v.tipo, emp.farmaceutico === 1);
               return (
                 <div key={v.id} style={{
                   width: 5, height: 5, borderRadius: "50%",
-                  background: emp.farmaceutico ? "#c0392b" : "#1d4ed8",
+                  background: col.fg,
                 }} />
               );
             })}
@@ -322,8 +326,10 @@ export default function RRHHPage() {
             position: "absolute" as const, bottom: 1, right: 1,
             width: 3, height: 3, borderRadius: "50%",
             background: (() => {
-              const emp = empleados.find(e => e.id === vacsH[0]?.empleado_id);
-              return emp?.farmaceutico ? "#c0392b" : "#1d4ed8";
+              const v0 = vacsH[0];
+              const emp = empleados.find(e => e.id === v0?.empleado_id);
+              if (!emp || !v0) return "#9ca3af";
+              return colorAusencia(v0.tipo, emp.farmaceutico === 1).fg;
             })(),
           }} />
         )}

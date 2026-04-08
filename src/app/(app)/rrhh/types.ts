@@ -143,6 +143,33 @@ export interface Ausencia {
 // se migra la UI. Usar `Ausencia` en código nuevo.
 export type Vacacion = Ausencia;
 
+// Color de la ausencia en calendario, grids y listados. Responde a dos
+// dimensiones: el TIPO (qué es) manda sobre el perfil (quién). Así IT y
+// permisos destacan respecto de vacaciones ordinarias.
+//   - IT                    → naranja-rojo fuerte (es una baja médica)
+//   - Permisos retribuidos  → morado
+//   - No retribuidos / otro → gris
+//   - Vac / ap / comp       → se mantiene el azul/rojo del perfil
+//                             (fuerte si farmacéutico, azul si auxiliar)
+export function colorAusencia(
+  tipo: string,
+  farmaceutico: boolean
+): { bg: string; fg: string; label: string } {
+  const IT = new Set(["it_enf", "it_enfermedad", "it_enfermedad_comun", "it_acc", "it_accidente", "it_accidente_no_laboral", "it_acc_laboral", "it_accidente_laboral", "it_enfermedad_profesional"]);
+  const PERMISO_RETRIB = new Set(["matrimonio", "fallecimiento", "hospitalizacion", "mudanza", "deber_publico", "examen_prenatal", "lactancia", "consulta_medica"]);
+  const OTROS = new Set(["no_retribuido", "otro", "permiso_parental"]);
+
+  if (IT.has(tipo))            return { bg: "#fed7aa", fg: "#9a3412", label: "IT" };
+  if (PERMISO_RETRIB.has(tipo)) return { bg: "#ede9fe", fg: "#6d28d9", label: "Permiso" };
+  if (OTROS.has(tipo))          return { bg: "#e5e7eb", fg: "#374151", label: "Otro" };
+
+  // Vacaciones, asuntos propios, compensatorios → se mantiene tu código de
+  // siempre por empleado. Subimos algo la saturación del azul para auxiliares
+  // porque Beatriz ha comentado que el azul anterior quedaba muy suave.
+  if (farmaceutico) return { bg: "#fdecea", fg: "#c0392b", label: "Vac." };
+  return { bg: "#c7d2fe", fg: "#1e3a8a", label: "Vac." };
+}
+
 export interface BolsaVacaciones {
   id: number;
   empleado_id: string;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Empleado, Vacacion, BolsaVacaciones, GuardiaStats, BancoHoras, GREEN, GREEN_DARK, fmtDate, daysBetween } from "./types";
+import { Empleado, Vacacion, BolsaVacaciones, GuardiaStats, BancoHoras, GREEN, GREEN_DARK, fmtDate, daysBetween, colorAusencia } from "./types";
 
 // Tipos agrupados para el selector de alta de ausencia.
 // El motor de nómina (src/lib/nomina/contexto.ts) clasifica así:
@@ -701,6 +701,35 @@ export default function VacacionesTab({
                 <span style={{ color: "#7c3aed" }}>A. propios</span>
                 <span style={{ fontWeight: 600, color: apSt.avail <= 0 ? "#ef4444" : "#7c3aed" }}>{2 - apSt.avail}/2</span>
               </div>
+
+              {/* Otras ausencias (IT / permisos retribuidos / no retrib.) */}
+              {(() => {
+                const otras = empVacs.filter(v => !["vac", "ap", "comp"].includes(v.tipo));
+                if (otras.length === 0) return null;
+                // Agrupar por tipo usando el helper para que el badge muestre el grupo
+                const grupos = new Map<string, { bg: string; fg: string; dias: number }>();
+                for (const o of otras) {
+                  const col = colorAusencia(o.tipo, emp.farmaceutico === 1);
+                  const clave = col.label; // IT | Permiso | Otro
+                  const dias = daysBetween(o.fecha_inicio, o.fecha_fin);
+                  const prev = grupos.get(clave);
+                  if (prev) prev.dias += dias;
+                  else grupos.set(clave, { bg: col.bg, fg: col.fg, dias });
+                }
+                return (
+                  <div style={{ marginTop: 3, display: "flex", flexWrap: "wrap" as const, gap: 2 }}>
+                    {Array.from(grupos.entries()).map(([clave, g]) => (
+                      <span key={clave} style={{
+                        fontSize: 8, fontWeight: 700,
+                        padding: "1px 5px", borderRadius: 3,
+                        background: g.bg, color: g.fg,
+                      }}>
+                        {clave} {g.dias}d
+                      </span>
+                    ))}
+                  </div>
+                );
+              })()}
               {emp.farmaceutico === 1 && guardCount > 0 && (
                 <div style={{ marginTop: 4, paddingTop: 4, borderTop: "1px dashed #d1fae5" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, lineHeight: 1.6 }}>
