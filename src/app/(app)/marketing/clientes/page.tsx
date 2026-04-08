@@ -10,10 +10,17 @@
  *
  * Acceso restringido a Ovidio + Beatriz (ver lib/marketing/permisos.ts).
  *
- * Para añadir un informe nuevo el año que viene:
- *   1. Re-ejecutar el script de cálculo (ver REIG-BASE/04-VENTAS/estudios/).
- *   2. Guardar el JSON en src/data/marketing/clientes/AAAA-MM.json
- *   3. Cambiar el import de abajo y la versión del header.
+ * Regeneración AUTOMÁTICA — Fase 11 del pipeline:
+ *   1. Al procesar dispensaciones en `cargar_pipeline.py`, si hay un mes
+ *      cerrado nuevo, se ejecuta `generar_clientes_json.py --mes YYYY-MM`.
+ *   2. El script escribe dos ficheros en src/data/marketing/clientes/:
+ *        - AAAA-MM.json   (archivo histórico versionado)
+ *        - latest.json    (snapshot del último mes, importado aquí)
+ *   3. Esta página importa SIEMPRE `latest.json`, así que basta con que el
+ *      pipeline actualice ese fichero (ya lo hace). No hay que tocar código.
+ *
+ * Regeneración MANUAL (ad-hoc):
+ *    python scripts/generar_clientes_json.py --mes 2026-04
  */
 
 import { useMemo } from "react";
@@ -31,7 +38,9 @@ import {
   Cell,
   LabelList,
 } from "recharts";
-import data from "@/data/marketing/clientes/2026-04.json";
+// Import del snapshot activo. `latest.json` lo reescribe el pipeline
+// automático cada vez que cierra un mes completo de dispensaciones.
+import data from "@/data/marketing/clientes/latest.json";
 
 /* ── Identidad de marca Reig ─────────────────────────────────────────── */
 const VERDE = "#1B5E20";

@@ -1,0 +1,639 @@
+{
+  "version": "2026-03",
+  "fecha_corte": "2026-03-31",
+  "ventana": "12 meses (2025-04-01 → 2026-03-31)",
+  "fuente": "Farmatic Control H + maestro inventario",
+  "k_anon": 5,
+  "kpis": {
+    "activos_12m": 17706,
+    "fidelizados_12m": 6183,
+    "historicos": 29345,
+    "polifarmacia_5plus_pct": 30.37,
+    "polifarmacia_10plus_pct": 8.81,
+    "polifarmacia_15plus_pct": 3.29,
+    "patologias_detectadas": 12,
+    "inmunosup_total": 191,
+    "inmunosup_tx_pattern": 0
+  },
+  "piramide": [
+    {
+      "banda": "0-14",
+      "F": 806,
+      "M": 900
+    },
+    {
+      "banda": "15-44",
+      "F": 3404,
+      "M": 1888
+    },
+    {
+      "banda": "45-64",
+      "F": 4362,
+      "M": 2901
+    },
+    {
+      "banda": "65-74",
+      "F": 1100,
+      "M": 913
+    },
+    {
+      "banda": "75+",
+      "F": 886,
+      "M": 546
+    }
+  ],
+  "segmentos": {
+    "labels": {
+      "V": "Vulnerable / exento (TSI 001)",
+      "P": "Pensionista renta baja (TSI 002)",
+      "A1": "Activo renta baja-media (TSI 003)",
+      "A2": "Activo renta media-alta (TSI 004)",
+      "A3": "Renta alta (TSI 005)",
+      "M": "Mutualista funcionario (MUFACE/ISFAS/MUGEJU)",
+      "X": "Otro / técnico (excluido del perfil)"
+    },
+    "activos": {
+      "V": 0,
+      "P": 0,
+      "A1": 0,
+      "A2": 0,
+      "A3": 0,
+      "M": 0,
+      "X": 17706
+    },
+    "fidelizados": {
+      "V": 0,
+      "P": 0,
+      "A1": 0,
+      "A2": 0,
+      "A3": 0,
+      "M": 0,
+      "X": 6183
+    }
+  },
+  "patologias": [
+    {
+      "nombre": "Hipertensión arterial",
+      "n": 4042,
+      "pct": 22.83
+    },
+    {
+      "nombre": "Dolor crónico (opioides + gabapentinoides)",
+      "n": 2915,
+      "pct": 16.46
+    },
+    {
+      "nombre": "Salud mental — depresión",
+      "n": 2848,
+      "pct": 16.08
+    },
+    {
+      "nombre": "Dislipemia",
+      "n": 2828,
+      "pct": 15.97
+    },
+    {
+      "nombre": "Salud mental — ansiedad/insomnio (BZD)",
+      "n": 2766,
+      "pct": 15.62
+    },
+    {
+      "nombre": "EPOC / Asma",
+      "n": 2010,
+      "pct": 11.35
+    },
+    {
+      "nombre": "Diabetes (con tratamiento)",
+      "n": 1831,
+      "pct": 10.34
+    },
+    {
+      "nombre": "Anticoagulación / antiagregación",
+      "n": 1589,
+      "pct": 8.97
+    },
+    {
+      "nombre": "Salud mental — antipsicóticos",
+      "n": 1029,
+      "pct": 5.81
+    },
+    {
+      "nombre": "Hipotiroidismo",
+      "n": 505,
+      "pct": 2.85
+    },
+    {
+      "nombre": "Inmunosupresión (incluye trasplante y autoinmunes)",
+      "n": 191,
+      "pct": 1.08
+    },
+    {
+      "nombre": "Osteoporosis",
+      "n": 110,
+      "pct": 0.62
+    }
+  ],
+  "polifarmacia": {
+    "5plus": {
+      "n": 5377,
+      "pct": 30.37
+    },
+    "10plus": {
+      "n": 1560,
+      "pct": 8.81
+    },
+    "15plus": {
+      "n": 582,
+      "pct": 3.29
+    }
+  },
+  "top_grupos": [
+    {
+      "cod": "M01AE",
+      "nombre": "DERIVADOS DEL ACIDO PROPIONICO",
+      "pacientes": 3907,
+      "pct": 22.07
+    },
+    {
+      "cod": "N02BE",
+      "nombre": "ANILIDAS",
+      "pacientes": 3629,
+      "pct": 20.5
+    },
+    {
+      "cod": "R06AX",
+      "nombre": "OTROS ANTIHISTAMINICOS PARA USO SISTEMICO",
+      "pacientes": 3043,
+      "pct": 17.19
+    },
+    {
+      "cod": "A02BC",
+      "nombre": "INHIBIDORES DE LA BOMBA DE PROTONES",
+      "pacientes": 2444,
+      "pct": 13.8
+    },
+    {
+      "cod": "C10AA",
+      "nombre": "C10AA",
+      "pacientes": 2033,
+      "pct": 11.48
+    },
+    {
+      "cod": "N02AJ",
+      "nombre": "OPIOIDES COMBINADOS CON OTROS ANALGESICOS",
+      "pacientes": 1895,
+      "pct": 10.7
+    },
+    {
+      "cod": "N05BA",
+      "nombre": "DERIVADOS DE LA BENZODIAZEPINA",
+      "pacientes": 1838,
+      "pct": 10.38
+    },
+    {
+      "cod": "R01AD",
+      "nombre": "CORTICOSTEROIDES",
+      "pacientes": 1727,
+      "pct": 9.75
+    },
+    {
+      "cod": "N02BB",
+      "nombre": "PIRAZOLONAS",
+      "pacientes": 1620,
+      "pct": 9.15
+    },
+    {
+      "cod": "N06AX",
+      "nombre": "OTROS ANTIDEPRESIVOS",
+      "pacientes": 1593,
+      "pct": 9.0
+    },
+    {
+      "cod": "N06AB",
+      "nombre": "INHIBIDORES SELECTIVOS DE LA RECAPTACION DE SEROTONINA",
+      "pacientes": 1307,
+      "pct": 7.38
+    },
+    {
+      "cod": "D07AC",
+      "nombre": "CORTICOSTEROIDES POTENTES (GRUPO III)",
+      "pacientes": 1100,
+      "pct": 6.21
+    },
+    {
+      "cod": "M03BA",
+      "nombre": "ESTERES DEL ACIDO CARBAMICO",
+      "pacientes": 1008,
+      "pct": 5.69
+    },
+    {
+      "cod": "C09CA",
+      "nombre": "ANTAGONISTAS DE LOS RECEPTORES DE ANGIOTENSINA II, MONOTERAPIA",
+      "pacientes": 992,
+      "pct": 5.6
+    },
+    {
+      "cod": "N02BF",
+      "nombre": "GABAPENTINOIDES",
+      "pacientes": 952,
+      "pct": 5.38
+    },
+    {
+      "cod": "C09AA",
+      "nombre": "INHIBIDORES DE LA ECA, MONOFARMACOS",
+      "pacientes": 899,
+      "pct": 5.08
+    },
+    {
+      "cod": "D06AX",
+      "nombre": "OTROS ANTIBIOTICOS PARA USO TOPICO",
+      "pacientes": 868,
+      "pct": 4.9
+    },
+    {
+      "cod": "D01AC",
+      "nombre": "DERIVADOS IMIDAZOLICOS Y TRIAZOLICOS",
+      "pacientes": 817,
+      "pct": 4.61
+    },
+    {
+      "cod": "B01AC",
+      "nombre": "ALGODÓN EN ZIG-ZAG",
+      "pacientes": 765,
+      "pct": 4.32
+    },
+    {
+      "cod": "A03FA",
+      "nombre": "PROPULSIVOS",
+      "pacientes": 748,
+      "pct": 4.22
+    },
+    {
+      "cod": "R03AC",
+      "nombre": "AGONISTAS SELECTIVOS DE RECEPTORES BETA-2 ADRENERGICOS",
+      "pacientes": 720,
+      "pct": 4.07
+    },
+    {
+      "cod": "H02AB",
+      "nombre": "GLUCOCORTICOIDES",
+      "pacientes": 720,
+      "pct": 4.07
+    },
+    {
+      "cod": "A10BD",
+      "nombre": "COMBINACIONES DE FARMACOS HIPOGLUCEMIANTES ORALES",
+      "pacientes": 706,
+      "pct": 3.99
+    },
+    {
+      "cod": "A11CC",
+      "nombre": "VITAMINA D Y ANALOGOS",
+      "pacientes": 705,
+      "pct": 3.98
+    },
+    {
+      "cod": "R06AE",
+      "nombre": "DERIVADOS DE LA PIPERAZINA",
+      "pacientes": 704,
+      "pct": 3.98
+    }
+  ],
+  "heatmap_pat_seg": {
+    "segmentos": [
+      "V",
+      "P",
+      "A1",
+      "A2",
+      "A3",
+      "M"
+    ],
+    "filas": [
+      {
+        "patologia": "Hipertensión arterial",
+        "valores": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "denoms": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "n": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "patologia": "Diabetes (con tratamiento)",
+        "valores": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "denoms": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "n": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "patologia": "Dislipemia",
+        "valores": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "denoms": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "n": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "patologia": "EPOC / Asma",
+        "valores": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "denoms": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "n": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "patologia": "Salud mental — depresión",
+        "valores": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "denoms": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "n": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "patologia": "Salud mental — ansiedad/insomnio (BZD)",
+        "valores": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "denoms": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "n": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "patologia": "Salud mental — antipsicóticos",
+        "valores": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "denoms": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "n": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "patologia": "Dolor crónico (opioides + gabapentinoides)",
+        "valores": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "denoms": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "n": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "patologia": "Anticoagulación / antiagregación",
+        "valores": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "denoms": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "n": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "patologia": "Hipotiroidismo",
+        "valores": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "denoms": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "n": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "patologia": "Inmunosupresión",
+        "valores": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "denoms": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "n": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "patologia": "Osteoporosis",
+        "valores": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "denoms": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "n": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      }
+    ],
+    "metodo_corto": "Prevalencia ajustada por edad (estandarización directa, población estándar = cohorte activa total)"
+  }
+}
