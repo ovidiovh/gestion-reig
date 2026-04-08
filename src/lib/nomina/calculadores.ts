@@ -93,8 +93,7 @@ function calcAuxiliarRotativo(
 ): ResultadoNomina {
   const r = resultadoBase(emp);
   const fijas = emp.h_lab_complemento_mensual;      // típicamente 9 h
-  const extrasMes = emp.h_extras_fijas_mes;         // típicamente 4 h (estimación de guardias)
-  r.laborables = fijas + extrasMes;
+  const extrasMes = emp.h_extras_fijas_mes;         // típicamente 4 h fijas mensuales
   r.complementos_eur = emp.complemento_mensual_eur;
 
   // Solo las guardias de FIN DE SEMANA o FESTIVO añaden horas reales por
@@ -107,15 +106,21 @@ function calcAuxiliarRotativo(
     (g) => g.es_festivo || g.dow === 0 || g.dow === 6
   );
 
-  // Visibilidad de guardias reales asignadas en el mes (no afecta al cálculo,
-  // solo deja a Beatriz comparar el estimado h_extras_fijas_mes contra lo real).
-  // §5.1 absorbe las guardias diurnas en una constante mensual; este desglose
-  // permite detectar meses con muchas más guardias de lo habitual.
-  const numGuardias = guardiasExtra.length;
-  const horasGuardiasReales = guardiasExtra.reduce(
-    (sum, g) => sum + horasGuardiaSlots(g),
-    0
-  );
+  // Sesión 10h (2026-04-08, Beatriz): las horas reales de guardia de fin
+  // de semana / festivo SUMAN encima de `fijas + extrasMes`, no absorbidas.
+  // Ejemplo Ani abril: 9 fijas + 4 extras + 5 sábado 4 = 18 laborables.
+  // Las guardias en día festivo van al cubo `festivas`, las de sábado/domingo
+  // no festivo van al cubo `laborables`.
+  let horasGuardiaLab = 0;
+  let horasGuardiaFest = 0;
+  for (const g of guardiasExtra) {
+    const h = horasGuardiaSlots(g);
+    if (g.es_festivo) horasGuardiaFest += h;
+    else horasGuardiaLab += h;
+  }
+
+  r.laborables = fijas + extrasMes + horasGuardiaLab;
+  r.festivos = horasGuardiaFest;
 
   const guardiasDetalle: GuardiaDesglose[] = guardiasExtra.map((g) => ({
     fecha: g.fecha,
@@ -127,18 +132,11 @@ function calcAuxiliarRotativo(
   r.desglose = {
     fijas_mes: fijas,
     extras_fijas_mes: extrasMes,
-    num_guardias_asignadas: numGuardias,
-    horas_guardias_reales: horasGuardiasReales,
+    num_guardias_asignadas: guardiasExtra.length,
+    horas_guardias_reales: horasGuardiaLab + horasGuardiaFest,
     guardias_detalle: guardiasDetalle,
   };
 
-  // Warning solo si hay desviación significativa (> 2 h respecto al estimado).
-  if (numGuardias > 0 && Math.abs(horasGuardiasReales - extrasMes) > 2) {
-    r.warnings.push(
-      `Guardias reales este mes: ${numGuardias} (${horasGuardiasReales} h) ` +
-        `vs estimación fija ${extrasMes} h. Considera ajustar manualmente si procede.`
-    );
-  }
   return r;
 }
 
