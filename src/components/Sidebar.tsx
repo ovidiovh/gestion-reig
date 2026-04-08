@@ -141,7 +141,7 @@ const sections: NavSection[] = [
     title: "RRHH",
     collapsible: true,
     items: [
-      { label: "Guardias y Vacaciones", href: "/rrhh", activo: true, icon: icons.users },
+      { label: "Calendario, Guardia y Vacaciones", href: "/rrhh", activo: true, icon: icons.users },
       { label: "Equipo", href: "/rrhh/equipo", activo: true, icon: icons.briefcase },
       { label: "Nóminas", href: "/rrhh/nominas", activo: true, icon: icons.briefcase },
     ],
