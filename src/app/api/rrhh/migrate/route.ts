@@ -123,6 +123,30 @@ const GUARD_DEFAULTS = [
 
 export async function POST() {
   try {
+    // ─── Sesión 10 (2026-04-08) — Paso 3.0: Ausencias unificadas ───
+    // La tabla `rrhh_ausencias` nació en una migración anterior como esqueleto
+    // mínimo (fecha / tipo / nota) pero NADIE la llegó a consumir — grep
+    // confirmado sobre todo el árbol src/. En esta sesión la redefinimos
+    // como el modelo unificado de ausencias (vacaciones + IT + permisos +
+    // horas sueltas) definido en REIG-BASE → 06-OPERATIVA-FARMACIA/
+    // ausencias-y-permisos.md §6.
+    //
+    // Como el schema viejo es incompatible con el nuevo y la tabla no tiene
+    // consumidores, la borramos SÓLO si detectamos el schema v1 (tiene
+    // columna `fecha` pero no `fecha_inicio`). Idempotente: si ya se ha
+    // migrado a v2 o la tabla no existe, no hace nada.
+    try {
+      const info = await db.execute(`PRAGMA table_info(rrhh_ausencias)`);
+      const rows = ((info as unknown) as { rows: Array<{ name: string }> }).rows ?? [];
+      const tieneFechaInicio = rows.some((r) => r.name === "fecha_inicio");
+      const tieneFecha = rows.some((r) => r.name === "fecha");
+      if (rows.length > 0 && tieneFecha && !tieneFechaInicio) {
+        await db.execute(`DROP TABLE rrhh_ausencias`);
+      }
+    } catch {
+      /* PRAGMA o DROP fallando significa base nueva — seguimos */
+    }
+
     // 1. Crear tablas base
     await db.executeMultiple(`
       CREATE TABLE IF NOT EXISTS rrhh_empleados (
@@ -185,14 +209,75 @@ export async function POST() {
         created_at   TEXT NOT NULL DEFAULT (datetime('now'))
       );
 
+      -- ─── Modelo unificado de ausencias (sesión 10, 2026-04-08) ───
+      -- Reemplaza a rrhh_vacaciones (que queda viva como red de seguridad
+      -- durante la transición). Cubre vacaciones, asuntos propios,
+      -- compensatorios, IT, y los 20+ permisos del Convenio XXV + Estatuto
+      -- de los Trabajadores. Ver REIG-BASE → ausencias-y-permisos.md §6.
+      --
+      -- Campos clave:
+      --   tipo              TEXT libre validado en TypeScript (no enum SQL
+      --                     para que añadir un tipo nuevo no requiera ALTER).
+      --                     Valores típicos: vac, ap, comp, it_enf, it_acc,
+      --                     it_acc_laboral, matrimonio, fallecimiento,
+      --                     hospitalizacion, intervencion_reposo, mudanza,
+      --                     deber_publico, lactancia, lactancia_acumulada,
+      --                     permiso_parental, fuerza_mayor, catastrofe,
+      --                     cuidado_menor_grave, embarazo_riesgo, examenes,
+      --                     medico_propio, medico_acompanante, otros.
+      --   hora_inicio/fin   NULLABLE en media-horas desde medianoche (mismo
+      --                     sistema que rrhh_guardia_slots). NULL = día
+      --                     completo. Permite permisos de horas sueltas.
+      --   retribuida        1 = cuenta como trabajada a efectos de salario.
+      --                     0 = permiso no retribuido (ej. permiso parental).
+      --   bolsa_id          FK opcional a rrhh_bolsa_vacaciones. Si está
+      --                     informado, esta ausencia consume días de esa
+      --                     bolsa arrastrada en vez del saldo del año.
+      --   banco_horas_id    FK opcional a rrhh_banco_horas. Si está
+      --                     informado, esta ausencia de horas sueltas se
+      --                     compensa contra el banco de horas (caso
+      --                     acompañamiento médico, llegada tarde, etc.).
       CREATE TABLE IF NOT EXISTS rrhh_ausencias (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        empleado_id     TEXT NOT NULL REFERENCES rrhh_empleados(id),
+        fecha_inicio    TEXT NOT NULL,
+        fecha_fin       TEXT NOT NULL,
+        hora_inicio     INTEGER,
+        hora_fin        INTEGER,
+        tipo            TEXT NOT NULL DEFAULT 'vac',
+        estado          TEXT NOT NULL DEFAULT 'pend',
+        retribuida      INTEGER NOT NULL DEFAULT 1,
+        bolsa_id        INTEGER REFERENCES rrhh_bolsa_vacaciones(id),
+        banco_horas_id  INTEGER REFERENCES rrhh_banco_horas(id),
+        notas           TEXT,
+        created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_ausencias_empleado
+        ON rrhh_ausencias(empleado_id);
+      CREATE INDEX IF NOT EXISTS idx_ausencias_fechas
+        ON rrhh_ausencias(fecha_inicio, fecha_fin);
+
+      -- ─── Bolsa de vacaciones arrastradas (sesión 10, 2026-04-08) ───
+      -- Excepción del art. 38.3 ET: las vacaciones no disfrutadas en el año
+      -- natural por coincidir con IT, riesgo de embarazo, parto o cuidado
+      -- de menor, se arrastran al año siguiente hasta 18 meses desde el fin
+      -- del año de origen. El resto de casos NO se arrastran (imperativo
+      -- legal). Cada fila de esta tabla es UNA bolsa que el empleado puede
+      -- consumir creando ausencias con bolsa_id apuntando aquí.
+      CREATE TABLE IF NOT EXISTS rrhh_bolsa_vacaciones (
         id           INTEGER PRIMARY KEY AUTOINCREMENT,
         empleado_id  TEXT NOT NULL REFERENCES rrhh_empleados(id),
-        fecha        TEXT NOT NULL,
-        tipo         TEXT NOT NULL DEFAULT 'med',
-        nota         TEXT,
+        anio_origen  INTEGER NOT NULL,
+        dias         REAL NOT NULL,
+        dias_usados  REAL NOT NULL DEFAULT 0,
+        motivo       TEXT NOT NULL DEFAULT 'manual',
+        estado       TEXT NOT NULL DEFAULT 'disponible',
+        caduca_en    TEXT,
+        notas        TEXT,
         created_at   TEXT NOT NULL DEFAULT (datetime('now'))
       );
+      CREATE INDEX IF NOT EXISTS idx_bolsa_empleado
+        ON rrhh_bolsa_vacaciones(empleado_id);
 
       CREATE TABLE IF NOT EXISTS rrhh_horarios_asignacion (
         id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -333,6 +418,44 @@ export async function POST() {
       try { await db.execute(sql); } catch { /* columna ya existe — ignorar */ }
     }
 
+    // 1d. Migración idempotente de rrhh_vacaciones → rrhh_ausencias
+    //
+    // Mientras vivamos en paralelo las dos tablas (rrhh_vacaciones como red
+    // de seguridad, rrhh_ausencias como modelo nuevo), esta pasada copia a
+    // rrhh_ausencias las filas de rrhh_vacaciones que todavía no estén
+    // replicadas. Es idempotente: detecta la colisión por la tupla
+    // (empleado_id, fecha_inicio, fecha_fin, tipo).
+    //
+    // Tipos existentes en rrhh_vacaciones (vac, ap, comp) se mapean 1:1 y
+    // todos son retribuidos. Los tipos nuevos (it_*, matrimonio, etc.) no
+    // existen en rrhh_vacaciones → no hay nada que mapear.
+    //
+    // Cuando el motor de nómina esté probado leyendo ya rrhh_ausencias
+    // durante un par de cierres de mes, se podrá dejar de escribir en
+    // rrhh_vacaciones y eventualmente deprecarla — en una sesión futura.
+    try {
+      await db.execute({
+        sql: `INSERT INTO rrhh_ausencias
+                (empleado_id, fecha_inicio, fecha_fin, tipo, estado, retribuida, notas)
+              SELECT v.empleado_id, v.fecha_inicio, v.fecha_fin,
+                     COALESCE(v.tipo, 'vac'),
+                     COALESCE(v.estado, 'pend'),
+                     1,
+                     NULL
+              FROM rrhh_vacaciones v
+              WHERE NOT EXISTS (
+                SELECT 1 FROM rrhh_ausencias a
+                WHERE a.empleado_id = v.empleado_id
+                  AND a.fecha_inicio = v.fecha_inicio
+                  AND a.fecha_fin   = v.fecha_fin
+                  AND a.tipo        = COALESCE(v.tipo, 'vac')
+              )`,
+        args: [],
+      });
+    } catch (e) {
+      console.warn("[rrhh/migrate] Migración vacaciones→ausencias:", e);
+    }
+
     // 2. Seed empleados (upsert)
     //
     // Estrategia:
@@ -436,7 +559,8 @@ export async function POST() {
       tablas: [
         "rrhh_empleados", "rrhh_festivos", "rrhh_guardias",
         "rrhh_guardia_slots", "rrhh_guardia_defaults",
-        "rrhh_vacaciones", "rrhh_ausencias", "rrhh_horarios_asignacion",
+        "rrhh_vacaciones", "rrhh_ausencias", "rrhh_bolsa_vacaciones",
+        "rrhh_horarios_asignacion",
         "rrhh_banco_horas", "rrhh_turnos_config",
         "rrhh_nominas_historial",
       ],

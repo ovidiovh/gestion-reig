@@ -57,6 +57,12 @@ export async function calcularNominaMes(mes: string): Promise<ResumenMes> {
   for (const emp of empleados) {
     const ctx = contextoPara(emp, datos);
     const res = calcularNominaEmpleado(emp, ctx);
+    // La 5ª columna "Notas" del PDF (ver template-reig.ts y
+    // template-mirelus.ts) se rellena con las ausencias del mes que no son
+    // vacaciones normales. El contexto ya las trae formateadas en notas_ausencias;
+    // el motor las concatena con " · " para que el template solo tenga que
+    // pintarlas tal cual. Ver ausencias-y-permisos.md §7 y sesión 10 (2026-04-08).
+    res.notas_mes = ctx.notas_ausencias.join(" · ");
     resultados.push(res);
   }
 

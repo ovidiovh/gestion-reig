@@ -40,6 +40,7 @@ function mock(a: MockArgs): ResultadoNomina {
     nocturnas_festivas: a.noct_fest ?? 0,
     festivos: a.festivos ?? 0,
     complementos_eur: a.complementos ?? 0,
+    notas_mes: "",
     desglose: {},
     warnings: [],
   };

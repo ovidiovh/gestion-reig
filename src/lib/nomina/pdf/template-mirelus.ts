@@ -119,13 +119,17 @@ interface Columna {
 }
 
 function drawTabla(doc: InstanceType<typeof PDFDocument>, filas: ResultadoNomina[]) {
+  // Columna "Notas" añadida en sesión 10 (2026-04-08) — ver template-reig.ts
+  // para el razonamiento detallado. Mantiene espejo de anchos con el PDF de
+  // Reig para que ambas hojas entren en A4 portrait.
   const cols: Columna[] = [
-    { label: "Empleado",     width: 170, align: "left",  get: (r) => nombreEmpleado(r) },
-    { label: "Laborables",   width: 70,  align: "right", get: (r) => fmtNum(r.laborables) },
-    { label: "Noct. lab.",   width: 65,  align: "right", get: (r) => fmtNum(r.nocturnas_laborables) },
-    { label: "Festivos",     width: 65,  align: "right", get: (r) => fmtNum(r.festivos) },
-    { label: "Noct. fest.",  width: 65,  align: "right", get: (r) => fmtNum(r.nocturnas_festivas) },
-    { label: "Complemento",  width: 70,  align: "right", get: (r) => fmtEur(r.complementos_eur) },
+    { label: "Empleado",     width: 120, align: "left",  get: (r) => nombreEmpleado(r) },
+    { label: "Laborables",   width: 55,  align: "right", get: (r) => fmtNum(r.laborables) },
+    { label: "Noct. lab.",   width: 50,  align: "right", get: (r) => fmtNum(r.nocturnas_laborables) },
+    { label: "Festivos",     width: 50,  align: "right", get: (r) => fmtNum(r.festivos) },
+    { label: "Noct. fest.",  width: 50,  align: "right", get: (r) => fmtNum(r.nocturnas_festivas) },
+    { label: "Complemento",  width: 60,  align: "right", get: (r) => fmtEur(r.complementos_eur) },
+    { label: "Notas",        width: 110, align: "left",  get: (r) => r.notas_mes },
   ];
 
   const startX = MARGEN;

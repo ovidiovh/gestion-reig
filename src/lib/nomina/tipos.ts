@@ -65,10 +65,31 @@ export interface ContextoMes {
   viernes_mes: number;
   /** Número de viernes del mes que caen en festivo oficial (no se trabajan → no cuentan extras). */
   viernes_festivos_mes: number;
-  /** Días laborables L-V que el empleado está de vacaciones. */
+  /**
+   * Días laborables L-V que el empleado está ausente y que reducen la base
+   * salarial del mes. Incluye: vacaciones ordinarias (vac), asuntos propios
+   * (ap), compensatorios (comp), IT de 7 días o más (it_*), y permisos no
+   * retribuidos (permiso_parental). NO incluye IT cortas (<7 días) ni
+   * permisos retribuidos (matrimonio, fallecimiento, hospitalización,
+   * lactancia, fuerza mayor, etc.) — esos no tocan la base salarial que
+   * paga Reig, solo generan un descuento aparte en la cotización que
+   * gestiona la gestoría.
+   *
+   * Decisiones internas 2026-04-08 (ausencias-y-permisos.md §7):
+   *  - Umbral de IT "corta" = 7 días naturales. Por debajo, Reig sigue
+   *    pagando la base íntegra (el sistema público no llega a pagar nada).
+   *  - En IT larga, los complementos y horas extras que paga Reig
+   *    directamente NO se reducen — solo el fijo de base.
+   */
   dias_vacaciones_empleado_labs: number;
   /** Viernes del mes que el empleado está de vacaciones (Zule). */
   viernes_vacaciones_empleado: number;
+  /**
+   * Notas por ausencias del mes para mostrar en la 5ª columna del PDF.
+   * Cada entrada es un string corto tipo "IT 12-18 abr" o "Matrimonio 3-17 may".
+   * El template PDF las concatena con " · " o las rompe por líneas.
+   */
+  notas_ausencias: string[];
   /** Guardias efectivamente asignadas al empleado en el mes. */
   guardias_empleado: GuardiaAsignada[];
   /** Warnings acumulados durante la construcción del contexto (ej: datos sospechosos). */
@@ -101,6 +122,12 @@ export interface ResultadoNomina {
   nocturnas_festivas: number;
   /** Complemento fijo mensual en €. */
   complementos_eur: number;
+  /**
+   * Notas de ausencias del mes (IT, matrimonio, fallecimiento, hospitalización,
+   * etc.) formateadas para la 5ª columna del PDF que va a la gestoría.
+   * Ejemplo: "IT 12-18 abr · Matrimonio 22-26 abr". Cadena vacía si no hay.
+   */
+  notas_mes: string;
 
   /** Desglose con los sub-componentes que dieron la suma final (para depurar). */
   desglose: {

@@ -23,6 +23,7 @@ function resultadoBase(emp: EmpleadoNomina): ResultadoNomina {
     nocturnas_laborables: 0,
     nocturnas_festivas: 0,
     complementos_eur: 0,
+    notas_mes: "",
     desglose: {},
     warnings: [],
   };

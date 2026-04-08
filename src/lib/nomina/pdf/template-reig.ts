@@ -2,7 +2,14 @@
 //
 // Diseño "corporativo light": cabecera con banda verde Reig, título y mes,
 // línea de "Días trabajados", tabla idéntica en estructura a la de Mirelus
-// (6 columnas) pero con el header de tabla en verde corporativo.
+// (7 columnas: Empleado · Laborables · Noct.lab · Festivos · Noct.fest ·
+// Complemento · Notas) con el header en verde corporativo.
+//
+// Columna "Notas" añadida en sesión 10 (2026-04-08) para que la gestoría
+// vea de un vistazo las ausencias del mes que NO son vacaciones ordinarias
+// (IT, matrimonio, fallecimiento, hospitalización, etc.). Los tipos
+// vac/ap/comp NO salen en Notas porque ya se reflejan en los huecos del
+// cálculo de laborables. Ver ausencias-y-permisos.md §7 y §5.
 //
 // Recibe el ResumenMes del motor (src/lib/nomina/engine.ts) y devuelve un
 // Buffer con el PDF listo para descargar o archivar.
@@ -129,12 +136,13 @@ interface Columna {
 
 function drawTabla(doc: InstanceType<typeof PDFDocument>, filas: ResultadoNomina[]) {
   const cols: Columna[] = [
-    { label: "Empleado",     width: 170, align: "left",  get: (r) => nombreEmpleado(r) },
-    { label: "Laborables",   width: 70,  align: "right", get: (r) => fmtNum(r.laborables) },
-    { label: "Noct. lab.",   width: 65,  align: "right", get: (r) => fmtNum(r.nocturnas_laborables) },
-    { label: "Festivos",     width: 65,  align: "right", get: (r) => fmtNum(r.festivos) },
-    { label: "Noct. fest.",  width: 65,  align: "right", get: (r) => fmtNum(r.nocturnas_festivas) },
-    { label: "Complemento",  width: 70,  align: "right", get: (r) => fmtEur(r.complementos_eur) },
+    { label: "Empleado",     width: 120, align: "left",  get: (r) => nombreEmpleado(r) },
+    { label: "Laborables",   width: 55,  align: "right", get: (r) => fmtNum(r.laborables) },
+    { label: "Noct. lab.",   width: 50,  align: "right", get: (r) => fmtNum(r.nocturnas_laborables) },
+    { label: "Festivos",     width: 50,  align: "right", get: (r) => fmtNum(r.festivos) },
+    { label: "Noct. fest.",  width: 50,  align: "right", get: (r) => fmtNum(r.nocturnas_festivas) },
+    { label: "Complemento",  width: 60,  align: "right", get: (r) => fmtEur(r.complementos_eur) },
+    { label: "Notas",        width: 110, align: "left",  get: (r) => r.notas_mes },
   ];
 
   const startX = MARGEN;
