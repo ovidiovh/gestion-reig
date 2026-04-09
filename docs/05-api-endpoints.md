@@ -50,7 +50,7 @@ Request: {
   fecha: "YYYY-MM-DD",    // DEBE ser hoy
   destino?: string,        // default "caja_fuerte"
   cajas: [{
-    num_caja: number,      // 1-10
+    num_caja: number,      // 0-9, 11-12 (la 10 no existe)
     b200, b100, b50, b20, b10, b5: number
   }],
   audit?: {                // opcional

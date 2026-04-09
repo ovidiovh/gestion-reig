@@ -89,8 +89,11 @@ La app distingue dos zonas operativas con cajas y colores diferentes:
 
 | Zona | Cajas | Color UI | Uso |
 |------|-------|----------|-----|
-| Farmacia | 1–10 | `#0C6D32` (verde) | Cajas registradoras de farmacia |
-| Óptica | 11 | `#0C4D6D` (azul) | Caja única de óptica |
+| Farmacia | 1–9, 11 (Ortopedia) | `#0C6D32` (verde) | Cajas registradoras de farmacia |
+| Óptica | 12 | `#0C4D6D` (azul) | Caja única de óptica |
+| Cambio | 0 | — | Caja de cambio diaria |
+
+> **Nota:** La caja 10 NO existe.
 
 - El layout de `/retiradas` proporciona `useZona()` hook via ZonaContext
 - Selector FARMACIA / ÓPTICA en la parte superior de la página

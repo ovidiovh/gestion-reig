@@ -89,10 +89,13 @@ El layout exporta `useZona()` hook via ZonaContext. Selector de pestaña FARMACI
 
 | Zona | Cajas disponibles | Color UI |
 |------|------------------|----------|
-| Farmacia | 1–10 | Verde `#0C6D32` |
-| Óptica | Solo 11 | Azul `#0C4D6D` |
+| Farmacia | 1–9, 11 (Ortopedia) | Verde `#0C6D32` |
+| Óptica | 12 | Azul `#0C4D6D` |
+| Cambio | 0 | — |
 
-`CAJAS_DISPONIBLES` es dinámico: `zona === "optica" ? [11] : [1,2,...,10]`.
+> **Nota:** La caja 10 NO existe. La 11 (Ortopedia) se retira con farmacia.
+
+`CAJAS_DISPONIBLES` es dinámico: `zona === "optica" ? [12] : [1,2,...,9,11]`.
 
 ### Flujo en 3 pasos
 

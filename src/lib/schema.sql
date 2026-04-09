@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS retiradas_sesion (
 CREATE TABLE IF NOT EXISTS retiradas_caja (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   sesion_id     INTEGER NOT NULL REFERENCES retiradas_sesion(id),
-  num_caja      INTEGER NOT NULL CHECK(num_caja BETWEEN 1 AND 11),
+  num_caja      INTEGER NOT NULL CHECK(num_caja BETWEEN 0 AND 12),
   b200          INTEGER NOT NULL DEFAULT 0,       -- cantidad de billetes de 200€
   b100          INTEGER NOT NULL DEFAULT 0,
   b50           INTEGER NOT NULL DEFAULT 0,

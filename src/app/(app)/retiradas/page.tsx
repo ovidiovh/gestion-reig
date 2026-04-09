@@ -65,7 +65,7 @@ const btnBase: React.CSSProperties = {
 
 export default function RetiradasPage() {
   const zona = useZona();
-  const CAJAS_DISPONIBLES = zona === "optica" ? [11] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const CAJAS_DISPONIBLES = zona === "optica" ? [12] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 11];
   const color = zona === "optica" ? "#0C4D6D" : "#0C6D32";
   const colorBg = zona === "optica" ? "#0C4D6D15" : "#0C6D3215";
 

@@ -71,22 +71,26 @@ export async function POST() {
       // Ya existe, ignorar
     }
 
-    // Migración: recrear retiradas_caja sin CHECK(1-10) → CHECK(1-11) para óptica
-    // SQLite no permite ALTER CHECK, pero las filas nuevas con num_caja=11
-    // se insertan ignorando el CHECK si la tabla fue creada con CREATE IF NOT EXISTS
-    // en una versión anterior. Creamos tabla temporal solo si es necesario.
+    // Migración CHECK constraint de retiradas_caja:
+    //   v1: CHECK(1-10) — original
+    //   v2: CHECK(1-11) — añadió óptica como caja 11
+    //   v3: CHECK(0-12) — corrección real: caja 0 (cambio), 1-9 (farmacia),
+    //       11 (ortopedia), 12 (óptica). La 10 no existe pero el CHECK
+    //       admite el rango completo 0-12 por simplicidad.
     try {
-      // Verificamos si caja 11 se puede insertar
-      await db.execute("INSERT INTO retiradas_caja (sesion_id, num_caja, total) VALUES (-1, 11, 0)");
-      // Si funciona, limpiamos la fila de test
+      // Verificamos si caja 12 se puede insertar (si falla = CHECK aún es 1-11 o 1-10)
+      await db.execute("INSERT INTO retiradas_caja (sesion_id, num_caja, total) VALUES (-1, 12, 0)");
+      await db.execute("DELETE FROM retiradas_caja WHERE sesion_id = -1");
+      // También probar caja 0
+      await db.execute("INSERT INTO retiradas_caja (sesion_id, num_caja, total) VALUES (-1, 0, 0)");
       await db.execute("DELETE FROM retiradas_caja WHERE sesion_id = -1");
     } catch {
-      // CHECK constraint falla → recrear tabla sin CHECK restrictivo
+      // CHECK constraint falla → recrear tabla con rango 0-12
       await db.executeMultiple(`
         CREATE TABLE IF NOT EXISTS retiradas_caja_new (
           id            INTEGER PRIMARY KEY AUTOINCREMENT,
           sesion_id     INTEGER NOT NULL REFERENCES retiradas_sesion(id),
-          num_caja      INTEGER NOT NULL CHECK(num_caja BETWEEN 1 AND 11),
+          num_caja      INTEGER NOT NULL CHECK(num_caja BETWEEN 0 AND 12),
           b200          INTEGER NOT NULL DEFAULT 0,
           b100          INTEGER NOT NULL DEFAULT 0,
           b50           INTEGER NOT NULL DEFAULT 0,

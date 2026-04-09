@@ -177,7 +177,7 @@ export async function guardarSesion(input: SesionInput): Promise<{ id: number; t
   // 2. Insertar cajas
   // Insertamos en num_caja Y caja_num con el mismo valor por compatibilidad
   // hacia atrás: las BD viejas (schema.sql original) tienen num_caja NOT NULL
-  // CHECK BETWEEN 1 AND 11; las BD nuevas usan caja_num. Escribir en ambas
+  // CHECK BETWEEN 0 AND 12 (v3); las BD nuevas usan caja_num. Escribir en ambas
   // satisface ambos schemas.
   for (const c of input.cajas) {
     await query(

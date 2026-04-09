@@ -324,7 +324,7 @@ export default function DescuadresPage() {
 
         {/* Info ingesta */}
         <span style={{ marginLeft: "auto", fontSize: 11, color: COLOR.muted }}>
-          Ingesta automática · Apps Script · L-S ~8:30h
+          Ingesta automática · Cowork · L-S ~8:30h
         </span>
       </div>
 

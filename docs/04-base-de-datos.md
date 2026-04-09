@@ -57,7 +57,7 @@ Detalle de billetes por caja física dentro de una sesión.
 |---------|------|-------------|
 | `id` | INTEGER PK | AUTOINCREMENT |
 | `sesion_id` | INTEGER NOT NULL FK | → `retiradas_sesion.id` |
-| `num_caja` | INTEGER NOT NULL | 1-11 (1-10 farmacia, 11 óptica) |
+| `num_caja` | INTEGER NOT NULL | 0-12 (0 cambio, 1-9 farmacia, 11 ortopedia, 12 óptica; la 10 no existe) |
 | `b200` | INTEGER NOT NULL | Cantidad billetes de 200€ |
 | `b100` | INTEGER NOT NULL | Cantidad billetes de 100€ |
 | `b50` | INTEGER NOT NULL | Cantidad billetes de 50€ |

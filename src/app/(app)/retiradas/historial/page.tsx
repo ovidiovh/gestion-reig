@@ -413,7 +413,7 @@ export default function HistorialPage() {
         </Link>
       </div>
       <p className="text-gray-500 mb-6">
-        {isFarma ? "Retiradas de efectivo — Cajas 1-10" : "Retiradas de efectivo — Óptica (Caja 11)"}
+        {isFarma ? "Retiradas de efectivo — Cajas 1-9, 11 (Ortopedia)" : "Retiradas de efectivo — Óptica (Caja 12)"}
       </p>
 
       {/* ═══ Dashboard Caja Fuerte ═══ */}
