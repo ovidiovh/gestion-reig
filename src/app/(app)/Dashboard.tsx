@@ -64,7 +64,7 @@ interface Festivo {
   nombre: string;
 }
 
-/* ───── Calendario: constantes de rotación ───── */
+/* ───── Constantes de rotación ───── */
 
 const ANCHOR_WEEK = "2026-03-23";
 const ANCHOR_TURNOS: Record<string, number> = { ani: 1, yoli: 2, leti: 2, dulce: 3 };
@@ -96,9 +96,8 @@ function isGuardDate(fecha: string): boolean {
 function getMonthDays(year: number, month: number) {
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
-  const startDow = firstDay.getDay() || 7; // 1=Mon ... 7=Sun
+  const startDow = firstDay.getDay() || 7;
   const days: (string | null)[] = [];
-  // Padding for days before the 1st
   for (let i = 1; i < startDow; i++) days.push(null);
   for (let d = 1; d <= lastDay.getDate(); d++) {
     const dd = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -152,44 +151,38 @@ function diasHasta(fecha: string) {
   return Math.ceil((fechaMs - hoyMs) / (1000 * 60 * 60 * 24));
 }
 
-/* ───── Iconos SVG ───── */
+/* ───── Estilos compartidos ───── */
 
-const icons = {
-  euro: (
-    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M14.121 15.536c-1.171 1.952-3.07 1.952-4.242 0-1.172-1.953-1.172-5.119 0-7.072 1.171-1.952 3.07-1.952 4.242 0M8 10.5h4m-4 3h4" />
-    </svg>
-  ),
-  balanza: (
-    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-    </svg>
-  ),
-  tarjeta: (
-    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-    </svg>
-  ),
-  reloj: (
-    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  ),
-  palmera: (
-    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-    </svg>
-  ),
-  escudo: (
-    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-    </svg>
-  ),
-  alerta: (
-    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-    </svg>
-  ),
+const S = {
+  card: {
+    background: "#fff",
+    borderRadius: 16,
+    padding: "24px 26px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)",
+    border: "none",
+  } as React.CSSProperties,
+  label: {
+    fontSize: 11,
+    fontWeight: 500 as const,
+    color: "#86868b",
+    letterSpacing: "0.01em",
+  } as React.CSSProperties,
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 600 as const,
+    color: "#1d1d1f",
+    letterSpacing: "-0.02em",
+  } as React.CSSProperties,
+  link: {
+    fontSize: 12,
+    fontWeight: 500 as const,
+    color: "#2E7D32",
+    textDecoration: "none",
+    cursor: "pointer",
+  } as React.CSSProperties,
+  mono: {
+    fontFamily: "'JetBrains Mono', 'SF Mono', monospace",
+  } as React.CSSProperties,
 };
 
 /* ───── Componente principal ───── */
@@ -211,10 +204,8 @@ export default function Dashboard({ userName, role, modulosPermitidos }: Dashboa
     const today = hoy();
     const monday = lunesDeSemana(today);
     const year = today.slice(0, 4);
-
     const fetches: Promise<void>[] = [];
 
-    // Ventas — intentar hoy, si no hay datos retroceder hasta 7 días
     if (puede("marketing_crm")) {
       fetches.push(
         (async () => {
@@ -238,8 +229,6 @@ export default function Dashboard({ userName, role, modulosPermitidos }: Dashboa
         })()
       );
     }
-
-    // Descuadres
     if (puede("financiero_descuadres")) {
       fetches.push(
         fetch(`/api/descuadres?vista=dia&fecha=${today}`)
@@ -248,8 +237,6 @@ export default function Dashboard({ userName, role, modulosPermitidos }: Dashboa
           .catch(() => setDescuadres([]))
       );
     }
-
-    // Tarjetas
     if (puede("financiero_tarjetas")) {
       fetches.push(
         fetch(`/api/tarjetas?vista=dia&desde=${today}&hasta=${today}`)
@@ -261,8 +248,6 @@ export default function Dashboard({ userName, role, modulosPermitidos }: Dashboa
           .catch(() => setTarjetas({ fecha: today, total: 0, count: 0 }))
       );
     }
-
-    // Horarios
     if (puede("rrhh_equipo")) {
       fetches.push(
         fetch(`/api/rrhh/horarios?week=${monday}&weeks=1`)
@@ -271,39 +256,33 @@ export default function Dashboard({ userName, role, modulosPermitidos }: Dashboa
           .catch(() => setHorarios([]))
       );
     }
-
-    // Vacaciones
     if (puede("rrhh_vacaciones")) {
       fetches.push(
         fetch(`/api/rrhh/vacaciones?year=${year}`)
           .then((r) => r.json())
           .then((data) => {
             const all = data.vacaciones || [];
-            const hoyVac = all.filter(
+            setVacaciones(all.filter(
               (v: Vacacion) => v.fecha_inicio <= today && v.fecha_fin >= today && v.estado === "aprobada"
-            );
-            setVacaciones(hoyVac);
+            ));
           })
           .catch(() => setVacaciones([]))
       );
     }
-
-    // Guardias
     if (puede("rrhh_calendario")) {
       fetches.push(
         fetch(`/api/rrhh/guardias?year=${year}`)
           .then((r) => r.json())
           .then((data) => {
             const all: Guardia[] = data.guardias || [];
-            const futuras = all
-              .filter((g) => g.fecha >= today)
-              .sort((a, b) => a.fecha.localeCompare(b.fecha));
-            setGuardias(futuras.slice(0, 3));
+            setGuardias(
+              all.filter((g) => g.fecha >= today)
+                .sort((a, b) => a.fecha.localeCompare(b.fecha))
+                .slice(0, 3)
+            );
           })
           .catch(() => setGuardias([]))
       );
-
-      // Festivos (para el calendario)
       fetches.push(
         fetch(`/api/rrhh/festivos?year=${year}`)
           .then((r) => r.json())
@@ -311,447 +290,383 @@ export default function Dashboard({ userName, role, modulosPermitidos }: Dashboa
           .catch(() => setFestivos([]))
       );
     }
-
     Promise.allSettled(fetches).finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Cálculos derivados ──
-
+  /* ── Cálculos ── */
   const ventasTotal = ventas?.reduce((s, v) => s + v.facturacion, 0) ?? 0;
   const ticketsTotal = ventas?.reduce((s, v) => s + v.tickets, 0) ?? 0;
   const ticketMedio = ticketsTotal > 0 ? ventasTotal / ticketsTotal : 0;
-
   const descuadreNeto = descuadres?.reduce((s, d) => s + d.descuadre, 0) ?? 0;
-  const descuadreAbs = Math.abs(descuadreNeto);
-  const hayAlertaDescuadre = descuadreAbs > 2; // más de 2€
-
+  const hayAlertaDescuadre = Math.abs(descuadreNeto) > 2;
   const proximaGuardia = guardias && guardias.length > 0 ? guardias[0] : null;
   const diasParaGuardia = proximaGuardia ? diasHasta(proximaGuardia.fecha) : null;
 
-  // ── Nombre del saludo según hora ──
   const hora = new Date().getHours();
   const saludo = hora < 14 ? "Buenos días" : hora < 21 ? "Buenas tardes" : "Buenas noches";
   const nombre = userName.split(" ")[0];
 
   return (
-    <div className="max-w-6xl">
-      {/* ── Header ── */}
-      <div className="mb-8">
-        <h1
-          className="text-2xl md:text-3xl font-semibold"
-          style={{ fontFamily: "'DM Serif Display', serif", color: "var(--color-reig-text)" }}
-        >
-          {saludo}, {nombre}
-        </h1>
-        <p className="text-sm mt-1" style={{ color: "var(--color-reig-text-muted)" }}>
-          {new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+    <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+
+      {/* ── HEADER ── */}
+      <header style={{ marginBottom: 36, paddingTop: 4 }}>
+        <p style={{ fontSize: 15, color: "#86868b", fontWeight: 400, marginBottom: 2 }}>
+          {saludo},
         </p>
-      </div>
+        <h1 style={{
+          fontSize: 32, fontWeight: 700, color: "#1d1d1f",
+          letterSpacing: "-0.025em", lineHeight: 1.15,
+        }}>
+          {nombre}
+        </h1>
+        <p style={{
+          fontSize: 15, color: "#86868b", fontWeight: 400,
+          marginTop: 4, textTransform: "capitalize",
+        }}>
+          {new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })}
+        </p>
+      </header>
 
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="card" style={{ height: 120 }}>
-              <div className="skeleton" style={{ width: "60%", height: 12, marginBottom: 12 }} />
-              <div className="skeleton" style={{ width: "40%", height: 28 }} />
+            <div key={i} style={{ ...S.card, height: 120 }}>
+              <div className="skeleton" style={{ width: "50%", height: 10, marginBottom: 16, borderRadius: 4 }} />
+              <div className="skeleton" style={{ width: "35%", height: 24, borderRadius: 4 }} />
             </div>
           ))}
         </div>
       ) : (
-        <div className="space-y-6">
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
 
-          {/* ════ FILA 1: KPIs rápidos ════ */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          {/* ═══ KPIs ═══ */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+
             {/* Ventas */}
             {ventas !== null && (
-              <Link href="/crm" className="card group hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="kpi-label" style={{ marginBottom: 0 }}>
+              <Link href="/crm" className="dash-kpi" style={{ textDecoration: "none", color: "inherit" }}>
+                <div style={S.card}>
+                  <p style={S.label}>
                     {ventasFecha
-                      ? `Ventas ${ventasFecha === hoy() ? "hoy" : formatFechaCorta(ventasFecha)}`
-                      : "Ventas (sin datos recientes)"}
-                  </span>
-                  <span
-                    className="w-8 h-8 rounded-lg flex items-center justify-center"
-                    style={{ background: "var(--color-reig-green-light)", color: "var(--color-reig-green)" }}
-                  >
-                    {icons.euro}
-                  </span>
+                      ? `Ventas · ${ventasFecha === hoy() ? "hoy" : formatFechaCorta(ventasFecha)}`
+                      : "Ventas"}
+                  </p>
+                  <p style={{
+                    ...S.mono, fontSize: 28, fontWeight: 700,
+                    color: "#1d1d1f", lineHeight: 1, marginTop: 8, marginBottom: 4,
+                  }}>
+                    {ventasFecha ? formatEur(ventasTotal) : "—"}
+                  </p>
+                  <p style={{ fontSize: 12, color: "#86868b" }}>
+                    {ventasFecha
+                      ? `${ticketsTotal} tickets · ${formatEurDecimal(ticketMedio)} media`
+                      : "Sin datos recientes"}
+                  </p>
                 </div>
-                <p className="kpi-value">{formatEur(ventasTotal)}</p>
-                <p className="text-xs mt-1" style={{ color: "var(--color-reig-text-muted)" }}>
-                  {ticketsTotal} tickets · media {formatEurDecimal(ticketMedio)}
-                </p>
               </Link>
             )}
 
             {/* Descuadres */}
             {descuadres !== null && (
-              <Link
-                href="/descuadres"
-                className="card group hover:shadow-md transition-shadow"
-                style={hayAlertaDescuadre ? { borderColor: "var(--color-reig-warn)" } : undefined}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="kpi-label" style={{ marginBottom: 0 }}>Descuadre hoy</span>
-                  <span
-                    className="w-8 h-8 rounded-lg flex items-center justify-center"
-                    style={{
-                      background: hayAlertaDescuadre ? "var(--color-reig-warn-light)" : "var(--color-reig-green-light)",
-                      color: hayAlertaDescuadre ? "var(--color-reig-warn)" : "var(--color-reig-green)",
-                    }}
-                  >
-                    {hayAlertaDescuadre ? icons.alerta : icons.balanza}
-                  </span>
+              <Link href="/descuadres" className="dash-kpi" style={{ textDecoration: "none", color: "inherit" }}>
+                <div style={S.card}>
+                  <p style={S.label}>Descuadre · hoy</p>
+                  <p style={{
+                    ...S.mono, fontSize: 28, fontWeight: 700,
+                    color: hayAlertaDescuadre ? "#bf4800" : "#1d1d1f",
+                    lineHeight: 1, marginTop: 8, marginBottom: 4,
+                  }}>
+                    {descuadreNeto >= 0 ? "+" : ""}{formatEurDecimal(descuadreNeto)}
+                  </p>
+                  <p style={{ fontSize: 12, color: "#86868b" }}>
+                    {descuadres.length} caja{descuadres.length !== 1 ? "s" : ""} registrada{descuadres.length !== 1 ? "s" : ""}
+                  </p>
                 </div>
-                <p className="kpi-value" style={hayAlertaDescuadre ? { color: "var(--color-reig-warn)" } : undefined}>
-                  {descuadreNeto >= 0 ? "+" : ""}{formatEurDecimal(descuadreNeto)}
-                </p>
-                <p className="text-xs mt-1" style={{ color: "var(--color-reig-text-muted)" }}>
-                  {descuadres.length} caja{descuadres.length !== 1 ? "s" : ""} registrada{descuadres.length !== 1 ? "s" : ""}
-                </p>
               </Link>
             )}
 
             {/* Tarjetas */}
             {tarjetas !== null && (
-              <Link href="/tarjetas" className="card group hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="kpi-label" style={{ marginBottom: 0 }}>Tarjetas hoy</span>
-                  <span
-                    className="w-8 h-8 rounded-lg flex items-center justify-center"
-                    style={{ background: "var(--color-reig-optica-light)", color: "var(--color-reig-optica)" }}
-                  >
-                    {icons.tarjeta}
-                  </span>
-                </div>
-                <p className="kpi-value">{formatEur(tarjetas.total)}</p>
-                <p className="text-xs mt-1" style={{ color: "var(--color-reig-text-muted)" }}>
-                  {tarjetas.count || 0} operaciones
-                </p>
-              </Link>
-            )}
-
-            {/* Próxima guardia */}
-            {proximaGuardia && (
-              <Link
-                href="/rrhh"
-                className="card group hover:shadow-md transition-shadow"
-                style={diasParaGuardia !== null && diasParaGuardia <= 2 ? { borderColor: "var(--color-reig-danger)" } : undefined}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="kpi-label" style={{ marginBottom: 0 }}>Próxima guardia</span>
-                  <span
-                    className="w-8 h-8 rounded-lg flex items-center justify-center"
-                    style={{
-                      background: diasParaGuardia !== null && diasParaGuardia <= 2
-                        ? "var(--color-reig-danger-light)" : "var(--color-reig-green-light)",
-                      color: diasParaGuardia !== null && diasParaGuardia <= 2
-                        ? "var(--color-reig-danger)" : "var(--color-reig-green)",
-                    }}
-                  >
-                    {icons.escudo}
-                  </span>
-                </div>
-                <p className="kpi-value" style={{ fontSize: 18 }}>
-                  {formatFecha(proximaGuardia.fecha)}
-                </p>
-                <p className="text-xs mt-1" style={{ color: "var(--color-reig-text-muted)" }}>
-                  {diasParaGuardia === 0
-                    ? "Hoy"
-                    : diasParaGuardia === 1
-                    ? "Mañana"
-                    : `En ${diasParaGuardia} días`}
-                  {" · "}
-                  {proximaGuardia.es_festivo ? "Festivo" : proximaGuardia.tipo === "fest" ? "Fin de semana" : "Laborable"}
-                </p>
-              </Link>
-            )}
-          </div>
-
-          {/* ════ FILA 2: Detalle del día ════ */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-
-            {/* ── Ventas por vendedor ── */}
-            {ventas !== null && ventas.length > 0 && (
-              <div className="card">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-sm font-bold" style={{ color: "var(--color-reig-text)" }}>
-                      Ventas por vendedor
-                    </h2>
-                    <p className="text-xs" style={{ color: "var(--color-reig-text-muted)" }}>
-                      {!ventasFecha ? "Sin datos" : ventasFecha === hoy() ? "Hoy" : formatFecha(ventasFecha)}
-                    </p>
-                  </div>
-                  <Link
-                    href="/crm"
-                    className="text-xs font-medium px-3 py-1 rounded-lg transition-colors"
-                    style={{ color: "var(--color-reig-green)", background: "var(--color-reig-green-light)" }}
-                  >
-                    Ver CRM
-                  </Link>
-                </div>
-                <div className="space-y-2">
-                  {ventas
-                    .sort((a, b) => b.facturacion - a.facturacion)
-                    .map((v) => {
-                      const pct = ventasTotal > 0 ? (v.facturacion / ventasTotal) * 100 : 0;
-                      return (
-                        <div key={v.vendedor}>
-                          <div className="flex items-center justify-between text-sm mb-1">
-                            <span className="font-medium" style={{ color: "var(--color-reig-text)" }}>
-                              {v.vendedor}
-                            </span>
-                            <span
-                              className="font-mono text-xs font-semibold"
-                              style={{ color: "var(--color-reig-text-secondary)" }}
-                            >
-                              {formatEur(v.facturacion)}
-                            </span>
-                          </div>
-                          <div
-                            className="h-1.5 rounded-full overflow-hidden"
-                            style={{ background: "var(--color-reig-border-light)" }}
-                          >
-                            <div
-                              className="h-full rounded-full transition-all"
-                              style={{ width: `${pct}%`, background: "var(--color-reig-green)" }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-            )}
-
-            {/* ── Horario del equipo ── */}
-            {horarios !== null && (
-              <div className="card">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-sm font-bold" style={{ color: "var(--color-reig-text)" }}>
-                      Equipo hoy
-                    </h2>
-                    <p className="text-xs" style={{ color: "var(--color-reig-text-muted)" }}>
-                      Horario asignado esta semana
-                    </p>
-                  </div>
-                  <Link
-                    href="/rrhh"
-                    className="text-xs font-medium px-3 py-1 rounded-lg transition-colors"
-                    style={{ color: "var(--color-reig-green)", background: "var(--color-reig-green-light)" }}
-                  >
-                    Ver RRHH
-                  </Link>
-                </div>
-
-                {horarios.length === 0 ? (
-                  <p className="text-sm" style={{ color: "var(--color-reig-text-muted)" }}>
-                    Sin horarios asignados esta semana
+              <Link href="/tarjetas" className="dash-kpi" style={{ textDecoration: "none", color: "inherit" }}>
+                <div style={S.card}>
+                  <p style={S.label}>Tarjetas · hoy</p>
+                  <p style={{
+                    ...S.mono, fontSize: 28, fontWeight: 700,
+                    color: "#1d1d1f", lineHeight: 1, marginTop: 8, marginBottom: 4,
+                  }}>
+                    {formatEur(tarjetas.total)}
                   </p>
-                ) : (
-                  <div className="space-y-2">
-                    {horarios.map((h) => {
-                      // Turnos numéricos con horario real
-                      const turnoLabel: Record<number, { text: string; color: string; bg: string }> = {
-                        0: { text: "8:30–12:30", color: "#7c3aed", bg: "#f3e8ff" },
-                        1: { text: "8:30–16:30", color: "var(--color-reig-optica)", bg: "var(--color-reig-optica-light)" },
-                        2: { text: "9–13 / 16–20", color: "var(--color-reig-green)", bg: "var(--color-reig-green-light)" },
-                        3: { text: "12:30–20:30", color: "#854d0e", bg: "#fef9c3" },
-                      };
-                      const turnoNum = typeof h.turno === "string" ? parseInt(h.turno) : h.turno;
-                      const info = turnoLabel[turnoNum] || { text: `Turno ${h.turno}`, color: "var(--color-reig-text-secondary)", bg: "#F3F4F6" };
-                      return (
-                        <div
-                          key={h.empleado_id}
-                          className="flex items-center justify-between py-1.5 px-2 rounded-lg"
-                          style={{ background: "var(--color-reig-bg)" }}
-                        >
-                          <span className="text-sm font-medium" style={{ color: "var(--color-reig-text)" }}>
-                            {h.nombre}
-                          </span>
-                          <span
-                            className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                            style={{ color: info.color, background: info.bg }}
-                          >
-                            {info.text}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                  <p style={{ fontSize: 12, color: "#86868b" }}>
+                    {tarjetas.count || 0} operaciones
+                  </p>
+                </div>
+              </Link>
+            )}
 
-                {/* Vacaciones inline */}
-                {vacaciones !== null && vacaciones.length > 0 && (
-                  <div className="mt-4 pt-3" style={{ borderTop: "1px solid var(--color-reig-border-light)" }}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span style={{ color: "var(--color-reig-warn)" }}>{icons.palmera}</span>
-                      <span className="text-xs font-bold uppercase tracking-wide" style={{ color: "var(--color-reig-warn)" }}>
-                        De vacaciones hoy
-                      </span>
-                    </div>
-                    <div className="space-y-1">
-                      {vacaciones.map((v) => (
-                        <div key={v.id} className="flex items-center justify-between text-sm">
-                          <span className="font-medium" style={{ color: "var(--color-reig-text)" }}>
-                            {v.nombre}
-                          </span>
-                          <span className="text-xs" style={{ color: "var(--color-reig-text-muted)" }}>
-                            hasta {formatFechaCorta(v.fecha_fin)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+            {/* Guardia */}
+            {proximaGuardia && (
+              <Link href="/rrhh" className="dash-kpi" style={{ textDecoration: "none", color: "inherit" }}>
+                <div style={{
+                  ...S.card,
+                  ...(diasParaGuardia !== null && diasParaGuardia <= 2
+                    ? { background: "#1d1d1f", color: "#fff" }
+                    : {}),
+                }}>
+                  <p style={{
+                    ...S.label,
+                    color: diasParaGuardia !== null && diasParaGuardia <= 2 ? "rgba(255,255,255,0.5)" : "#86868b",
+                  }}>
+                    Próxima guardia
+                  </p>
+                  <p style={{
+                    fontSize: 18, fontWeight: 600, letterSpacing: "-0.01em",
+                    color: diasParaGuardia !== null && diasParaGuardia <= 2 ? "#fff" : "#1d1d1f",
+                    lineHeight: 1.2, marginTop: 8, marginBottom: 4,
+                    textTransform: "capitalize",
+                  }}>
+                    {formatFecha(proximaGuardia.fecha)}
+                  </p>
+                  <p style={{
+                    fontSize: 12,
+                    color: diasParaGuardia !== null && diasParaGuardia <= 2 ? "rgba(255,255,255,0.45)" : "#86868b",
+                  }}>
+                    {diasParaGuardia === 0 ? "Hoy" : diasParaGuardia === 1 ? "Mañana" : `En ${diasParaGuardia} días`}
+                    {" · "}{proximaGuardia.es_festivo ? "Festivo" : proximaGuardia.tipo === "fest" ? "Fin de semana" : "Laborable"}
+                  </p>
+                </div>
+              </Link>
             )}
           </div>
 
-          {/* ════ FILA 3: Descuadres detalle + Guardias próximas ════ */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          {/* ═══ CONTENIDO PRINCIPAL ═══ */}
+          <div style={{ display: "grid", gridTemplateColumns: "5fr 3fr", gap: 12 }}>
 
-            {/* ── Descuadres por caja ── */}
-            {descuadres !== null && descuadres.length > 0 && (
-              <div className="card">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-sm font-bold" style={{ color: "var(--color-reig-text)" }}>
-                      Descuadres por caja
-                    </h2>
-                    <p className="text-xs" style={{ color: "var(--color-reig-text-muted)" }}>
-                      Cierre de hoy
-                    </p>
+            {/* ── COLUMNA IZQUIERDA ── */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+
+              {/* Ventas por vendedor */}
+              {ventas !== null && ventas.length > 0 && (
+                <div style={S.card}>
+                  <div style={{
+                    display: "flex", justifyContent: "space-between",
+                    alignItems: "baseline", marginBottom: 20,
+                  }}>
+                    <p style={S.sectionTitle}>Ventas</p>
+                    <Link href="/crm" style={S.link}>Ver CRM</Link>
                   </div>
-                  <Link
-                    href="/descuadres"
-                    className="text-xs font-medium px-3 py-1 rounded-lg transition-colors"
-                    style={{ color: "var(--color-reig-green)", background: "var(--color-reig-green-light)" }}
-                  >
-                    Ver todo
-                  </Link>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    {ventas
+                      .sort((a, b) => b.facturacion - a.facturacion)
+                      .map((v, idx) => {
+                        const pct = ventasTotal > 0 ? (v.facturacion / ventasTotal) * 100 : 0;
+                        // Escala de grises progresiva — solo el primero tiene color
+                        const barColor = idx === 0 ? "#1d1d1f" : idx === 1 ? "#6e6e73" : "#aeaeb2";
+                        return (
+                          <div key={v.vendedor}>
+                            <div style={{
+                              display: "flex", justifyContent: "space-between",
+                              alignItems: "baseline", marginBottom: 6,
+                            }}>
+                              <span style={{ fontSize: 14, fontWeight: 500, color: "#1d1d1f" }}>
+                                {v.vendedor}
+                              </span>
+                              <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                                <span style={{ fontSize: 12, color: "#86868b" }}>
+                                  {v.tickets} tickets
+                                </span>
+                                <span style={{
+                                  ...S.mono, fontSize: 14, fontWeight: 600,
+                                  color: idx === 0 ? "#1d1d1f" : "#6e6e73",
+                                }}>
+                                  {formatEur(v.facturacion)}
+                                </span>
+                              </div>
+                            </div>
+                            <div style={{
+                              height: 4, borderRadius: 2,
+                              background: "#f5f5f7",
+                            }}>
+                              <div style={{
+                                height: "100%", borderRadius: 2,
+                                width: `${pct}%`, background: barColor,
+                                transition: "width 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
+                              }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  {descuadres
-                    .sort((a, b) => a.caja - b.caja)
-                    .map((d) => {
-                      const esPositivo = d.descuadre >= 0;
+              )}
+
+              {/* Descuadres por caja */}
+              {descuadres !== null && descuadres.length > 0 && (
+                <div style={S.card}>
+                  <div style={{
+                    display: "flex", justifyContent: "space-between",
+                    alignItems: "baseline", marginBottom: 20,
+                  }}>
+                    <p style={S.sectionTitle}>Descuadres</p>
+                    <Link href="/descuadres" style={S.link}>Ver detalle</Link>
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    {descuadres.sort((a, b) => a.caja - b.caja).map((d, idx) => {
                       const esGordo = Math.abs(d.descuadre) > 2;
                       return (
-                        <div
-                          key={d.id}
-                          className="flex items-center justify-between py-2 px-3 rounded-lg"
-                          style={{
-                            background: esGordo
-                              ? (esPositivo ? "var(--color-reig-warn-light)" : "var(--color-reig-danger-light)")
-                              : "var(--color-reig-bg)",
-                          }}
-                        >
-                          <div className="flex items-center gap-3">
-                            <span
-                              className="text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center"
-                              style={{
-                                background: "var(--color-reig-surface)",
-                                color: "var(--color-reig-text-secondary)",
-                                border: "1px solid var(--color-reig-border)",
-                              }}
-                            >
-                              {d.caja}
-                            </span>
-                            <span className="text-sm" style={{ color: "var(--color-reig-text)" }}>
-                              Caja {d.caja}
-                            </span>
+                        <div key={d.id} style={{
+                          display: "flex", justifyContent: "space-between",
+                          alignItems: "center", padding: "12px 0",
+                          borderTop: idx > 0 ? "1px solid #f5f5f7" : "none",
+                        }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <span style={{
+                              ...S.mono, fontSize: 12, fontWeight: 600,
+                              color: "#86868b", width: 20, textAlign: "center",
+                            }}>{d.caja}</span>
+                            <span style={{ fontSize: 14, color: "#1d1d1f" }}>Caja {d.caja}</span>
                           </div>
-                          <span
-                            className="font-mono text-sm font-semibold"
-                            style={{
-                              color: esGordo
-                                ? (esPositivo ? "#92400E" : "var(--color-reig-danger)")
-                                : "var(--color-reig-success)",
-                            }}
-                          >
+                          <span style={{
+                            ...S.mono, fontSize: 14, fontWeight: 600,
+                            color: esGordo ? "#bf4800" : "#1d1d1f",
+                          }}>
                             {d.descuadre >= 0 ? "+" : ""}{formatEurDecimal(d.descuadre)}
                           </span>
                         </div>
                       );
                     })}
-                </div>
-              </div>
-            )}
-
-            {/* ── Próximas guardias ── */}
-            {guardias !== null && guardias.length > 0 && (
-              <div className="card">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-sm font-bold" style={{ color: "var(--color-reig-text)" }}>
-                      Próximas guardias
-                    </h2>
-                    <p className="text-xs" style={{ color: "var(--color-reig-text-muted)" }}>
-                      Ciclo de 19 días
-                    </p>
                   </div>
-                  <Link
-                    href="/rrhh"
-                    className="text-xs font-medium px-3 py-1 rounded-lg transition-colors"
-                    style={{ color: "var(--color-reig-green)", background: "var(--color-reig-green-light)" }}
-                  >
-                    Ver calendario
-                  </Link>
                 </div>
-                <div className="space-y-2">
-                  {guardias.map((g, i) => {
-                    const dias = diasHasta(g.fecha);
-                    const esInminente = dias <= 2;
-                    return (
-                      <div
-                        key={g.id || i}
-                        className="flex items-center justify-between py-2 px-3 rounded-lg"
-                        style={{
-                          background: esInminente ? "var(--color-reig-danger-light)" : "var(--color-reig-bg)",
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span
-                            className="w-8 h-8 rounded-lg flex items-center justify-center"
-                            style={{
-                              background: esInminente ? "var(--color-reig-danger)" : "var(--color-reig-green)",
-                              color: "#fff",
-                            }}
-                          >
-                            {icons.escudo}
+              )}
+            </div>
+
+            {/* ── COLUMNA DERECHA ── */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+
+              {/* Equipo */}
+              {horarios !== null && (
+                <div style={S.card}>
+                  <div style={{
+                    display: "flex", justifyContent: "space-between",
+                    alignItems: "baseline", marginBottom: 20,
+                  }}>
+                    <p style={S.sectionTitle}>Equipo</p>
+                    <Link href="/rrhh" style={S.link}>RRHH</Link>
+                  </div>
+
+                  {horarios.length === 0 ? (
+                    <p style={{ fontSize: 14, color: "#86868b" }}>Sin horarios asignados</p>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                      {horarios.map((h, idx) => {
+                        const turnoInfo: Record<number, { text: string; color: string }> = {
+                          0: { text: "8:30–12:30", color: "#7c3aed" },
+                          1: { text: "8:30–16:30", color: "#1d4ed8" },
+                          2: { text: "9–13 / 16–20", color: "#2E7D32" },
+                          3: { text: "12:30–20:30", color: "#854d0e" },
+                        };
+                        const turnoNum = typeof h.turno === "string" ? parseInt(h.turno) : h.turno;
+                        const info = turnoInfo[turnoNum] || { text: `T${h.turno}`, color: "#86868b" };
+                        return (
+                          <div key={h.empleado_id} style={{
+                            display: "flex", justifyContent: "space-between",
+                            alignItems: "center", padding: "11px 0",
+                            borderTop: idx > 0 ? "1px solid #f5f5f7" : "none",
+                          }}>
+                            <span style={{ fontSize: 14, fontWeight: 500, color: "#1d1d1f" }}>
+                              {h.nombre}
+                            </span>
+                            <span style={{
+                              ...S.mono, fontSize: 12, fontWeight: 600, color: info.color,
+                            }}>
+                              {info.text}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Vacaciones */}
+                  {vacaciones !== null && vacaciones.length > 0 && (
+                    <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #f5f5f7" }}>
+                      <p style={{
+                        fontSize: 11, fontWeight: 600, color: "#bf4800",
+                        textTransform: "uppercase", letterSpacing: "0.04em",
+                        marginBottom: 10,
+                      }}>
+                        De vacaciones
+                      </p>
+                      {vacaciones.map((v) => (
+                        <div key={v.id} style={{
+                          display: "flex", justifyContent: "space-between",
+                          alignItems: "center", paddingTop: 4,
+                        }}>
+                          <span style={{ fontSize: 14, fontWeight: 500, color: "#1d1d1f" }}>
+                            {v.nombre}
                           </span>
+                          <span style={{ fontSize: 12, color: "#86868b" }}>
+                            hasta {formatFechaCorta(v.fecha_fin)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Próximas guardias */}
+              {guardias !== null && guardias.length > 0 && (
+                <div style={S.card}>
+                  <div style={{
+                    display: "flex", justifyContent: "space-between",
+                    alignItems: "baseline", marginBottom: 20,
+                  }}>
+                    <p style={S.sectionTitle}>Guardias</p>
+                    <Link href="/rrhh" style={S.link}>Calendario</Link>
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    {guardias.map((g, i) => {
+                      const dias = diasHasta(g.fecha);
+                      const esInminente = dias <= 2;
+                      return (
+                        <div key={g.id || i} style={{
+                          display: "flex", justifyContent: "space-between",
+                          alignItems: "center", padding: "11px 0",
+                          borderTop: i > 0 ? "1px solid #f5f5f7" : "none",
+                        }}>
                           <div>
-                            <p className="text-sm font-medium capitalize" style={{ color: "var(--color-reig-text)" }}>
+                            <p style={{
+                              fontSize: 14, fontWeight: 500,
+                              color: esInminente ? "#bf4800" : "#1d1d1f",
+                              textTransform: "capitalize",
+                            }}>
                               {formatFecha(g.fecha)}
                             </p>
-                            <p className="text-xs" style={{ color: "var(--color-reig-text-muted)" }}>
+                            <p style={{ fontSize: 12, color: "#86868b", marginTop: 1 }}>
                               {g.es_festivo ? "Festivo" : g.tipo === "fest" ? "Fin de semana" : "Laborable"}
                             </p>
                           </div>
+                          <span style={{
+                            ...S.mono, fontSize: 12, fontWeight: 600,
+                            color: esInminente ? "#bf4800" : "#86868b",
+                          }}>
+                            {dias === 0 ? "HOY" : dias === 1 ? "MAÑANA" : `${dias}d`}
+                          </span>
                         </div>
-                        <span
-                          className="text-xs font-semibold px-2.5 py-1 rounded-full"
-                          style={{
-                            background: esInminente ? "var(--color-reig-danger)" : "var(--color-reig-green-light)",
-                            color: esInminente ? "#fff" : "var(--color-reig-green-dark)",
-                          }}
-                        >
-                          {dias === 0 ? "Hoy" : dias === 1 ? "Mañana" : `${dias} días`}
-                        </span>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
-          {/* ════ CALENDARIO MENSUAL ════ */}
+          {/* ═══ CALENDARIO ═══ */}
           {puede("rrhh_calendario") && (() => {
             const now = new Date();
             const year = now.getFullYear();
@@ -764,145 +679,101 @@ export default function Dashboard({ userName, role, modulosPermitidos }: Dashboa
             const DIAS_HDR = ["L", "M", "X", "J", "V", "S", "D"];
             const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
-            // Compute turno for each rotativa for each week in this month
-            const rotativos = Object.keys(ANCHOR_TURNOS); // ani, yoli, leti, dulce
-
             return (
-              <div className="card">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-sm font-bold" style={{ color: "var(--color-reig-text)" }}>
-                      {meses[month]} {year}
-                    </h2>
-                    <p className="text-xs" style={{ color: "var(--color-reig-text-muted)" }}>
-                      Calendario · guardias · festivos · turnos
-                    </p>
+              <div style={{ ...S.card, marginTop: 0 }}>
+                <div style={{
+                  display: "flex", justifyContent: "space-between",
+                  alignItems: "baseline", marginBottom: 20,
+                }}>
+                  <p style={S.sectionTitle}>{meses[month]}</p>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    {[1, 2, 3].map((t) => (
+                      <span key={t} style={{
+                        fontSize: 10, fontWeight: 600, color: TURNO_COLORS[t].color,
+                      }}>
+                        {TURNO_SHORT[t]}
+                      </span>
+                    ))}
+                    <span style={{ fontSize: 10, fontWeight: 600, color: "#166534" }}>G</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: "#b91c1c" }}>F</span>
                   </div>
-                  <Link
-                    href="/rrhh"
-                    className="text-xs font-medium px-3 py-1 rounded-lg transition-colors"
-                    style={{ color: "var(--color-reig-green)", background: "var(--color-reig-green-light)" }}
-                  >
-                    Ver completo
-                  </Link>
                 </div>
 
-                {/* Leyenda turnos */}
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {[1, 2, 3].map((t) => (
-                    <span
-                      key={t}
-                      className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                      style={{ background: TURNO_COLORS[t].bg, color: TURNO_COLORS[t].color }}
-                    >
-                      {TURNO_SHORT[t]}
-                    </span>
-                  ))}
-                  <span
-                    className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                    style={{ background: "#E8F5E9", color: "#2E7D32" }}
-                  >
-                    Guardia
-                  </span>
-                  <span
-                    className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                    style={{ background: "#fff0f0", color: "#c0392b" }}
-                  >
-                    Festivo
-                  </span>
-                </div>
-
-                {/* Grid del mes */}
-                <div className="grid grid-cols-7 gap-0.5">
-                  {/* Cabecera días */}
-                  {DIAS_HDR.map((d) => (
-                    <div
-                      key={d}
-                      className="text-center text-[10px] font-bold py-1"
-                      style={{ color: "var(--color-reig-text-muted)" }}
-                    >
+                <div style={{
+                  display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2,
+                }}>
+                  {DIAS_HDR.map((d, i) => (
+                    <div key={d} style={{
+                      textAlign: "center", fontSize: 11, fontWeight: 600,
+                      color: i >= 5 ? "#d1d1d6" : "#86868b",
+                      paddingBottom: 8,
+                    }}>
                       {d}
                     </div>
                   ))}
 
-                  {/* Celdas */}
                   {days.map((fecha, i) => {
-                    if (!fecha) return <div key={`empty-${i}`} />;
+                    if (!fecha) return <div key={`e-${i}`} />;
 
                     const dayNum = parseInt(fecha.slice(-2));
                     const d = new Date(fecha + "T12:00:00");
-                    const dow = d.getDay(); // 0=Sun, 6=Sat
+                    const dow = d.getDay();
                     const isToday = fecha === todayStr;
                     const isFestivo = festivoSet.has(fecha);
                     const isWeekend = dow === 0 || dow === 6;
                     const isGuard = isGuardDate(fecha);
-
-                    // Turno for this week
                     const weekMonday = lunesDeSemana(fecha);
+                    const turnoThisWeek = getTurnoForWeek("ani", weekMonday);
 
-                    // Determine cell style
-                    let cellBg = "var(--color-reig-surface)";
-                    let cellBorder = "transparent";
-                    let numColor = "var(--color-reig-text)";
-
-                    if (isGuard) {
-                      cellBg = "#E8F5E9";
-                      cellBorder = "#2E7D32";
-                    } else if (isFestivo) {
-                      cellBg = "#fff0f0";
-                      numColor = "#c0392b";
-                    } else if (isWeekend) {
-                      cellBg = "#f8f8f8";
-                      numColor = "var(--color-reig-text-muted)";
-                    }
+                    let numColor = "#1d1d1f";
+                    let cellBg = "transparent";
+                    let numWeight = 400;
 
                     if (isToday) {
-                      cellBorder = "#3b82f6";
+                      cellBg = "#1d1d1f";
+                      numColor = "#fff";
+                      numWeight = 700;
+                    } else if (isGuard) {
+                      cellBg = "#f0fdf4";
+                      numColor = "#166534";
+                      numWeight = 600;
+                    } else if (isFestivo) {
+                      numColor = "#b91c1c";
+                      numWeight = 500;
+                    } else if (isWeekend) {
+                      numColor = "#d1d1d6";
                     }
-
-                    // Get dominant turno for rotativas this week
-                    const turnoThisWeek = getTurnoForWeek("ani", weekMonday);
 
                     return (
                       <div
                         key={fecha}
-                        className="relative rounded-md text-center py-1"
                         style={{
+                          textAlign: "center", padding: "7px 0 5px",
+                          borderRadius: isToday ? 10 : 8,
                           background: cellBg,
-                          border: `2px solid ${cellBorder}`,
                           minHeight: 44,
                         }}
-                        title={
-                          isFestivo
-                            ? festivoNames[fecha]
-                            : isGuard
-                            ? "Día de guardia"
-                            : undefined
-                        }
+                        title={isFestivo ? festivoNames[fecha] : isGuard ? "Guardia" : undefined}
                       >
-                        <span
-                          className="text-xs font-semibold"
-                          style={{ color: numColor }}
-                        >
+                        <span style={{
+                          fontSize: 13, fontWeight: numWeight, color: numColor,
+                          display: "inline-block",
+                        }}>
                           {dayNum}
                         </span>
-                        {/* Turno dot for weekdays */}
-                        {!isWeekend && !isFestivo && turnoThisWeek > 0 && (
-                          <div className="flex justify-center mt-0.5">
-                            <span
-                              className="text-[8px] font-bold px-1 rounded"
-                              style={{
-                                background: TURNO_COLORS[turnoThisWeek]?.bg,
-                                color: TURNO_COLORS[turnoThisWeek]?.color,
-                              }}
-                            >
+                        {!isWeekend && !isFestivo && !isToday && turnoThisWeek > 0 && (
+                          <div style={{ marginTop: 2, lineHeight: 1 }}>
+                            <span style={{
+                              fontSize: 8, fontWeight: 700,
+                              color: TURNO_COLORS[turnoThisWeek]?.color,
+                            }}>
                               {TURNO_SHORT[turnoThisWeek]}
                             </span>
                           </div>
                         )}
-                        {isGuard && (
-                          <div className="flex justify-center mt-0.5">
-                            <span className="text-[8px]" style={{ color: "#2E7D32" }}>G</span>
+                        {isGuard && !isToday && (
+                          <div style={{ marginTop: 2, lineHeight: 1 }}>
+                            <span style={{ fontSize: 8, fontWeight: 800, color: "#166534" }}>G</span>
                           </div>
                         )}
                       </div>
@@ -913,42 +784,68 @@ export default function Dashboard({ userName, role, modulosPermitidos }: Dashboa
             );
           })()}
 
-          {/* ════ FILA 4: Accesos rápidos (los antiguos módulos, compactos) ════ */}
-          <div>
-            <h2
-              className="text-xs font-bold uppercase tracking-wide mb-3"
-              style={{ color: "var(--color-reig-text-muted)" }}
-            >
-              Accesos rápidos
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
-              {[
-                { label: "Retiradas", href: "/retiradas", permiso: "financiero_retiradas" },
-                { label: "Historial", href: "/retiradas/historial", permiso: "financiero_historial" },
-                { label: "Ingresos", href: "/ingresos", permiso: "financiero_ingresos" },
-                { label: "CRM", href: "/crm", permiso: "marketing_crm" },
-                { label: "Equipo", href: "/rrhh/equipo", permiso: "rrhh_equipo" },
-                { label: "Nóminas", href: "/rrhh/nominas", permiso: "rrhh_nominas" },
-              ]
-                .filter((a) => puede(a.permiso))
-                .map((a) => (
-                  <Link
-                    key={a.href}
-                    href={a.href}
-                    className="text-center py-3 px-2 rounded-lg text-xs font-semibold transition-all hover:shadow-sm"
-                    style={{
-                      background: "var(--color-reig-surface)",
-                      color: "var(--color-reig-text-secondary)",
-                      border: "1px solid var(--color-reig-border)",
-                    }}
-                  >
-                    {a.label}
-                  </Link>
-                ))}
-            </div>
-          </div>
+          {/* ═══ ACCESOS RÁPIDOS ═══ */}
+          {(() => {
+            const accesos = [
+              { label: "Retiradas", href: "/retiradas", permiso: "financiero_retiradas" },
+              { label: "Historial", href: "/retiradas/historial", permiso: "financiero_historial" },
+              { label: "Ingresos", href: "/ingresos", permiso: "financiero_ingresos" },
+              { label: "CRM", href: "/crm", permiso: "marketing_crm" },
+              { label: "Equipo", href: "/rrhh/equipo", permiso: "rrhh_equipo" },
+              { label: "Nóminas", href: "/rrhh/nominas", permiso: "rrhh_nominas" },
+            ].filter((a) => puede(a.permiso));
+
+            if (accesos.length === 0) return null;
+
+            return (
+              <div style={{ paddingTop: 4, paddingBottom: 16 }}>
+                <div style={{
+                  display: "flex", flexWrap: "wrap", gap: 8,
+                }}>
+                  {accesos.map((a) => (
+                    <Link
+                      key={a.href}
+                      href={a.href}
+                      className="dash-shortcut"
+                      style={{
+                        textDecoration: "none",
+                        fontSize: 13, fontWeight: 500, color: "#1d1d1f",
+                        padding: "8px 18px", borderRadius: 980,
+                        background: "#f5f5f7",
+                        transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                      }}
+                    >
+                      {a.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
+
+      <style>{`
+        .dash-kpi > div {
+          transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                      box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .dash-kpi:hover > div {
+          transform: translateY(-2px);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.06);
+        }
+        .dash-shortcut:hover {
+          background: #e8e8ed !important;
+        }
+        @media (max-width: 900px) {
+          div[style*="gridTemplateColumns: repeat(4"] {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+          div[style*="gridTemplateColumns: 5fr 3fr"] {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
