@@ -64,11 +64,27 @@ export async function requireAdmin(): Promise<UserSession> {
  *   const check = await requirePermiso("financiero_retiradas");
  *   if ("error" in check) return check.error;
  *   const { user } = check;
+ *
+ * También acepta un Request opcional para verificar JWT service-to-service
+ * (scripts del pipeline). Si el JWT es válido, devuelve el usuario virtual
+ * del pipeline con role=admin. Ver lib/service-auth.ts.
+ *
+ *   const check = await requirePermiso("admin_panel", req);
  */
 export async function requirePermiso(
-  modulo: string
+  modulo: string,
+  req?: Request
 ): Promise<{ user: UserSession } | { error: Response }> {
   const { NextResponse } = await import("next/server");
+
+  // 1. Si viene un Request, intentar service token JWT primero
+  if (req) {
+    const { verificarServiceToken } = await import("@/lib/service-auth");
+    const serviceUser = await verificarServiceToken(req);
+    if (serviceUser) return { user: serviceUser };
+  }
+
+  // 2. Flujo normal: sesión Auth.js
   const user = await getUser();
   if (!user) {
     return { error: NextResponse.json({ error: "No autenticado" }, { status: 401 }) };

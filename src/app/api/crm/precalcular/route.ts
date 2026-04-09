@@ -187,7 +187,8 @@ const KPI_DATA: Record<number, Array<{mes:number,facturacion:number,tickets:numb
 
 export async function POST(req: NextRequest) {
   // Require admin permission for precalculation operations (heavy DB operations)
-  const check = await requirePermiso("admin_panel");
+  // Also accepts JWT service-to-service token from pipeline scripts
+  const check = await requirePermiso("admin_panel", req);
   if ("error" in check) return check.error;
 
   const yearParam = req.nextUrl.searchParams.get("year");
