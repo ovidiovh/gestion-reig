@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
-import { tienePermiso } from "@/lib/permisos";
+import { listarPermisosUsuario } from "@/lib/permisos";
 
 /* ───── Tipos ───── */
 
@@ -169,16 +169,8 @@ export default async function HomePage() {
   const email = user?.email ?? null;
   const role = user?.role ?? "usuario";
 
-  // Pre-calcular permisos del usuario para módulos restringidos
-  const modulosPermitidos: string[] = [];
-  if (role === "admin") {
-    modulosPermitidos.push("marketing_clientes", "admin_panel");
-  } else {
-    const [mktg] = await Promise.all([
-      tienePermiso("marketing_clientes", email),
-    ]);
-    if (mktg) modulosPermitidos.push("marketing_clientes");
-  }
+  // Obtener TODOS los módulos a los que tiene acceso este usuario (1 sola query)
+  const modulosPermitidos = await listarPermisosUsuario(email ?? "", role);
 
   // Filtramos primero por visibilidad y descartamos secciones que se quedan
   // sin items (evita ver un título "Marketing" sin nada debajo).

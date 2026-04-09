@@ -152,3 +152,28 @@ export function puedeVer(
   if (role === "admin") return true;
   return modulosPermitidos.includes(modulo);
 }
+
+/**
+ * Devuelve la lista de módulos a los que tiene acceso un email concreto.
+ * Para admins devuelve TODOS los módulos.
+ * Útil para la Home y cualquier sitio que necesite saber "a qué tiene acceso este usuario".
+ */
+const TODOS_LOS_MODULOS = [
+  "financiero_retiradas", "financiero_historial", "financiero_ingresos",
+  "marketing_crm", "marketing_clientes",
+  "rrhh_calendario", "rrhh_guardias", "rrhh_vacaciones",
+  "rrhh_equipo", "rrhh_nominas",
+  "admin_panel",
+];
+
+export async function listarPermisosUsuario(
+  email: string,
+  role?: string
+): Promise<string[]> {
+  if (role === "admin") return [...TODOS_LOS_MODULOS];
+  const permisos = await cargarPermisos();
+  return TODOS_LOS_MODULOS.filter((m) => {
+    const emails = permisos.get(m);
+    return emails?.has(email.toLowerCase()) ?? false;
+  });
+}
