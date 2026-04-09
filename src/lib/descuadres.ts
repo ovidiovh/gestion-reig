@@ -7,8 +7,8 @@
  * automáticos de Farmatic.
  *
  * Reglas de negocio:
- *   - María cierra las cajas en orden: 0 (cambio), 1–9, 11 (óptica).
- *     La caja 10 NO EXISTE.
+ *   - María cierra las cajas en orden: 0 (cambio), 1–9, 11 (ortopedia).
+ *     La caja 10 NO EXISTE. La caja 12 (óptica) va por su cuenta.
  *   - El campo "Retirado" del email = tarjetas del día anterior.
  *   - Descuadre positivo = FALTA dinero. Negativo = SOBRA.
  *   - Los emails llegan desde info@farmatic.es (reply-to info@farmaciareig.net).
@@ -30,7 +30,8 @@ export const CAJA_LABEL: Record<number, string> = {
   1: "Caja 1", 2: "Caja 2", 3: "Caja 3", 4: "Caja 4",
   5: "Caja 5", 6: "Caja 6", 7: "Caja 7", 8: "Caja 8",
   9: "Caja 9",
-  11: "Caja 11 (Óptica)",
+  11: "Caja 11 (Ortopedia)",
+  12: "Caja 12 (Óptica)",
 };
 
 /* ───── Tipos ───── */
@@ -280,7 +281,7 @@ export async function agregadoPorCaja(desde: string, hasta: string): Promise<Agr
     `SELECT
        CASE caja
          WHEN 0 THEN 'Caja 0 (Cambio)'
-         WHEN 11 THEN 'Caja 11 (Óptica)'
+         WHEN 11 THEN 'Caja 11 (Ortopedia)' WHEN 12 THEN 'Caja 12 (Óptica)'
          ELSE 'Caja ' || caja
        END as clave,
        SUM(descuadre) as descuadre_neto,
@@ -378,7 +379,7 @@ export async function estadisticasPeriodo(desde: string, hasta: string): Promise
   // Peor caja (mayor descuadre neto positivo = más falta)
   const peorCaja = await query<{ caja_label: string; neto: number }>(
     `SELECT
-       CASE caja WHEN 0 THEN 'Caja 0 (Cambio)' WHEN 11 THEN 'Caja 11 (Óptica)' ELSE 'Caja ' || caja END as caja_label,
+       CASE caja WHEN 0 THEN 'Caja 0 (Cambio)' WHEN 11 THEN 'Caja 11 (Ortopedia)' WHEN 12 THEN 'Caja 12 (Óptica)' ELSE 'Caja ' || caja END as caja_label,
        SUM(descuadre) as neto
      FROM descuadres_cierre
      WHERE fecha_cierre >= ? AND fecha_cierre <= ?

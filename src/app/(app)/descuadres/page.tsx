@@ -60,7 +60,8 @@ const fmtFecha = (s: string) => {
 const CAJA_LABEL: Record<number, string> = {
   0: "Caja 0 (Cambio)", 1: "Caja 1", 2: "Caja 2", 3: "Caja 3",
   4: "Caja 4", 5: "Caja 5", 6: "Caja 6", 7: "Caja 7",
-  8: "Caja 8", 9: "Caja 9", 11: "Caja 11 (Óptica)",
+  8: "Caja 8", 9: "Caja 9", 11: "Caja 11 (Ortopedia)",
+  12: "Caja 12 (Óptica)",
 };
 
 /** Devuelve lunes de la semana ISO */
@@ -443,7 +444,7 @@ export default function DescuadresPage() {
                         >
                           <td style={{
                             padding: "10px 12px", fontWeight: 600,
-                            color: c.caja === 0 ? COLOR.primary : c.caja === 11 ? COLOR.optica : COLOR.text,
+                            color: c.caja === 0 ? COLOR.primary : c.caja === 12 ? COLOR.optica : COLOR.text,
                           }}>
                             {editingId === c.id ? (
                               <select
@@ -456,7 +457,7 @@ export default function DescuadresPage() {
                                   borderRadius: 4, border: `1px solid ${COLOR.primary}`,
                                 }}
                               >
-                                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11].map((n) => (
+                                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12].map((n) => (
                                   <option key={n} value={n}>
                                     {CAJA_LABEL[n]}
                                   </option>
