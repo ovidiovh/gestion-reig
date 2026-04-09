@@ -1,6 +1,7 @@
 import { query, db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { requirePermiso } from "@/lib/auth";
+import { insertAuditLog } from "@/lib/audit";
 
 // GET /api/rrhh/vacaciones?year=2026
 export async function GET(req: NextRequest) {
@@ -46,6 +47,14 @@ export async function POST(req: NextRequest) {
     const result = await db.execute({
       sql: `INSERT INTO rrhh_vacaciones (empleado_id, fecha_inicio, fecha_fin, estado, tipo) VALUES (?, ?, ?, ?, ?)`,
       args: [empleado_id, fecha_inicio, fecha_fin, estado || "pend", tipo || "vac"],
+    });
+
+    await insertAuditLog({
+      usuario_email: check.user.email,
+      usuario_nombre: check.user.nombre ?? "",
+      accion: "crear",
+      modulo: "rrhh_vacaciones",
+      detalle: `Vacaciones empleado=${empleado_id}, ${fecha_inicio} a ${fecha_fin}, tipo=${tipo || "vac"}`,
     });
 
     return NextResponse.json({ ok: true, id: result.lastInsertRowid });

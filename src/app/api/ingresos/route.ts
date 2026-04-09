@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePermiso } from "@/lib/auth";
 import { guardarIngreso, listarIngresos, estadisticasMes } from "@/lib/ingresos";
+import { insertAuditLog } from "@/lib/audit";
 
 export async function POST(req: NextRequest) {
   const check = await requirePermiso("financiero_ingresos");
@@ -34,6 +35,14 @@ export async function POST(req: NextRequest) {
       usuario_email: user.email,
       usuario_nombre: user.nombre,
       notas: body.notas || null,
+    });
+
+    await insertAuditLog({
+      usuario_email: user.email,
+      usuario_nombre: user.nombre,
+      accion: "crear",
+      modulo: "ingresos",
+      detalle: `Ingreso id=${id}, concepto=${body.concepto}, importe=${body.importe}€`,
     });
 
     return NextResponse.json({ ok: true, id });

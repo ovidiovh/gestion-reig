@@ -1,6 +1,7 @@
 import { query, db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requirePermiso } from "@/lib/auth";
+import { insertAuditLog } from "@/lib/audit";
 
 // GET /api/rrhh/guardias/[id] — guardia + slots + empleados
 export async function GET(
@@ -86,6 +87,14 @@ export async function PUT(
         });
       }
     }
+
+    await insertAuditLog({
+      usuario_email: check.user.email,
+      usuario_nombre: check.user.nombre ?? "",
+      accion: "modificar",
+      modulo: "rrhh_guardias",
+      detalle: `Guardia id=${id}${tipo ? `, tipo=${tipo}` : ""}${publicada !== undefined ? `, publicada=${publicada}` : ""}${slots ? `, slots=${slots.length}` : ""}`,
+    });
 
     return NextResponse.json({ ok: true });
   } catch (error) {

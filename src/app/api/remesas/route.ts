@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { requirePermiso } from "@/lib/auth";
+import { insertAuditLog } from "@/lib/audit";
 
 // GET — listar remesas
 export async function GET(req: NextRequest) {
@@ -83,6 +84,14 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    await insertAuditLog({
+      usuario_email: check.user.email,
+      usuario_nombre: check.user.nombre ?? "",
+      accion: "crear",
+      modulo: "remesas",
+      detalle: `Remesa id=${remesaId}, total=${total}€, sesiones=${sesion_ids.length}`,
+    });
+
     return NextResponse.json({ ok: true, remesa_id: remesaId, total, sesiones: sesion_ids.length });
   } catch (error) {
     return NextResponse.json({ ok: false, error: String(error) }, { status: 500 });
@@ -120,6 +129,14 @@ export async function PATCH(req: NextRequest) {
     await db.execute({
       sql: "UPDATE retiradas_remesa SET estado = 'confirmada', confirmada_at = datetime('now'), email_subject = ? WHERE id = ?",
       args: [email_subject || null, id],
+    });
+
+    await insertAuditLog({
+      usuario_email: check.user.email,
+      usuario_nombre: check.user.nombre ?? "",
+      accion: "modificar",
+      modulo: "remesas",
+      detalle: `Remesa id=${id} confirmada${email_subject ? `, email: ${email_subject}` : ""}`,
     });
 
     return NextResponse.json({ ok: true, id, estado: "confirmada" });

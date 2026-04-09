@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requirePermiso } from "@/lib/auth";
 import { guardarSesion, listarSesiones } from "@/lib/retiradas";
 import { db } from "@/lib/db";
+import { insertAuditLog } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -22,6 +23,14 @@ export async function POST(req: NextRequest) {
       destino: body.destino || "caja_fuerte",
       usuario_email: user.email,
       usuario_nombre: user.nombre,
+    });
+
+    await insertAuditLog({
+      usuario_email: user.email,
+      usuario_nombre: user.nombre,
+      accion: "crear",
+      modulo: "retiradas",
+      detalle: `Sesión retirada id=${id}, total=${total}€, destino=${body.destino || "caja_fuerte"}`,
     });
 
     return NextResponse.json({ ok: true, id, total });
@@ -136,6 +145,14 @@ export async function DELETE(req: NextRequest) {
     await db.execute({ sql: `DELETE FROM retiradas_conteo WHERE sesion_id = ?`, args: [sesionId] });
     await db.execute({ sql: `DELETE FROM retiradas_movimiento WHERE sesion_id = ?`, args: [sesionId] });
     const result = await db.execute({ sql: `DELETE FROM retiradas_sesion WHERE id = ?`, args: [sesionId] });
+
+    await insertAuditLog({
+      usuario_email: user.email,
+      usuario_nombre: user.nombre,
+      accion: "eliminar",
+      modulo: "retiradas",
+      detalle: `Sesión retirada id=${sesionId} eliminada`,
+    });
 
     return NextResponse.json({
       ok: true,

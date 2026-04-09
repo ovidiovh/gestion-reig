@@ -1,6 +1,7 @@
 import { query, db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { requirePermiso } from "@/lib/auth";
+import { insertAuditLog } from "@/lib/audit";
 
 // GET /api/rrhh/empleados?incluir_inactivos=1&para=vacaciones|nomina|planning
 //
@@ -73,6 +74,15 @@ export async function POST(req: NextRequest) {
     });
 
     const rows = await query(`SELECT * FROM rrhh_empleados WHERE id = ?`, [id]);
+
+    await insertAuditLog({
+      usuario_email: check.user.email,
+      usuario_nombre: check.user.nombre ?? "",
+      accion: "crear",
+      modulo: "rrhh_equipo",
+      detalle: `Empleado creado: ${nombre} (${id}), categoría=${categoria}, empresa=${empresa}`,
+    });
+
     return NextResponse.json({ ok: true, empleado: rows[0] }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ ok: false, error: String(error) }, { status: 500 });
@@ -119,6 +129,15 @@ export async function PATCH(req: NextRequest) {
     });
 
     const rows = await query(`SELECT * FROM rrhh_empleados WHERE id = ?`, [String(id)]);
+
+    await insertAuditLog({
+      usuario_email: check.user.email,
+      usuario_nombre: check.user.nombre ?? "",
+      accion: "modificar",
+      modulo: "rrhh_equipo",
+      detalle: `Empleado ${id} modificado: ${updates.map(([k, v]) => `${k}=${v}`).join(", ")}`,
+    });
+
     return NextResponse.json({ ok: true, empleado: rows[0] });
   } catch (error) {
     return NextResponse.json({ ok: false, error: String(error) }, { status: 500 });

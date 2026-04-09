@@ -17,6 +17,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createHash, randomUUID } from "crypto";
 import { db, query } from "@/lib/db";
 import { requirePermiso } from "@/lib/auth";
+import { insertAuditLog } from "@/lib/audit";
 import { calcularNominaMes, type ResumenMes } from "@/lib/nomina/engine";
 import { renderReigPDF } from "@/lib/nomina/pdf/template-reig";
 import { renderMirelusPDF } from "@/lib/nomina/pdf/template-mirelus";
@@ -116,29 +117,21 @@ async function archivarEmpresa(
     ],
   });
 
-  // 5. Audit log (cross-cutting)
-  try {
-    await db.execute({
-      sql: `INSERT INTO audit_log (usuario_email, usuario_nombre, accion, modulo, detalle)
-            VALUES (?, ?, ?, ?, ?)`,
-      args: [
-        cerradoPorEmail,
-        "",
-        "cierre_nomina",
-        "rrhh_nominas",
-        JSON.stringify({
-          mes,
-          empresa,
-          version,
-          hash_pdf: hash,
-          bytes_pdf: buffer.byteLength,
-          drive_file_id: upload.fileId,
-        }),
-      ],
-    });
-  } catch {
-    // audit_log puede no existir en deploys antiguos; no bloquear el cierre
-  }
+  // 5. Audit log (cross-cutting) — usa el helper centralizado
+  await insertAuditLog({
+    usuario_email: cerradoPorEmail,
+    usuario_nombre: "",
+    accion: "cierre_nomina",
+    modulo: "rrhh_nominas",
+    detalle: JSON.stringify({
+      mes,
+      empresa,
+      version,
+      hash_pdf: hash,
+      bytes_pdf: buffer.byteLength,
+      drive_file_id: upload.fileId,
+    }),
+  });
 
   return {
     empresa,
