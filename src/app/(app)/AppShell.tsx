@@ -27,7 +27,7 @@ export default function AppShell({
   usePageView();
 
   return (
-    <div className="min-h-screen" style={{ background: "#f8faf9" }}>
+    <div className="min-h-screen" style={{ background: "var(--color-reig-bg)" }}>
       <Sidebar
         userName={userName}
         userEmail={userEmail}

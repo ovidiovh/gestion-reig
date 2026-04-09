@@ -25,11 +25,12 @@
   --color-reig-orto-mid:     #F57C00;
   --color-reig-orto-light:   #FFF3E0;
 
-  /* ── Neutros ── */
-  --color-reig-bg:            #F7FAF8;
+  /* ── Neutros (fondo neutro, verde solo como acento) ── */
+  --color-reig-bg:            #F8F9FB;
   --color-reig-surface:       #FFFFFF;
-  --color-reig-border:        #E5E7EB;
-  --color-reig-text:          #1A2E1C;
+  --color-reig-border:        #E2E5EA;
+  --color-reig-border-light:  #F0F1F4;
+  --color-reig-text:          #111827;
   --color-reig-text-secondary:#4B5563;
   --color-reig-text-muted:    #9CA3AF;
 
@@ -40,6 +41,8 @@
   --color-reig-warn-light:   #FFFBEB;
   --color-reig-success:      #16A34A;
   --color-reig-success-light:#DCFCE7;
+  --color-reig-info:         #3B82F6;
+  --color-reig-info-light:   #EFF6FF;
 }
 
 /* ── Fuentes ── */
@@ -113,7 +116,7 @@ h1, h2, h3 { font-family: 'DM Serif Display', serif; }
   font-family: 'JetBrains Mono', monospace;
   font-size: 22px;
   font-weight: 700;
-  color: var(--color-reig-green-dark);
+  color: var(--color-reig-text);
   line-height: 1.1;
 }
 .kpi-label {
@@ -183,7 +186,7 @@ h1, h2, h3 { font-family: 'DM Serif Display', serif; }
   display: block;
   font-size: 11px; font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.04em;
-  color: var(--color-reig-green-dark);
+  color: var(--color-reig-text-secondary);
   margin-bottom: 4px;
 }
 
@@ -191,7 +194,7 @@ h1, h2, h3 { font-family: 'DM Serif Display', serif; }
 .section-title {
   font-family: 'DM Serif Display', serif;
   font-size: 22px;
-  color: var(--color-reig-green-dark);
+  color: var(--color-reig-text);
   margin: 0;
 }
 .section-subtitle {
