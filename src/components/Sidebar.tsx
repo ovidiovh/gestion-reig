@@ -325,8 +325,8 @@ export default function Sidebar({
 
   const sidebarContent = (
     <>
-      {/* Logo / Branding */}
-      <div className="px-5 py-4">
+      {/* Logo / Branding — clicable, lleva a Inicio */}
+      <Link href="/" className="block px-5 py-4 hover:opacity-80 transition-opacity">
         <img
           src="/logo-reig-white.png"
           alt="Farmacia Reig"
@@ -334,7 +334,7 @@ export default function Sidebar({
           style={{ filter: "brightness(1)" }}
         />
         <p className="text-white/50 text-[10px] mt-1 tracking-wide">{contextLabel}</p>
-      </div>
+      </Link>
 
       {/* Nav sections */}
       <nav className="flex-1 px-3 py-2 space-y-3 overflow-y-auto">
