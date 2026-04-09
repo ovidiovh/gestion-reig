@@ -204,6 +204,48 @@ export default function UsuariosPage() {
   // Estado para el form de añadir permiso
   const [nuevoPermiso, setNuevoPermiso] = useState({ modulo: "", email: "" });
 
+  // Estado para alta de usuario
+  const [showAlta, setShowAlta] = useState(false);
+  const [nuevoUser, setNuevoUser] = useState({
+    email: "",
+    nombre: "",
+    role: "usuario" as "admin" | "usuario",
+    departamento: "farmacia" as "farmacia" | "optica" | "ambos",
+  });
+  const [altaCargando, setAltaCargando] = useState(false);
+
+  const darDeAlta = async () => {
+    const emailFinal = nuevoUser.email.includes("@")
+      ? nuevoUser.email.toLowerCase().trim()
+      : `${nuevoUser.email.toLowerCase().trim()}@farmaciareig.net`;
+
+    if (!emailFinal || !nuevoUser.nombre.trim()) {
+      setMsg({ text: "Email y nombre son obligatorios", type: "err" });
+      return;
+    }
+    setAltaCargando(true);
+    try {
+      const res = await fetch("/api/admin/usuarios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...nuevoUser, email: emailFinal }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setMsg({ text: data.msg, type: "ok" });
+        setNuevoUser({ email: "", nombre: "", role: "usuario", departamento: "farmacia" });
+        setShowAlta(false);
+        cargar();
+      } else {
+        setMsg({ text: data.error || "Error al crear usuario", type: "err" });
+      }
+    } catch {
+      setMsg({ text: "Error de red", type: "err" });
+    } finally {
+      setAltaCargando(false);
+    }
+  };
+
   // Estado para categorías abiertas/cerradas
   const [catAbiertas, setCatAbiertas] = useState<Record<string, boolean>>({});
   const toggleCat = (id: string) =>
@@ -300,6 +342,112 @@ export default function UsuariosPage() {
       ) : tab === "usuarios" ? (
         /* ═══ TAB USUARIOS ═══ */
         <div className="space-y-3">
+          {/* Botón + Formulario de alta */}
+          {!showAlta ? (
+            <button
+              onClick={() => setShowAlta(true)}
+              className="w-full border-2 border-dashed rounded-xl p-4 text-sm font-medium transition-colors hover:border-green-400 hover:bg-green-50"
+              style={{ borderColor: "#d1d5db", color: "#5a615c" }}
+            >
+              + Dar de alta nuevo usuario
+            </button>
+          ) : (
+            <div
+              className="bg-white rounded-xl border p-5"
+              style={{ borderColor: "#0C6D32", borderWidth: 2 }}
+            >
+              <h3 className="text-sm font-semibold mb-4" style={{ color: "#2a2e2b" }}>
+                Alta de nuevo usuario
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                <div>
+                  <label className="text-xs font-medium block mb-1" style={{ color: "#5a615c" }}>
+                    Email
+                  </label>
+                  <div className="flex items-center">
+                    <input
+                      type="text"
+                      value={nuevoUser.email}
+                      onChange={(e) => setNuevoUser((p) => ({ ...p, email: e.target.value }))}
+                      placeholder="nombre"
+                      className="border rounded-l-lg px-3 py-1.5 text-sm flex-1"
+                      style={{ borderColor: "#d1d5db" }}
+                    />
+                    <span
+                      className="border border-l-0 rounded-r-lg px-2 py-1.5 text-xs"
+                      style={{ borderColor: "#d1d5db", background: "#f9fafb", color: "#6b7280" }}
+                    >
+                      @farmaciareig.net
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-medium block mb-1" style={{ color: "#5a615c" }}>
+                    Nombre completo
+                  </label>
+                  <input
+                    type="text"
+                    value={nuevoUser.nombre}
+                    onChange={(e) => setNuevoUser((p) => ({ ...p, nombre: e.target.value }))}
+                    placeholder="Ana Garcia"
+                    className="border rounded-lg px-3 py-1.5 text-sm w-full"
+                    style={{ borderColor: "#d1d5db" }}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium block mb-1" style={{ color: "#5a615c" }}>
+                    Rol
+                  </label>
+                  <select
+                    value={nuevoUser.role}
+                    onChange={(e) => setNuevoUser((p) => ({ ...p, role: e.target.value as "admin" | "usuario" }))}
+                    className="border rounded-lg px-3 py-1.5 text-sm w-full"
+                    style={{ borderColor: "#d1d5db" }}
+                  >
+                    <option value="usuario">usuario</option>
+                    <option value="admin">admin</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium block mb-1" style={{ color: "#5a615c" }}>
+                    Departamento
+                  </label>
+                  <select
+                    value={nuevoUser.departamento}
+                    onChange={(e) => setNuevoUser((p) => ({ ...p, departamento: e.target.value as "farmacia" | "optica" | "ambos" }))}
+                    className="border rounded-lg px-3 py-1.5 text-sm w-full"
+                    style={{ borderColor: "#d1d5db" }}
+                  >
+                    <option value="farmacia">farmacia</option>
+                    <option value="optica">optica</option>
+                    <option value="ambos">ambos</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={darDeAlta}
+                  disabled={altaCargando}
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-50"
+                  style={{ background: "#0C6D32" }}
+                >
+                  {altaCargando ? "Creando..." : "Crear usuario"}
+                </button>
+                <button
+                  onClick={() => setShowAlta(false)}
+                  className="px-4 py-2 rounded-lg text-sm font-medium border"
+                  style={{ borderColor: "#d1d5db", color: "#5a615c" }}
+                >
+                  Cancelar
+                </button>
+              </div>
+              <p className="text-xs mt-3" style={{ color: "#9ca3af" }}>
+                Una vez dado de alta, el usuario podra iniciar sesion con su cuenta Google de @farmaciareig.net.
+                Recuerda asignarle permisos en la pestaña de Permisos.
+              </p>
+            </div>
+          )}
+
           {usuarios.map((u) => (
             <div
               key={u.email}

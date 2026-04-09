@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { insertAuditLog } from "@/lib/audit";
+import { crearUsuario } from "@/lib/usuarios";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -42,6 +43,40 @@ export async function GET() {
   } catch (err) {
     console.error("[admin/usuarios GET]", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
+
+/**
+ * POST /api/admin/usuarios
+ * Body: { email: string, nombre: string, role: "admin"|"usuario", departamento: "farmacia"|"optica"|"ambos" }
+ * Da de alta un usuario nuevo.
+ */
+export async function POST(req: NextRequest) {
+  try {
+    const admin = await requireAdmin();
+    const body = await req.json();
+    const { email, nombre, role, departamento } = body;
+
+    if (!email || !nombre || !role || !departamento) {
+      return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
+    }
+
+    const result = await crearUsuario({ email, nombre, role, departamento });
+    if (!result.ok) {
+      return NextResponse.json({ error: result.msg }, { status: 409 });
+    }
+
+    await insertAuditLog({
+      usuario_email: admin.email,
+      usuario_nombre: admin.nombre,
+      accion: "crear_usuario",
+      modulo: "admin",
+      detalle: `Alta: ${email} (${role}, ${departamento})`,
+    });
+
+    return NextResponse.json({ ok: true, msg: result.msg });
+  } catch {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 }
 
