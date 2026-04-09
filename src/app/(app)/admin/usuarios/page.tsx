@@ -24,20 +24,71 @@ interface Permiso {
   fecha: string;
 }
 
-/* ───── Módulos con whitelist ───── */
+/* ───── Módulos agrupados por categoría ───── */
 
-const MODULOS_RESTRINGIDOS = [
-  { key: "financiero_retiradas", label: "Retiradas", descripcion: "Registrar retirada de efectivo de las cajas" },
-  { key: "financiero_historial", label: "Historial retiradas", descripcion: "Consultar retiradas pasadas y remesas" },
-  { key: "financiero_ingresos", label: "Ingresos banco", descripcion: "Ingresos bancarios y conciliacion" },
-  { key: "marketing_crm", label: "CRM", descripcion: "Base de datos de clientes y analisis de ventas" },
-  { key: "marketing_clientes", label: "Marketing / Clientes", descripcion: "Dashboard epidemiologico y segmentacion" },
-  { key: "rrhh_calendario", label: "Calendario", descripcion: "Planning mensual del equipo" },
-  { key: "rrhh_guardias", label: "Guardias", descripcion: "Elaboracion y gestion de guardias" },
-  { key: "rrhh_vacaciones", label: "Vacaciones", descripcion: "Gestion de vacaciones y ausencias" },
-  { key: "rrhh_equipo", label: "Equipo", descripcion: "Gestion del personal de la farmacia" },
-  { key: "rrhh_nominas", label: "Nominas", descripcion: "Generacion mensual de PDFs para la gestoria" },
-  { key: "admin_panel", label: "Administracion", descripcion: "Panel de usuarios, permisos y accesos" },
+interface Modulo {
+  key: string;
+  label: string;
+  descripcion: string;
+}
+
+interface Categoria {
+  id: string;
+  label: string;
+  icono: string;
+  color: string;       // color del badge / header
+  bgColor: string;     // fondo suave del header
+  modulos: Modulo[];
+}
+
+const CATEGORIAS: Categoria[] = [
+  {
+    id: "financiero",
+    label: "Finanzas",
+    icono: "💰",
+    color: "#92400e",
+    bgColor: "#fef3c7",
+    modulos: [
+      { key: "financiero_retiradas", label: "Retiradas", descripcion: "Registrar retirada de efectivo de las cajas" },
+      { key: "financiero_historial", label: "Historial retiradas", descripcion: "Consultar retiradas pasadas y remesas" },
+      { key: "financiero_ingresos", label: "Ingresos banco", descripcion: "Ingresos bancarios y conciliacion" },
+    ],
+  },
+  {
+    id: "marketing",
+    label: "Marketing",
+    icono: "📊",
+    color: "#5b21b6",
+    bgColor: "#ede9fe",
+    modulos: [
+      { key: "marketing_crm", label: "CRM", descripcion: "Base de datos de clientes y analisis de ventas" },
+      { key: "marketing_clientes", label: "Marketing / Clientes", descripcion: "Dashboard epidemiologico y segmentacion" },
+    ],
+  },
+  {
+    id: "rrhh",
+    label: "RRHH",
+    icono: "👥",
+    color: "#065f46",
+    bgColor: "#ecfdf5",
+    modulos: [
+      { key: "rrhh_calendario", label: "Calendario", descripcion: "Planning mensual del equipo" },
+      { key: "rrhh_guardias", label: "Guardias", descripcion: "Elaboracion y gestion de guardias" },
+      { key: "rrhh_vacaciones", label: "Vacaciones", descripcion: "Gestion de vacaciones y ausencias" },
+      { key: "rrhh_equipo", label: "Equipo", descripcion: "Gestion del personal de la farmacia" },
+      { key: "rrhh_nominas", label: "Nominas", descripcion: "Generacion mensual de PDFs para la gestoria" },
+    ],
+  },
+  {
+    id: "admin",
+    label: "Administracion",
+    icono: "⚙️",
+    color: "#991b1b",
+    bgColor: "#fef2f2",
+    modulos: [
+      { key: "admin_panel", label: "Administracion", descripcion: "Panel de usuarios, permisos y accesos" },
+    ],
+  },
 ];
 
 /* ───── Helpers ───── */
@@ -152,6 +203,49 @@ export default function UsuariosPage() {
 
   // Estado para el form de añadir permiso
   const [nuevoPermiso, setNuevoPermiso] = useState({ modulo: "", email: "" });
+
+  // Estado para categorías abiertas/cerradas
+  const [catAbiertas, setCatAbiertas] = useState<Record<string, boolean>>({});
+  const toggleCat = (id: string) =>
+    setCatAbiertas((prev) => ({ ...prev, [id]: !prev[id] }));
+
+  // ── Acciones en lote por categoría ──
+
+  const concederCategoria = async (cat: Categoria, emailTarget: string) => {
+    if (!emailTarget) return;
+    setMsg(null);
+    const modulosSinPermiso = cat.modulos.filter(
+      (m) => !permisos.some((p) => p.modulo === m.key && p.email === emailTarget)
+    );
+    for (const m of modulosSinPermiso) {
+      await conceder(m.key, emailTarget);
+    }
+  };
+
+  const revocarCategoria = async (cat: Categoria, emailTarget: string) => {
+    if (!emailTarget) return;
+    if (!confirm(`¿Revocar TODOS los permisos de "${cat.label}" a ${emailTarget}?`)) return;
+    setMsg(null);
+    const modulosConPermiso = cat.modulos.filter(
+      (m) => permisos.some((p) => p.modulo === m.key && p.email === emailTarget)
+    );
+    for (const m of modulosConPermiso) {
+      // revocar individual ya hace confirm — lo bypasseamos directamente
+      try {
+        const res = await fetch("/api/admin/permisos", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ modulo: m.key, email: emailTarget }),
+        });
+        await res.json();
+      } catch { /* silenciar */ }
+    }
+    setMsg({ text: `Permisos de ${cat.label} revocados para ${emailTarget.split("@")[0]}`, type: "ok" });
+    cargar();
+  };
+
+  // Estado para el select de usuario por categoría (conceder todo)
+  const [catUsuario, setCatUsuario] = useState<Record<string, string>>({});
 
   return (
     <div>
@@ -300,86 +394,213 @@ export default function UsuariosPage() {
           >
             Los <strong>admins</strong> tienen acceso implicito a todo. Los permisos aqui controlan
             que secciones restringidas puede ver un usuario con rol &quot;usuario&quot;.
+            Pulsa en cada categoria para desplegar sus modulos.
           </div>
 
-          {/* Módulos con sus whitelists */}
-          {MODULOS_RESTRINGIDOS.map((mod) => {
-            const permisosModulo = permisos.filter((p) => p.modulo === mod.key);
+          {/* Categorías colapsables */}
+          {CATEGORIAS.map((cat) => {
+            const abierta = !!catAbiertas[cat.id];
+            // Contar permisos totales de esta categoría
+            const totalPermisosCat = cat.modulos.reduce(
+              (acc, m) => acc + permisos.filter((p) => p.modulo === m.key).length,
+              0
+            );
 
             return (
               <div
-                key={mod.key}
-                className="bg-white rounded-xl border p-5 mb-4"
+                key={cat.id}
+                className="rounded-xl border mb-4 overflow-hidden"
                 style={{ borderColor: "#e5e7eb" }}
               >
-                <h3 className="text-sm font-semibold mb-1" style={{ color: "#2a2e2b" }}>
-                  {mod.label}
-                </h3>
-                <p className="text-xs mb-3" style={{ color: "#9ca3af" }}>{mod.descripcion}</p>
-
-                {/* Lista de emails con permiso */}
-                {permisosModulo.length > 0 ? (
-                  <div className="space-y-1 mb-3">
-                    {permisosModulo.map((p) => (
-                      <div
-                        key={`${p.modulo}-${p.email}`}
-                        className="flex items-center justify-between px-3 py-1.5 rounded-lg"
-                        style={{ background: "#f9fafb" }}
+                {/* Header de categoría — clickable */}
+                <button
+                  onClick={() => toggleCat(cat.id)}
+                  className="w-full flex items-center justify-between px-5 py-4 transition-colors"
+                  style={{ background: abierta ? cat.bgColor : "#fff" }}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">{cat.icono}</span>
+                    <span
+                      className="text-sm font-semibold"
+                      style={{ color: cat.color }}
+                    >
+                      {cat.label}
+                    </span>
+                    <span
+                      className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                      style={{ background: "#f3f4f6", color: "#6b7280" }}
+                    >
+                      {cat.modulos.length} modulo{cat.modulos.length > 1 ? "s" : ""}
+                    </span>
+                    {totalPermisosCat > 0 && (
+                      <span
+                        className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                        style={{ background: "#ecfdf5", color: "#065f46" }}
                       >
-                        <div>
-                          <span className="text-sm font-medium" style={{ color: "#2a2e2b" }}>
-                            {p.email.split("@")[0]}
-                          </span>
-                          <span className="text-xs ml-2" style={{ color: "#9ca3af" }}>
-                            por {p.concedido_por.split("@")[0]} · {p.fecha ? formatFecha(p.fecha) : ""}
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => revocar(p.modulo, p.email)}
-                          className="text-xs px-2 py-0.5 rounded text-red-600 hover:bg-red-50 transition-colors"
-                        >
-                          Revocar
-                        </button>
-                      </div>
-                    ))}
+                        {totalPermisosCat} permiso{totalPermisosCat > 1 ? "s" : ""} activo{totalPermisosCat > 1 ? "s" : ""}
+                      </span>
+                    )}
                   </div>
-                ) : (
-                  <p className="text-xs mb-3" style={{ color: "#9ca3af" }}>
-                    Sin permisos explicitos (solo admins tienen acceso).
-                  </p>
-                )}
-
-                {/* Form rápido para añadir */}
-                <div className="flex gap-2 items-center">
-                  <select
-                    value={nuevoPermiso.modulo === mod.key ? nuevoPermiso.email : ""}
-                    onChange={(e) => setNuevoPermiso({ modulo: mod.key, email: e.target.value })}
-                    className="border rounded-lg px-2 py-1 text-xs flex-1"
-                    style={{ borderColor: "#d1d5db" }}
-                  >
-                    <option value="">Seleccionar usuario...</option>
-                    {usuarios
-                      .filter((u) => u.activo && !permisosModulo.some((p) => p.email === u.email))
-                      .map((u) => (
-                        <option key={u.email} value={u.email}>
-                          {u.nombre || u.email.split("@")[0]} ({u.email})
-                        </option>
-                      ))}
-                  </select>
-                  <button
-                    onClick={() => {
-                      if (nuevoPermiso.modulo === mod.key && nuevoPermiso.email) {
-                        conceder(mod.key, nuevoPermiso.email);
-                        setNuevoPermiso({ modulo: "", email: "" });
-                      }
+                  <svg
+                    className="transition-transform duration-200"
+                    style={{
+                      transform: abierta ? "rotate(180deg)" : "rotate(0deg)",
+                      width: 16,
+                      height: 16,
+                      color: "#9ca3af",
                     }}
-                    disabled={nuevoPermiso.modulo !== mod.key || !nuevoPermiso.email}
-                    className="px-3 py-1 rounded-lg text-xs font-medium text-white disabled:opacity-40"
-                    style={{ background: "#0C6D32" }}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    Conceder
-                  </button>
-                </div>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Contenido desplegable */}
+                {abierta && (
+                  <div className="px-5 pb-5 pt-2 bg-white">
+                    {/* Acción rápida: conceder toda la categoría a un usuario */}
+                    <div
+                      className="flex gap-2 items-center mb-4 p-3 rounded-lg"
+                      style={{ background: "#f9fafb", border: "1px dashed #d1d5db" }}
+                    >
+                      <span className="text-xs font-medium whitespace-nowrap" style={{ color: "#5a615c" }}>
+                        Conceder toda la categoria:
+                      </span>
+                      <select
+                        value={catUsuario[cat.id] || ""}
+                        onChange={(e) => setCatUsuario((prev) => ({ ...prev, [cat.id]: e.target.value }))}
+                        className="border rounded-lg px-2 py-1 text-xs flex-1"
+                        style={{ borderColor: "#d1d5db" }}
+                      >
+                        <option value="">Seleccionar usuario...</option>
+                        {usuarios
+                          .filter((u) => u.activo)
+                          .map((u) => (
+                            <option key={u.email} value={u.email}>
+                              {u.nombre || u.email.split("@")[0]}
+                            </option>
+                          ))}
+                      </select>
+                      <button
+                        onClick={() => {
+                          if (catUsuario[cat.id]) {
+                            concederCategoria(cat, catUsuario[cat.id]);
+                            setCatUsuario((prev) => ({ ...prev, [cat.id]: "" }));
+                          }
+                        }}
+                        disabled={!catUsuario[cat.id]}
+                        className="px-3 py-1 rounded-lg text-xs font-medium text-white disabled:opacity-40 whitespace-nowrap"
+                        style={{ background: "#0C6D32" }}
+                      >
+                        Conceder todo
+                      </button>
+                      {catUsuario[cat.id] && (
+                        <button
+                          onClick={() => {
+                            if (catUsuario[cat.id]) {
+                              revocarCategoria(cat, catUsuario[cat.id]);
+                              setCatUsuario((prev) => ({ ...prev, [cat.id]: "" }));
+                            }
+                          }}
+                          className="px-3 py-1 rounded-lg text-xs font-medium text-white whitespace-nowrap"
+                          style={{ background: "#dc2626" }}
+                        >
+                          Revocar todo
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Módulos individuales */}
+                    {cat.modulos.map((mod) => {
+                      const permisosModulo = permisos.filter((p) => p.modulo === mod.key);
+
+                      return (
+                        <div
+                          key={mod.key}
+                          className="border rounded-lg p-4 mb-3 last:mb-0"
+                          style={{ borderColor: "#e5e7eb" }}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="text-sm font-semibold" style={{ color: "#2a2e2b" }}>
+                              {mod.label}
+                            </h4>
+                            {permisosModulo.length > 0 && (
+                              <span
+                                className="text-[10px] px-2 py-0.5 rounded-full"
+                                style={{ background: "#ecfdf5", color: "#065f46" }}
+                              >
+                                {permisosModulo.length} usuario{permisosModulo.length > 1 ? "s" : ""}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs mb-3" style={{ color: "#9ca3af" }}>{mod.descripcion}</p>
+
+                          {/* Lista de emails con permiso */}
+                          {permisosModulo.length > 0 && (
+                            <div className="space-y-1 mb-3">
+                              {permisosModulo.map((p) => (
+                                <div
+                                  key={`${p.modulo}-${p.email}`}
+                                  className="flex items-center justify-between px-3 py-1.5 rounded-lg"
+                                  style={{ background: "#f9fafb" }}
+                                >
+                                  <div>
+                                    <span className="text-sm font-medium" style={{ color: "#2a2e2b" }}>
+                                      {p.email.split("@")[0]}
+                                    </span>
+                                    <span className="text-xs ml-2" style={{ color: "#9ca3af" }}>
+                                      por {p.concedido_por.split("@")[0]} · {p.fecha ? formatFecha(p.fecha) : ""}
+                                    </span>
+                                  </div>
+                                  <button
+                                    onClick={() => revocar(p.modulo, p.email)}
+                                    className="text-xs px-2 py-0.5 rounded text-red-600 hover:bg-red-50 transition-colors"
+                                  >
+                                    Revocar
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Form rápido para añadir individualmente */}
+                          <div className="flex gap-2 items-center">
+                            <select
+                              value={nuevoPermiso.modulo === mod.key ? nuevoPermiso.email : ""}
+                              onChange={(e) => setNuevoPermiso({ modulo: mod.key, email: e.target.value })}
+                              className="border rounded-lg px-2 py-1 text-xs flex-1"
+                              style={{ borderColor: "#d1d5db" }}
+                            >
+                              <option value="">Añadir usuario...</option>
+                              {usuarios
+                                .filter((u) => u.activo && !permisosModulo.some((p) => p.email === u.email))
+                                .map((u) => (
+                                  <option key={u.email} value={u.email}>
+                                    {u.nombre || u.email.split("@")[0]}
+                                  </option>
+                                ))}
+                            </select>
+                            <button
+                              onClick={() => {
+                                if (nuevoPermiso.modulo === mod.key && nuevoPermiso.email) {
+                                  conceder(mod.key, nuevoPermiso.email);
+                                  setNuevoPermiso({ modulo: "", email: "" });
+                                }
+                              }}
+                              disabled={nuevoPermiso.modulo !== mod.key || !nuevoPermiso.email}
+                              className="px-3 py-1 rounded-lg text-xs font-medium text-white disabled:opacity-40"
+                              style={{ background: "#0C6D32" }}
+                            >
+                              Conceder
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}
