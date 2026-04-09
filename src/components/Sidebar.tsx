@@ -326,21 +326,14 @@ export default function Sidebar({
   const sidebarContent = (
     <>
       {/* Logo / Branding */}
-      <div className="px-6 py-5 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/20">
-          <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-            <path d="M16 4v24M4 16h24" stroke="white" strokeWidth="4" strokeLinecap="round" />
-          </svg>
-        </div>
-        <div>
-          <h1
-            className="text-white text-lg font-semibold"
-            style={{ fontFamily: "'DM Serif Display', serif" }}
-          >
-            Gestion Reig
-          </h1>
-          <p className="text-white/60 text-xs">{contextLabel}</p>
-        </div>
+      <div className="px-5 py-4">
+        <img
+          src="/logo-reig-white.png"
+          alt="Farmacia Reig"
+          className="h-10 w-auto"
+          style={{ filter: "brightness(1)" }}
+        />
+        <p className="text-white/50 text-[10px] mt-1 tracking-wide">{contextLabel}</p>
       </div>
 
       {/* Nav sections */}
