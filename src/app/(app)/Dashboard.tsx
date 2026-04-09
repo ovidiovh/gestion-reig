@@ -59,6 +59,54 @@ interface TarjetasDia {
   count: number;
 }
 
+interface Festivo {
+  fecha: string;
+  nombre: string;
+}
+
+/* ───── Calendario: constantes de rotación ───── */
+
+const ANCHOR_WEEK = "2026-03-23";
+const ANCHOR_TURNOS: Record<string, number> = { ani: 1, yoli: 2, leti: 2, dulce: 3 };
+const TURNO_SHORT: Record<number, string> = { 0: "Esp", 1: "T1", 2: "T2", 3: "T3" };
+const TURNO_COLORS: Record<number, { bg: string; color: string }> = {
+  0: { bg: "#f3e8ff", color: "#7c3aed" },
+  1: { bg: "#dbeafe", color: "#1d4ed8" },
+  2: { bg: "#dcfce7", color: "#166534" },
+  3: { bg: "#fef9c3", color: "#854d0e" },
+};
+const FIRST_GUARD = new Date("2026-04-04T12:00:00");
+
+function getTurnoForWeek(empId: string, weekStart: string): number {
+  if (empId === "zuleica") return 0;
+  if (!(empId in ANCHOR_TURNOS)) return -1;
+  const anchor = new Date(ANCHOR_WEEK + "T00:00:00");
+  const week = new Date(weekStart + "T00:00:00");
+  const weeksDiff = Math.round((week.getTime() - anchor.getTime()) / (7 * 86400000));
+  const anchorTurno = ANCHOR_TURNOS[empId];
+  return (((anchorTurno - 1 + weeksDiff) % 3) + 3) % 3 + 1;
+}
+
+function isGuardDate(fecha: string): boolean {
+  const d = new Date(fecha + "T12:00:00");
+  const diff = Math.round((d.getTime() - FIRST_GUARD.getTime()) / (86400000));
+  return diff >= 0 && diff % 19 === 0;
+}
+
+function getMonthDays(year: number, month: number) {
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const startDow = firstDay.getDay() || 7; // 1=Mon ... 7=Sun
+  const days: (string | null)[] = [];
+  // Padding for days before the 1st
+  for (let i = 1; i < startDow; i++) days.push(null);
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    const dd = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    days.push(dd);
+  }
+  return days;
+}
+
 /* ───── Helpers ───── */
 
 function hoy() {
@@ -154,6 +202,7 @@ export default function Dashboard({ userName, role, modulosPermitidos }: Dashboa
   const [horarios, setHorarios] = useState<Horario[] | null>(null);
   const [vacaciones, setVacaciones] = useState<Vacacion[] | null>(null);
   const [guardias, setGuardias] = useState<Guardia[] | null>(null);
+  const [festivos, setFestivos] = useState<Festivo[]>([]);
   const [loading, setLoading] = useState(true);
 
   const puede = (mod: string) => role === "admin" || modulosPermitidos.includes(mod);
@@ -252,6 +301,14 @@ export default function Dashboard({ userName, role, modulosPermitidos }: Dashboa
             setGuardias(futuras.slice(0, 3));
           })
           .catch(() => setGuardias([]))
+      );
+
+      // Festivos (para el calendario)
+      fetches.push(
+        fetch(`/api/rrhh/festivos?year=${year}`)
+          .then((r) => r.json())
+          .then((data) => setFestivos(data.festivos || []))
+          .catch(() => setFestivos([]))
       );
     }
 
@@ -693,6 +750,168 @@ export default function Dashboard({ userName, role, modulosPermitidos }: Dashboa
               </div>
             )}
           </div>
+
+          {/* ════ CALENDARIO MENSUAL ════ */}
+          {puede("rrhh_calendario") && (() => {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth();
+            const days = getMonthDays(year, month);
+            const todayStr = hoy();
+            const festivoSet = new Set(festivos.map((f) => f.fecha));
+            const festivoNames: Record<string, string> = {};
+            festivos.forEach((f) => { festivoNames[f.fecha] = f.nombre; });
+            const DIAS_HDR = ["L", "M", "X", "J", "V", "S", "D"];
+            const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+            // Compute turno for each rotativa for each week in this month
+            const rotativos = Object.keys(ANCHOR_TURNOS); // ani, yoli, leti, dulce
+
+            return (
+              <div className="card">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-sm font-bold" style={{ color: "var(--color-reig-text)" }}>
+                      {meses[month]} {year}
+                    </h2>
+                    <p className="text-xs" style={{ color: "var(--color-reig-text-muted)" }}>
+                      Calendario · guardias · festivos · turnos
+                    </p>
+                  </div>
+                  <Link
+                    href="/rrhh"
+                    className="text-xs font-medium px-3 py-1 rounded-lg transition-colors"
+                    style={{ color: "var(--color-reig-green)", background: "var(--color-reig-green-light)" }}
+                  >
+                    Ver completo
+                  </Link>
+                </div>
+
+                {/* Leyenda turnos */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {[1, 2, 3].map((t) => (
+                    <span
+                      key={t}
+                      className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                      style={{ background: TURNO_COLORS[t].bg, color: TURNO_COLORS[t].color }}
+                    >
+                      {TURNO_SHORT[t]}
+                    </span>
+                  ))}
+                  <span
+                    className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    style={{ background: "#E8F5E9", color: "#2E7D32" }}
+                  >
+                    Guardia
+                  </span>
+                  <span
+                    className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    style={{ background: "#fff0f0", color: "#c0392b" }}
+                  >
+                    Festivo
+                  </span>
+                </div>
+
+                {/* Grid del mes */}
+                <div className="grid grid-cols-7 gap-0.5">
+                  {/* Cabecera días */}
+                  {DIAS_HDR.map((d) => (
+                    <div
+                      key={d}
+                      className="text-center text-[10px] font-bold py-1"
+                      style={{ color: "var(--color-reig-text-muted)" }}
+                    >
+                      {d}
+                    </div>
+                  ))}
+
+                  {/* Celdas */}
+                  {days.map((fecha, i) => {
+                    if (!fecha) return <div key={`empty-${i}`} />;
+
+                    const dayNum = parseInt(fecha.slice(-2));
+                    const d = new Date(fecha + "T12:00:00");
+                    const dow = d.getDay(); // 0=Sun, 6=Sat
+                    const isToday = fecha === todayStr;
+                    const isFestivo = festivoSet.has(fecha);
+                    const isWeekend = dow === 0 || dow === 6;
+                    const isGuard = isGuardDate(fecha);
+
+                    // Turno for this week
+                    const weekMonday = lunesDeSemana(fecha);
+
+                    // Determine cell style
+                    let cellBg = "var(--color-reig-surface)";
+                    let cellBorder = "transparent";
+                    let numColor = "var(--color-reig-text)";
+
+                    if (isGuard) {
+                      cellBg = "#E8F5E9";
+                      cellBorder = "#2E7D32";
+                    } else if (isFestivo) {
+                      cellBg = "#fff0f0";
+                      numColor = "#c0392b";
+                    } else if (isWeekend) {
+                      cellBg = "#f8f8f8";
+                      numColor = "var(--color-reig-text-muted)";
+                    }
+
+                    if (isToday) {
+                      cellBorder = "#3b82f6";
+                    }
+
+                    // Get dominant turno for rotativas this week
+                    const turnoThisWeek = getTurnoForWeek("ani", weekMonday);
+
+                    return (
+                      <div
+                        key={fecha}
+                        className="relative rounded-md text-center py-1"
+                        style={{
+                          background: cellBg,
+                          border: `2px solid ${cellBorder}`,
+                          minHeight: 44,
+                        }}
+                        title={
+                          isFestivo
+                            ? festivoNames[fecha]
+                            : isGuard
+                            ? "Día de guardia"
+                            : undefined
+                        }
+                      >
+                        <span
+                          className="text-xs font-semibold"
+                          style={{ color: numColor }}
+                        >
+                          {dayNum}
+                        </span>
+                        {/* Turno dot for weekdays */}
+                        {!isWeekend && !isFestivo && turnoThisWeek > 0 && (
+                          <div className="flex justify-center mt-0.5">
+                            <span
+                              className="text-[8px] font-bold px-1 rounded"
+                              style={{
+                                background: TURNO_COLORS[turnoThisWeek]?.bg,
+                                color: TURNO_COLORS[turnoThisWeek]?.color,
+                              }}
+                            >
+                              {TURNO_SHORT[turnoThisWeek]}
+                            </span>
+                          </div>
+                        )}
+                        {isGuard && (
+                          <div className="flex justify-center mt-0.5">
+                            <span className="text-[8px]" style={{ color: "#2E7D32" }}>G</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ════ FILA 4: Accesos rápidos (los antiguos módulos, compactos) ════ */}
           <div>
