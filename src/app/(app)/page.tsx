@@ -99,6 +99,12 @@ const sections: DashboardSection[] = [
         visibleSi: ({ role, modulosPermitidos }) =>
           role === "admin" || modulosPermitidos.includes("financiero_descuadres"),
       },
+      {
+        title: "Tarjetas", description: "Cobros con tarjeta por caja: acumulados, patrones y tendencias",
+        href: "/tarjetas", activo: true, icon: icons.chart,
+        visibleSi: ({ role, modulosPermitidos }) =>
+          role === "admin" || modulosPermitidos.includes("financiero_tarjetas"),
+      },
     ],
   },
   {

@@ -135,6 +135,11 @@ const sections: NavSection[] = [
         visibleSi: ({ role, modulosPermitidos }) =>
           puedeVer("financiero_descuadres", modulosPermitidos || [], role),
       },
+      {
+        label: "Tarjetas", href: "/tarjetas", activo: true, icon: icons.chart,
+        visibleSi: ({ role, modulosPermitidos }) =>
+          puedeVer("financiero_tarjetas", modulosPermitidos || [], role),
+      },
     ],
   },
   {
