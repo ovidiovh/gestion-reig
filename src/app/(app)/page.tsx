@@ -93,7 +93,7 @@ const sections: DashboardSection[] = [
         visibleSi: ({ role, modulosPermitidos }) =>
           role === "admin" || modulosPermitidos.includes("financiero_ingresos"),
       },
-      { title: "Ventas", description: "Dashboard de facturacion, tickets y KPIs", href: "/ventas", activo: false, icon: icons.chart },
+      // Ventas: se añadirá cuando esté implementado
     ],
   },
   {
@@ -111,7 +111,7 @@ const sections: DashboardSection[] = [
         visibleSi: ({ role, modulosPermitidos }) =>
           role === "admin" || modulosPermitidos.includes("marketing_clientes"),
       },
-      { title: "Fichas producto", description: "Fichas SEO para farmaciareig.net", href: "/fichas", activo: false, icon: icons.tag },
+      // Fichas producto: se añadirá cuando esté implementado
     ],
   },
   {
