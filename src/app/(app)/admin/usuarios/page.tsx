@@ -27,7 +27,14 @@ interface Permiso {
 /* ───── Módulos con whitelist ───── */
 
 const MODULOS_RESTRINGIDOS = [
+  { key: "financiero_retiradas", label: "Retiradas", descripcion: "Registrar retirada de efectivo de las cajas" },
+  { key: "financiero_historial", label: "Historial retiradas", descripcion: "Consultar retiradas pasadas y remesas" },
+  { key: "financiero_ingresos", label: "Ingresos banco", descripcion: "Ingresos bancarios y conciliacion" },
+  { key: "marketing_crm", label: "CRM", descripcion: "Base de datos de clientes y analisis de ventas" },
   { key: "marketing_clientes", label: "Marketing / Clientes", descripcion: "Dashboard epidemiologico y segmentacion" },
+  { key: "rrhh_calendario", label: "Calendario / Guardias", descripcion: "Planning mensual, guardias y ausencias" },
+  { key: "rrhh_equipo", label: "Equipo", descripcion: "Gestion del personal de la farmacia" },
+  { key: "rrhh_nominas", label: "Nominas", descripcion: "Generacion mensual de PDFs para la gestoria" },
   { key: "admin_panel", label: "Administracion", descripcion: "Panel de usuarios, permisos y accesos" },
 ];
 

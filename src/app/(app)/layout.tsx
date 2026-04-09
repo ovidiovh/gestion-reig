@@ -1,28 +1,38 @@
 import { requireUser } from "@/lib/auth";
-import { emailsConPermiso } from "@/lib/permisos";
+import { db } from "@/lib/db";
 import AppShell from "./AppShell";
 
 /**
+ * Todos los módulos restringibles del sistema.
+ * Cuando se añada un módulo nuevo, añadirlo aquí.
+ */
+const TODOS_LOS_MODULOS = [
+  "financiero_retiradas",
+  "financiero_historial",
+  "financiero_ingresos",
+  "marketing_crm",
+  "marketing_clientes",
+  "rrhh_calendario",
+  "rrhh_equipo",
+  "rrhh_nominas",
+  "admin_panel",
+];
+
+/**
  * Obtiene los módulos a los que el usuario tiene permiso.
- * Los admins tienen acceso implícito a todo, pero los listamos
- * igualmente para que el Sidebar sepa qué items mostrar.
+ * Los admins tienen acceso implícito a todo.
+ * Para no-admins, consulta permisos_modulo en una sola query.
  */
 async function obtenerModulosPermitidos(email: string, role: string): Promise<string[]> {
   if (role === "admin") {
-    // Los admins ven todo — devolver todos los módulos que existen
-    return ["marketing_clientes", "admin_panel"];
+    return [...TODOS_LOS_MODULOS];
   }
   try {
-    // Buscar en qué módulos aparece este email
-    const todos = await Promise.all([
-      emailsConPermiso("marketing_clientes"),
-      emailsConPermiso("admin_panel"),
-    ]);
-    const modulos: string[] = [];
-    const emailLower = email.toLowerCase();
-    if (todos[0].includes(emailLower)) modulos.push("marketing_clientes");
-    if (todos[1].includes(emailLower)) modulos.push("admin_panel");
-    return modulos;
+    const result = await db.execute({
+      sql: `SELECT modulo FROM permisos_modulo WHERE email = ?`,
+      args: [email.toLowerCase()],
+    });
+    return result.rows.map((r) => String(r.modulo));
   } catch {
     return [];
   }

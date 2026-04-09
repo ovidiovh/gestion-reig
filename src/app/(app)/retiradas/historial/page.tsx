@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useZona } from "../layout";
+import { useZona } from "../RetiradasZona";
 
 interface Sesion {
   id: number;

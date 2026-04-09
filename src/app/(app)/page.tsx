@@ -75,22 +75,40 @@ const sections: DashboardSection[] = [
   {
     title: "Financiero",
     items: [
-      { title: "Nueva retirada", description: "Registrar retirada de efectivo de las cajas", href: "/retiradas", activo: true, icon: icons.cash },
-      { title: "Historial", description: "Consultar retiradas pasadas y remesas bancarias", href: "/retiradas/historial", activo: true, icon: icons.clock },
+      {
+        title: "Nueva retirada", description: "Registrar retirada de efectivo de las cajas",
+        href: "/retiradas", activo: true, icon: icons.cash,
+        visibleSi: ({ role, modulosPermitidos }) =>
+          role === "admin" || modulosPermitidos.includes("financiero_retiradas"),
+      },
+      {
+        title: "Historial", description: "Consultar retiradas pasadas y remesas bancarias",
+        href: "/retiradas/historial", activo: true, icon: icons.clock,
+        visibleSi: ({ role, modulosPermitidos }) =>
+          role === "admin" || modulosPermitidos.includes("financiero_historial"),
+      },
+      {
+        title: "Ingresos banco", description: "Ingresos bancarios y conciliacion",
+        href: "/ingresos", activo: true, icon: icons.briefcase,
+        visibleSi: ({ role, modulosPermitidos }) =>
+          role === "admin" || modulosPermitidos.includes("financiero_ingresos"),
+      },
       { title: "Ventas", description: "Dashboard de facturacion, tickets y KPIs", href: "/ventas", activo: false, icon: icons.chart },
     ],
   },
   {
     title: "Marketing",
     items: [
-      { title: "CRM", description: "Base de datos de clientes y analisis de ventas", href: "/crm", activo: true, icon: icons.users },
       {
-        title: "Clientes",
-        description: "Estudio epidemiologico y segmentacion socioeconomica",
-        href: "/marketing/clientes",
-        activo: true,
-        icon: icons.users,
-        visibleSi: ({ modulosPermitidos, role }) =>
+        title: "CRM", description: "Base de datos de clientes y analisis de ventas",
+        href: "/crm", activo: true, icon: icons.users,
+        visibleSi: ({ role, modulosPermitidos }) =>
+          role === "admin" || modulosPermitidos.includes("marketing_crm"),
+      },
+      {
+        title: "Clientes", description: "Estudio epidemiologico y segmentacion socioeconomica",
+        href: "/marketing/clientes", activo: true, icon: icons.users,
+        visibleSi: ({ role, modulosPermitidos }) =>
           role === "admin" || modulosPermitidos.includes("marketing_clientes"),
       },
       { title: "Fichas producto", description: "Fichas SEO para farmaciareig.net", href: "/fichas", activo: false, icon: icons.tag },
@@ -99,9 +117,24 @@ const sections: DashboardSection[] = [
   {
     title: "RRHH",
     items: [
-      { title: "Calendario, Guardia y Vacaciones", description: "Planning mensual, guardias y ausencias del equipo", href: "/rrhh", activo: true, icon: icons.calendar },
-      { title: "Equipo", description: "Gestion del personal de la farmacia", href: "/rrhh/equipo", activo: true, icon: icons.briefcase },
-      { title: "Nominas", description: "Generacion mensual de PDFs para la gestoria", href: "/rrhh/nominas", activo: true, icon: icons.briefcase },
+      {
+        title: "Calendario, Guardia y Vacaciones", description: "Planning mensual, guardias y ausencias del equipo",
+        href: "/rrhh", activo: true, icon: icons.calendar,
+        visibleSi: ({ role, modulosPermitidos }) =>
+          role === "admin" || modulosPermitidos.includes("rrhh_calendario"),
+      },
+      {
+        title: "Equipo", description: "Gestion del personal de la farmacia",
+        href: "/rrhh/equipo", activo: true, icon: icons.briefcase,
+        visibleSi: ({ role, modulosPermitidos }) =>
+          role === "admin" || modulosPermitidos.includes("rrhh_equipo"),
+      },
+      {
+        title: "Nominas", description: "Generacion mensual de PDFs para la gestoria",
+        href: "/rrhh/nominas", activo: true, icon: icons.briefcase,
+        visibleSi: ({ role, modulosPermitidos }) =>
+          role === "admin" || modulosPermitidos.includes("rrhh_nominas"),
+      },
     ],
   },
   {

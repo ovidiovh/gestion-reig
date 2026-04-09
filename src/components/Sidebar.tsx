@@ -115,9 +115,21 @@ const sections: NavSection[] = [
     title: "FINANCIERO",
     collapsible: true,
     items: [
-      { label: "Nueva retirada", href: "/retiradas", activo: true, icon: icons.cash },
-      { label: "Historial", href: "/retiradas/historial", activo: true, icon: icons.clock },
-      { label: "Ingresos banco", href: "/ingresos", activo: true, icon: icons.briefcase },
+      {
+        label: "Nueva retirada", href: "/retiradas", activo: true, icon: icons.cash,
+        visibleSi: ({ role, modulosPermitidos }) =>
+          puedeVer("financiero_retiradas", modulosPermitidos || [], role),
+      },
+      {
+        label: "Historial", href: "/retiradas/historial", activo: true, icon: icons.clock,
+        visibleSi: ({ role, modulosPermitidos }) =>
+          puedeVer("financiero_historial", modulosPermitidos || [], role),
+      },
+      {
+        label: "Ingresos banco", href: "/ingresos", activo: true, icon: icons.briefcase,
+        visibleSi: ({ role, modulosPermitidos }) =>
+          puedeVer("financiero_ingresos", modulosPermitidos || [], role),
+      },
       { label: "Ventas", href: "/ventas", activo: false, icon: icons.chart },
     ],
   },
@@ -126,13 +138,14 @@ const sections: NavSection[] = [
     title: "MARKETING",
     collapsible: true,
     items: [
-      { label: "CRM", href: "/crm", activo: true, icon: icons.users },
       {
-        label: "Clientes",
-        href: "/marketing/clientes",
-        activo: true,
-        icon: icons.chart,
-        visibleSi: ({ email, role, modulosPermitidos }) =>
+        label: "CRM", href: "/crm", activo: true, icon: icons.users,
+        visibleSi: ({ role, modulosPermitidos }) =>
+          puedeVer("marketing_crm", modulosPermitidos || [], role),
+      },
+      {
+        label: "Clientes", href: "/marketing/clientes", activo: true, icon: icons.chart,
+        visibleSi: ({ role, modulosPermitidos }) =>
           puedeVer("marketing_clientes", modulosPermitidos || [], role),
       },
       { label: "Fichas producto", href: "/fichas", activo: false, icon: icons.tag },
@@ -143,9 +156,21 @@ const sections: NavSection[] = [
     title: "RRHH",
     collapsible: true,
     items: [
-      { label: "Calendario, Guardia y Vacaciones", href: "/rrhh", activo: true, icon: icons.users },
-      { label: "Equipo", href: "/rrhh/equipo", activo: true, icon: icons.briefcase },
-      { label: "Nóminas", href: "/rrhh/nominas", activo: true, icon: icons.briefcase },
+      {
+        label: "Calendario, Guardia y Vacaciones", href: "/rrhh", activo: true, icon: icons.users,
+        visibleSi: ({ role, modulosPermitidos }) =>
+          puedeVer("rrhh_calendario", modulosPermitidos || [], role),
+      },
+      {
+        label: "Equipo", href: "/rrhh/equipo", activo: true, icon: icons.briefcase,
+        visibleSi: ({ role, modulosPermitidos }) =>
+          puedeVer("rrhh_equipo", modulosPermitidos || [], role),
+      },
+      {
+        label: "Nóminas", href: "/rrhh/nominas", activo: true, icon: icons.briefcase,
+        visibleSi: ({ role, modulosPermitidos }) =>
+          puedeVer("rrhh_nominas", modulosPermitidos || [], role),
+      },
     ],
   },
   {

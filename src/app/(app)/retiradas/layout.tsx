@@ -1,76 +1,22 @@
-"use client";
+import { redirect } from "next/navigation";
+import { requireUser } from "@/lib/auth";
+import { tienePermiso } from "@/lib/permisos";
+import RetiradasZona from "./RetiradasZona";
 
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { createContext, useContext, Suspense } from "react";
-
-type Zona = "farmacia" | "optica";
-
-const ZonaContext = createContext<Zona>("farmacia");
-export function useZona() { return useContext(ZonaContext); }
-
-function RetiradasLayoutInner({ children }: { children: React.ReactNode }) {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
-  const zona: Zona = searchParams.get("zona") === "optica" ? "optica" : "farmacia";
-
-  const setZona = (z: Zona) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (z === "farmacia") params.delete("zona");
-    else params.set("zona", z);
-    const qs = params.toString();
-    router.push(pathname + (qs ? `?${qs}` : ""));
-  };
-
-  const isFarma = zona === "farmacia";
-  const activeColor = isFarma ? "var(--color-reig-green)" : "var(--color-reig-optica)";
-  const activeBg    = isFarma ? "var(--color-reig-green-light)" : "var(--color-reig-optica-light)";
-
-  return (
-    <ZonaContext.Provider value={zona}>
-      {/* Barra de zona */}
-      <div style={{ display: "flex", gap: 0, marginBottom: 20, borderRadius: 10, overflow: "hidden", border: "1px solid #e0e0e0" }}>
-        <button
-          onClick={() => setZona("farmacia")}
-          style={{
-            flex: 1, padding: "10px 0", border: "none", cursor: "pointer",
-            fontWeight: 700, fontSize: 13, letterSpacing: 0.5,
-            background: isFarma ? "var(--color-reig-green)" : "#f5f5f5",
-            color: isFarma ? "#fff" : "#888",
-            transition: "all 0.2s",
-          }}
-        >
-          🏥 FARMACIA
-        </button>
-        <button
-          onClick={() => setZona("optica")}
-          style={{
-            flex: 1, padding: "10px 0", border: "none", cursor: "pointer",
-            fontWeight: 700, fontSize: 13, letterSpacing: 0.5,
-            background: !isFarma ? "var(--color-reig-optica)" : "#f5f5f5",
-            color: !isFarma ? "#fff" : "#888",
-            transition: "all 0.2s",
-          }}
-        >
-          👓 ÓPTICA
-        </button>
-      </div>
-
-      {/* Indicador visual de zona activa */}
-      <div style={{
-        height: 3, borderRadius: 2, marginBottom: 16, marginTop: -16,
-        background: activeColor,
-      }} />
-
-      {children}
-    </ZonaContext.Provider>
-  );
-}
-
-export default function RetiradasLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <Suspense fallback={<div style={{ padding: 20, color: "#aaa" }}>Cargando...</div>}>
-      <RetiradasLayoutInner>{children}</RetiradasLayoutInner>
-    </Suspense>
-  );
+/**
+ * Layout server del segmento Retiradas.
+ * 1. Verifica permiso financiero_retiradas.
+ * 2. Delega al client component RetiradasZona para el selector farmacia/óptica.
+ */
+export default async function RetiradasLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const user = await requireUser();
+  const permitido = await tienePermiso("financiero_retiradas", user.email, user.role);
+  if (!permitido) {
+    redirect("/?error=sin-permisos");
+  }
+  return <RetiradasZona>{children}</RetiradasZona>;
 }

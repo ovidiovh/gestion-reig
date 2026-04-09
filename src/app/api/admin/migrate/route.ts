@@ -67,30 +67,26 @@ export async function GET() {
         args: [],
       },
 
-      // ── Seed: migrar la whitelist hardcodeada de marketing_clientes ──
-      {
-        sql: `INSERT OR IGNORE INTO permisos_modulo (modulo, email, concedido_por)
-              VALUES ('marketing_clientes', 'ovidio@farmaciareig.net', 'migracion_auto')`,
-        args: [],
-      },
-      {
-        sql: `INSERT OR IGNORE INTO permisos_modulo (modulo, email, concedido_por)
-              VALUES ('marketing_clientes', 'brs@farmaciareig.net', 'migracion_auto')`,
-        args: [],
-      },
-
-      // ── Los admins siempre tienen acceso implícito, pero los seedeamos
-      //    también en admin_panel para que el sistema sea explícito ──
-      {
-        sql: `INSERT OR IGNORE INTO permisos_modulo (modulo, email, concedido_por)
-              VALUES ('admin_panel', 'ovidio@farmaciareig.net', 'migracion_auto')`,
-        args: [],
-      },
-      {
-        sql: `INSERT OR IGNORE INTO permisos_modulo (modulo, email, concedido_por)
-              VALUES ('admin_panel', 'brs@farmaciareig.net', 'migracion_auto')`,
-        args: [],
-      },
+      // ── Seed: permisos explícitos para admins (Ovidio + Beatriz).
+      //    Los admins ya tienen acceso implícito, pero los seedeamos para
+      //    que aparezcan en la UI de permisos y sean gestionables. ──
+      // Nota: INSERT OR IGNORE = idempotente, se puede re-ejecutar sin miedo.
+      ...["financiero_retiradas", "financiero_historial", "financiero_ingresos",
+          "marketing_crm", "marketing_clientes",
+          "rrhh_calendario", "rrhh_equipo", "rrhh_nominas",
+          "admin_panel"
+      ].flatMap((modulo) => [
+        {
+          sql: `INSERT OR IGNORE INTO permisos_modulo (modulo, email, concedido_por)
+                VALUES (?, 'ovidio@farmaciareig.net', 'migracion_auto')`,
+          args: [modulo],
+        },
+        {
+          sql: `INSERT OR IGNORE INTO permisos_modulo (modulo, email, concedido_por)
+                VALUES (?, 'brs@farmaciareig.net', 'migracion_auto')`,
+          args: [modulo],
+        },
+      ]),
     ]);
 
     return NextResponse.json({
