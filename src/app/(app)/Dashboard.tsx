@@ -82,14 +82,18 @@ function formatEurDecimal(n: number) {
 }
 
 function formatFecha(fecha: string) {
+  if (!fecha) return "—";
   const d = new Date(fecha + "T12:00:00");
+  if (isNaN(d.getTime())) return "—";
   const dias = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
   const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
   return `${dias[d.getDay()]} ${d.getDate()} ${meses[d.getMonth()]}`;
 }
 
 function formatFechaCorta(fecha: string) {
+  if (!fecha) return "—";
   const d = new Date(fecha + "T12:00:00");
+  if (isNaN(d.getTime())) return "—";
   const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
   return `${d.getDate()} ${meses[d.getMonth()]}`;
 }
@@ -307,7 +311,9 @@ export default function Dashboard({ userName, role, modulosPermitidos }: Dashboa
               <Link href="/crm" className="card group hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between mb-3">
                   <span className="kpi-label" style={{ marginBottom: 0 }}>
-                    Ventas {ventasFecha === hoy() ? "hoy" : formatFechaCorta(ventasFecha)}
+                    {ventasFecha
+                      ? `Ventas ${ventasFecha === hoy() ? "hoy" : formatFechaCorta(ventasFecha)}`
+                      : "Ventas (sin datos recientes)"}
                   </span>
                   <span
                     className="w-8 h-8 rounded-lg flex items-center justify-center"
@@ -419,7 +425,7 @@ export default function Dashboard({ userName, role, modulosPermitidos }: Dashboa
                       Ventas por vendedor
                     </h2>
                     <p className="text-xs" style={{ color: "var(--color-reig-text-muted)" }}>
-                      {ventasFecha === hoy() ? "Hoy" : formatFecha(ventasFecha)}
+                      {!ventasFecha ? "Sin datos" : ventasFecha === hoy() ? "Hoy" : formatFecha(ventasFecha)}
                     </p>
                   </div>
                   <Link
@@ -492,14 +498,15 @@ export default function Dashboard({ userName, role, modulosPermitidos }: Dashboa
                 ) : (
                   <div className="space-y-2">
                     {horarios.map((h) => {
-                      const turnoLabel: Record<string, { text: string; color: string; bg: string }> = {
-                        "M": { text: "Mañana", color: "var(--color-reig-green)", bg: "var(--color-reig-green-light)" },
-                        "T": { text: "Tarde", color: "var(--color-reig-optica)", bg: "var(--color-reig-optica-light)" },
-                        "P": { text: "Partido", color: "var(--color-reig-orto)", bg: "var(--color-reig-orto-light)" },
-                        "L": { text: "Libre", color: "var(--color-reig-text-muted)", bg: "#F3F4F6" },
-                        "V": { text: "Vacaciones", color: "var(--color-reig-warn)", bg: "var(--color-reig-warn-light)" },
+                      // Turnos numéricos con horario real
+                      const turnoLabel: Record<number, { text: string; color: string; bg: string }> = {
+                        0: { text: "8:30–12:30", color: "#7c3aed", bg: "#f3e8ff" },
+                        1: { text: "8:30–16:30", color: "var(--color-reig-optica)", bg: "var(--color-reig-optica-light)" },
+                        2: { text: "9–13 / 16–20", color: "var(--color-reig-green)", bg: "var(--color-reig-green-light)" },
+                        3: { text: "12:30–20:30", color: "#854d0e", bg: "#fef9c3" },
                       };
-                      const info = turnoLabel[h.turno] || { text: h.turno, color: "var(--color-reig-text-secondary)", bg: "#F3F4F6" };
+                      const turnoNum = typeof h.turno === "string" ? parseInt(h.turno) : h.turno;
+                      const info = turnoLabel[turnoNum] || { text: `Turno ${h.turno}`, color: "var(--color-reig-text-secondary)", bg: "#F3F4F6" };
                       return (
                         <div
                           key={h.empleado_id}
