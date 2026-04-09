@@ -13,10 +13,10 @@ import {
 // ── Colores por departamento ──────────────────────────────────────────────────
 
 const DEPTO: Record<string, { bar: string; bg: string; label: string }> = {
-  farmacia:  { bar: "#2E7D32", bg: "#E8F5E9", label: "Farmacia" },   // verde
+  farmacia:  { bar: "var(--color-reig-green)", bg: "var(--color-reig-green-light)", label: "Farmacia" },   // verde
   optica:    { bar: "#CA8A04", bg: "#FEF9C3", label: "Óptica" },     // amarillo
   ortopedia: { bar: "#EA580C", bg: "#FFF7ED", label: "Ortopedia" },  // naranja
-  otro:      { bar: "#6B7280", bg: "#F3F4F6", label: "Otros" },
+  otro:      { bar: "var(--color-reig-text-secondary)", bg: "var(--color-reig-bg)", label: "Otros" },
 };
 
 const DEPT_ORDER = ["farmacia", "optica", "ortopedia", "otro"];
@@ -202,7 +202,7 @@ export default function DayViewPanel({
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div style={{
-        background: "#fff", borderRadius: 14, padding: 20,
+        background: "var(--color-reig-surface)", borderRadius: 14, padding: 20,
         maxWidth: 820, width: "100%", maxHeight: "92vh", overflowY: "auto",
         boxShadow: "0 24px 64px rgba(0,0,0,0.3)",
       }}>
@@ -215,7 +215,7 @@ export default function DayViewPanel({
             </div>
             <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
               {festivo && (
-                <span style={{ fontSize: 10, background: "#fdecea", color: "#c0392b", padding: "2px 8px", borderRadius: 10, fontWeight: 700 }}>
+                <span style={{ fontSize: 10, background: "var(--color-reig-danger-light)", color: "var(--color-reig-danger)", padding: "2px 8px", borderRadius: 10, fontWeight: 700 }}>
                   🎉 {festivo.nombre}
                 </span>
               )}
@@ -225,7 +225,7 @@ export default function DayViewPanel({
                 </span>
               )}
               {isWeekend && !festivo && (
-                <span style={{ fontSize: 10, background: "#f3f4f6", color: "#6b7280", padding: "2px 8px", borderRadius: 10 }}>
+                <span style={{ fontSize: 10, background: "var(--color-reig-bg)", color: "var(--color-reig-text-secondary)", padding: "2px 8px", borderRadius: 10 }}>
                   Fin de semana
                 </span>
               )}
@@ -233,7 +233,7 @@ export default function DayViewPanel({
           </div>
           <button
             onClick={onClose}
-            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: "#aaa", lineHeight: 1 }}
+            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: "var(--color-reig-text-muted)", lineHeight: 1 }}
           >×</button>
         </div>
 
@@ -253,7 +253,7 @@ export default function DayViewPanel({
             );
           })}
           {vacsHoy.length > 0 && (
-            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 10, background: "#f3f4f6", color: "#9ca3af" }}>
+            <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 10, background: "var(--color-reig-bg)", color: "var(--color-reig-text-muted)" }}>
               ▣ ausencia/vacaciones
             </span>
           )}
@@ -272,7 +272,7 @@ export default function DayViewPanel({
                     <div key={hh} style={{
                       position: "absolute", top: 0,
                       left: pct(hh), transform: "translateX(-50%)",
-                      fontSize: 8, color: "#aaa", whiteSpace: "nowrap",
+                      fontSize: 8, color: "var(--color-reig-text-muted)", whiteSpace: "nowrap",
                     }}>
                       {hhToLabel(hh)}
                     </div>
@@ -284,14 +284,14 @@ export default function DayViewPanel({
               <div style={{ display: "flex", alignItems: "flex-end" }}>
                 <div style={{
                   width: 72, flexShrink: 0,
-                  fontSize: 8, color: "#888", fontWeight: 700, textAlign: "right", paddingRight: 6,
+                  fontSize: 8, color: "var(--color-reig-text-secondary)", fontWeight: 700, textAlign: "right", paddingRight: 6,
                   lineHeight: 1.3,
                 }}>
                   personas<br />
-                  <span style={{ fontWeight: 400, color: "#bbb", fontSize: 7 }}>▣ ausente</span>
+                  <span style={{ fontWeight: 400, color: "var(--color-reig-text-muted)", fontSize: 7 }}>▣ ausente</span>
                 </div>
 
-                <div style={{ flex: 1, display: "flex", borderTop: "1px solid #e5e7eb", borderLeft: "1px solid #e5e7eb" }}>
+                <div style={{ flex: 1, display: "flex", borderTop: "1px solid var(--color-reig-border)", borderLeft: "1px solid var(--color-reig-border)" }}>
                   {slotData.map((squares, i) => {
                     const present = squares.filter(s => s.present);
                     const absent  = squares.filter(s => !s.present);
@@ -304,9 +304,9 @@ export default function DayViewPanel({
                           display: "flex", flexDirection: "column-reverse",
                           alignItems: "center", justifyContent: "flex-start",
                           gap: GAP, paddingTop: 2, paddingBottom: 2,
-                          borderRight: "1px solid #e5e7eb",
-                          borderBottom: "1px solid #e5e7eb",
-                          background: i % 2 === 0 ? "#fafafa" : "#fff",
+                          borderRight: "1px solid var(--color-reig-border)",
+                          borderBottom: "1px solid var(--color-reig-border)",
+                          background: i % 2 === 0 ? "var(--color-reig-bg)" : "var(--color-reig-surface)",
                           position: "relative",
                         }}
                       >
@@ -329,7 +329,7 @@ export default function DayViewPanel({
                           return <div key={`a${j}`} style={{ width: SQ, height: SQ, flexShrink: 0, background: "#ffffff", border: `1.5px solid ${d.bar}`, borderRadius: 1, boxSizing: "border-box" }} />;
                         })}
                         {total > 0 && (
-                          <div style={{ position: "absolute", bottom: 1, fontSize: 6, fontWeight: 700, lineHeight: 1, color: absent.length > 0 ? "#ef4444" : "#6b7280" }}>
+                          <div style={{ position: "absolute", bottom: 1, fontSize: 6, fontWeight: 700, lineHeight: 1, color: absent.length > 0 ? "var(--color-reig-danger)" : "var(--color-reig-text-secondary)" }}>
                             {absent.length > 0 ? `${present.length}+${absent.length}` : present.length}
                           </div>
                         )}
@@ -341,15 +341,15 @@ export default function DayViewPanel({
             </div>
           </div>
         ) : (
-          <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "20px 0" }}>
+          <div style={{ textAlign: "center", color: "var(--color-reig-text-muted)", fontSize: 13, padding: "20px 0" }}>
             {festivo ? `🎉 Festivo — ${festivo.nombre}` : "Día libre — fin de semana"}
           </div>
         )}
 
         {/* ── Turnos rotativos de la semana — un chip por persona ── */}
         {Object.keys(turnoGroups).length > 0 && (
-          <div style={{ marginTop: 16, borderTop: "1px solid #f0f0f0", paddingTop: 12 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+          <div style={{ marginTop: 16, borderTop: "1px solid var(--color-reig-border-light)", paddingTop: 12 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "var(--color-reig-text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
               Turnos esta semana
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -377,8 +377,8 @@ export default function DayViewPanel({
 
         {/* ── Vacaciones / ausencias hoy ── */}
         {vacsHoy.length > 0 && (
-          <div style={{ marginTop: 14, borderTop: "1px solid #f0f0f0", paddingTop: 12 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+          <div style={{ marginTop: 14, borderTop: "1px solid var(--color-reig-border-light)", paddingTop: 12 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "var(--color-reig-text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
               De vacaciones / ausencia
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
@@ -390,8 +390,8 @@ export default function DayViewPanel({
                 return (
                   <div key={v.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <div style={{ width: 8, height: 8, borderRadius: 2, background: depto.bar, flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>{v.nombre}</span>
-                    <span style={{ fontSize: 11, color: "#9ca3af" }}>{desde} – {hasta}</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "var(--color-reig-text)" }}>{v.nombre}</span>
+                    <span style={{ fontSize: 11, color: "var(--color-reig-text-muted)" }}>{desde} – {hasta}</span>
                     <button
                       onClick={() => { onClose(); onGoToVac(); }}
                       style={{

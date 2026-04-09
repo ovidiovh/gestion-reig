@@ -30,13 +30,13 @@ type Paso = "listado" | "foto" | "ocr" | "formulario" | "guardado";
 const CONCEPTOS = ["FARMACIA", "OPTICA", "REMESA FARMACIA", "REMESA OPTICA"] as const;
 
 const COLORS = {
-  green: "#0C6D32",
-  greenLight: "#E8F5E9",
-  blue: "#0C4D6D",
-  blueLight: "#E3F2FD",
-  yellow: "#F4B400",
-  yellowLight: "#FFF8E1",
-  gray: "#757575",
+  green: "var(--color-reig-green)",
+  greenLight: "var(--color-reig-green-light)",
+  blue: "var(--color-reig-optica)",
+  blueLight: "var(--color-reig-optica-light)",
+  yellow: "var(--color-reig-warn)",
+  yellowLight: "var(--color-reig-warn-light)",
+  gray: "var(--color-reig-text-secondary)",
 };
 
 /* ───── Helpers ───── */
@@ -52,10 +52,10 @@ const conceptoColor = (c: string) => {
 
 const origenBadge = (o: string) => {
   switch (o) {
-    case "email": return { label: "Email", bg: "#E8F5E9", fg: "#2E7D32" };
-    case "foto":  return { label: "Foto",  bg: "#E3F2FD", fg: "#1565C0" };
-    case "manual": return { label: "Manual", bg: "#FFF3E0", fg: "#E65100" };
-    default: return { label: o, bg: "#F5F5F5", fg: "#757575" };
+    case "email": return { label: "Email", bg: "var(--color-reig-green-light)", fg: "var(--color-reig-green)" };
+    case "foto":  return { label: "Foto",  bg: "var(--color-reig-optica-light)", fg: "var(--color-reig-optica)" };
+    case "manual": return { label: "Manual", bg: "var(--color-reig-orto-light)", fg: "var(--color-reig-orto-mid)" };
+    default: return { label: o, bg: "var(--color-reig-border-light)", fg: "var(--color-reig-text-secondary)" };
   }
 };
 
@@ -328,10 +328,10 @@ export default function IngresosPage() {
      ═══════════════════════════════════════════════════════════════ */
 
   const card: React.CSSProperties = {
-    background: "#fff",
+    background: "var(--color-reig-bg-surface)",
     borderRadius: 12,
     padding: 20,
-    boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+    boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
     marginBottom: 16,
   };
 
@@ -347,9 +347,9 @@ export default function IngresosPage() {
   };
 
   const btnSecondary: React.CSSProperties = {
-    background: "#f5f5f5",
-    color: "#333",
-    border: "1px solid #ddd",
+    background: "var(--color-reig-bg)",
+    color: "var(--color-reig-text)",
+    border: "1px solid var(--color-reig-border)",
     borderRadius: 8,
     padding: "10px 20px",
     fontWeight: 600,
@@ -362,7 +362,7 @@ export default function IngresosPage() {
     return (
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: "#1a1a1a" }}>Ingresos Banco</h2>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: "var(--color-reig-text)" }}>Ingresos Banco</h2>
           <button
             onClick={() => {
               resetForm();
@@ -386,7 +386,7 @@ export default function IngresosPage() {
         {stats && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 20 }}>
             {[
-              { label: "Total mes", value: eur(stats.total), color: "#333" },
+              { label: "Total mes", value: eur(stats.total), color: "var(--color-reig-text)" },
               { label: "Farmacia", value: eur(stats.farmacia), color: COLORS.green },
               { label: "Optica", value: eur(stats.optica), color: COLORS.blue },
               { label: "Pendientes", value: String(stats.pendientes), color: COLORS.yellow },
@@ -404,7 +404,7 @@ export default function IngresosPage() {
         )}
 
         {/* Filtros */}
-        <div style={{ display: "flex", gap: 0, marginBottom: 16, borderRadius: 8, overflow: "hidden", border: "1px solid #e0e0e0" }}>
+        <div style={{ display: "flex", gap: 0, marginBottom: 16, borderRadius: 8, overflow: "hidden", border: "1px solid var(--color-reig-border)" }}>
           {[
             { key: "hoy", label: "Hoy" },
             { key: "semana", label: "Semana" },
@@ -421,8 +421,8 @@ export default function IngresosPage() {
                 cursor: "pointer",
                 fontWeight: 600,
                 fontSize: 12,
-                background: filtro === f.key ? COLORS.green : "#fafafa",
-                color: filtro === f.key ? "#fff" : "#666",
+                background: filtro === f.key ? COLORS.green : "var(--color-reig-bg)",
+                color: filtro === f.key ? "#fff" : "var(--color-reig-text-secondary)",
                 transition: "all 0.2s",
               }}
             >
@@ -444,7 +444,7 @@ export default function IngresosPage() {
           <div style={card}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
-                <tr style={{ borderBottom: "2px solid #eee" }}>
+                <tr style={{ borderBottom: "2px solid var(--color-reig-border-light)" }}>
                   <th style={{ textAlign: "left", padding: "8px 6px", color: COLORS.gray, fontWeight: 600 }}>Fecha</th>
                   <th style={{ textAlign: "left", padding: "8px 6px", color: COLORS.gray, fontWeight: 600 }}>Concepto</th>
                   <th style={{ textAlign: "right", padding: "8px 6px", color: COLORS.gray, fontWeight: 600 }}>Importe</th>
@@ -457,7 +457,7 @@ export default function IngresosPage() {
                   const cc = conceptoColor(ing.concepto);
                   const ob = origenBadge(ing.origen);
                   return (
-                    <tr key={ing.id} style={{ borderBottom: "1px solid #f0f0f0" }}>
+                    <tr key={ing.id} style={{ borderBottom: "1px solid var(--color-reig-border-light)" }}>
                       <td style={{ padding: "10px 6px" }}>
                         <div style={{ fontWeight: 600 }}>{ing.fecha}</div>
                         {ing.hora && <div style={{ fontSize: 11, color: COLORS.gray }}>{ing.hora}</div>}
@@ -491,7 +491,7 @@ export default function IngresosPage() {
                           {ob.label}
                         </span>
                       </td>
-                      <td style={{ padding: "10px 6px", fontSize: 11, color: COLORS.gray, fontFamily: "monospace" }}>
+                      <td style={{ padding: "10px 6px", fontSize: 11, color: COLORS.gray }} className="font-mono-metric">
                         {ing.num_operacion ? ing.num_operacion.slice(-10) : "—"}
                       </td>
                     </tr>
@@ -537,7 +537,7 @@ export default function IngresosPage() {
             </button>
           </div>
           {ocrRunning && (
-            <div style={{ marginTop: 12, background: "#f0f0f0", borderRadius: 6, overflow: "hidden", height: 6 }}>
+            <div style={{ marginTop: 12, background: "var(--color-reig-bg)", borderRadius: 6, overflow: "hidden", height: 6 }}>
               <div style={{ height: "100%", background: COLORS.green, width: `${ocrProgress}%`, transition: "width 0.3s" }} />
             </div>
           )}
@@ -554,7 +554,7 @@ export default function IngresosPage() {
     const inputStyle: React.CSSProperties = {
       width: "100%",
       padding: "10px 12px",
-      border: "1px solid #ddd",
+      border: "1px solid var(--color-reig-border)",
       borderRadius: 8,
       fontSize: 14,
       boxSizing: "border-box",
@@ -583,7 +583,7 @@ export default function IngresosPage() {
             {ocrTexto && (
               <details style={{ marginTop: 8 }}>
                 <summary style={{ fontSize: 11, color: COLORS.gray, cursor: "pointer" }}>Ver texto OCR</summary>
-                <pre style={{ fontSize: 10, color: "#666", whiteSpace: "pre-wrap", marginTop: 4, maxHeight: 120, overflow: "auto" }}>{ocrTexto}</pre>
+                <pre style={{ fontSize: 10, color: "var(--color-reig-text-secondary)", whiteSpace: "pre-wrap", marginTop: 4, maxHeight: 120, overflow: "auto" }}>{ocrTexto}</pre>
               </details>
             )}
           </div>
@@ -603,10 +603,10 @@ export default function IngresosPage() {
                     onClick={() => setFormConcepto(c)}
                     style={{
                       padding: "10px 8px",
-                      border: isActive ? `2px solid ${cc.fg}` : "1px solid #ddd",
+                      border: isActive ? `2px solid ${cc.fg}` : "1px solid var(--color-reig-border)",
                       borderRadius: 8,
-                      background: isActive ? cc.bg : "#fafafa",
-                      color: isActive ? cc.fg : "#999",
+                      background: isActive ? cc.bg : "var(--color-reig-bg)",
+                      color: isActive ? cc.fg : "var(--color-reig-text-muted)",
                       fontWeight: 700,
                       fontSize: 12,
                       cursor: "pointer",
@@ -703,10 +703,10 @@ export default function IngresosPage() {
           <h2 style={{ fontSize: 20, fontWeight: 700, color: COLORS.green, marginBottom: 8 }}>
             Ingreso registrado
           </h2>
-          <p style={{ color: COLORS.gray, fontSize: 14, marginBottom: 4 }}>
+          <p style={{ color: "var(--color-reig-text-secondary)", fontSize: 14, marginBottom: 4 }}>
             {formConcepto} — {eur(parseFloat(formImporte || "0"))}
           </p>
-          <p style={{ color: COLORS.gray, fontSize: 12, marginBottom: 20 }}>
+          <p style={{ color: "var(--color-reig-text-secondary)", fontSize: 12, marginBottom: 20 }}>
             ID: {savedId} | Fecha: {formFecha}
           </p>
           <button onClick={resetForm} style={btnPrimary}>

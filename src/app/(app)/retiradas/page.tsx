@@ -55,8 +55,8 @@ const eur = (n: number) => n.toLocaleString("es-ES", { style: "currency", curren
 // ── Styles ──
 
 const card: React.CSSProperties = {
-  background: "#fff", borderRadius: 12, padding: 20,
-  boxShadow: "0 1px 4px rgba(0,0,0,0.08)", marginBottom: 16,
+  background: "var(--color-reig-bg-surface)", borderRadius: 12, padding: 20,
+  boxShadow: "0 1px 4px rgba(0,0,0,0.05)", marginBottom: 16,
 };
 const btnBase: React.CSSProperties = {
   border: "none", borderRadius: 8, padding: "10px 20px",
@@ -66,8 +66,8 @@ const btnBase: React.CSSProperties = {
 export default function RetiradasPage() {
   const zona = useZona();
   const CAJAS_DISPONIBLES = zona === "optica" ? [12] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 11];
-  const color = zona === "optica" ? "#0C4D6D" : "#0C6D32";
-  const colorBg = zona === "optica" ? "#0C4D6D15" : "#0C6D3215";
+  const color = zona === "optica" ? "var(--color-reig-optica)" : "var(--color-reig-green)";
+  const colorBg = zona === "optica" ? "var(--color-reig-optica-pale)" : "var(--color-reig-green-pale)";
 
   const [paso, setPaso] = useState<1 | 2 | 3>(1);
 
@@ -194,7 +194,7 @@ export default function RetiradasPage() {
   return (
     <div style={{ maxWidth: 800, margin: "0 auto" }}>
       <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Retiradas de caja</h1>
-      <p style={{ color: "#888", fontSize: 13, marginBottom: 20 }}>
+      <p style={{ color: "var(--color-reig-text-secondary)", fontSize: 13, marginBottom: 20 }}>
         Paso {paso} de 3 — {paso === 1 ? "Selecciona cajas y cuenta billetes" : paso === 2 ? "Conteo total y validación" : "Guardado"}
       </p>
 
@@ -210,13 +210,13 @@ export default function RetiradasPage() {
               max={new Date().toISOString().slice(0, 10)}
               onChange={(e) => setFechaRetirada(e.target.value)}
               style={{
-                padding: "8px 12px", borderRadius: 8, border: "1px solid #ddd",
-                fontSize: 15, fontWeight: 600, color: "#333", flex: 1, maxWidth: 200,
+                padding: "8px 12px", borderRadius: 8, border: "1px solid var(--color-reig-border)",
+                fontSize: 15, fontWeight: 600, color: "var(--color-reig-text)", flex: 1, maxWidth: 200,
               }}
             />
             {fechaRetirada !== new Date().toISOString().slice(0, 10) && (
               <span style={{
-                fontSize: 12, color: "#b45309", background: "#fef3c7",
+                fontSize: 12, color: "var(--color-reig-warn)", background: "var(--color-reig-warn-light)",
                 padding: "4px 10px", borderRadius: 6, fontWeight: 600,
               }}>
                 Fecha anterior
@@ -238,8 +238,8 @@ export default function RetiradasPage() {
                       ...btnBase,
                       padding: "14px 0",
                       fontSize: 16,
-                      background: active ? color : "#f3f4f6",
-                      color: active ? "#fff" : "#666",
+                      background: active ? color : "var(--color-reig-bg)",
+                      color: active ? "#fff" : "var(--color-reig-text-secondary)",
                     }}
                   >
                     {n}
@@ -257,27 +257,27 @@ export default function RetiradasPage() {
               <div key={n} style={card}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                   <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>Caja {n}</h3>
-                  <span style={{ fontWeight: 800, fontSize: 16, color: t > 0 ? color : "#aaa" }}>
+                  <span style={{ fontWeight: 800, fontSize: 16, color: t > 0 ? color : "var(--color-reig-text-muted)" }}>
                     {eur(t)}
                   </span>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                   {BILLETES_CAJA.map(({ key, label, valor }) => (
                     <div key={key} style={{ textAlign: "center" }}>
-                      <label style={{ fontSize: 11, color: "#888", display: "block", marginBottom: 4 }}>{label}</label>
+                      <label style={{ fontSize: 11, color: "var(--color-reig-text-secondary)", display: "block", marginBottom: 4 }}>{label}</label>
                       <input
                         type="number"
                         min={0}
                         value={c[key] || ""}
                         onChange={(e) => updateBillete(n, key, parseInt(e.target.value) || 0)}
                         style={{
-                          width: "100%", padding: "8px 4px", border: "1px solid #e0e0e0",
+                          width: "100%", padding: "8px 4px", border: "1px solid var(--color-reig-border)",
                           borderRadius: 6, textAlign: "center", fontSize: 16, fontWeight: 600,
                         }}
                         placeholder="0"
                       />
                       {c[key] > 0 && (
-                        <div style={{ fontSize: 10, color: "#888", marginTop: 2 }}>{eur(c[key] * valor)}</div>
+                        <div style={{ fontSize: 10, color: "var(--color-reig-text-secondary)", marginTop: 2 }}>{eur(c[key] * valor)}</div>
                       )}
                     </div>
                   ))}
@@ -317,11 +317,11 @@ export default function RetiradasPage() {
       {paso === 2 && (
         <>
           {/* Referencia */}
-          <div style={{ ...card, background: "#f8fafc" }}>
-            <div style={{ fontSize: 13, color: "#666", marginBottom: 4 }}>Total suma de cajas</div>
+          <div style={{ ...card, background: "var(--color-reig-bg)" }}>
+            <div style={{ fontSize: 13, color: "var(--color-reig-text-secondary)", marginBottom: 4 }}>Total suma de cajas</div>
             <div style={{ fontSize: 22, fontWeight: 800 }}>{eur(totalCajasAjustado)}</div>
             {ajustesTotal !== 0 && (
-              <div style={{ fontSize: 12, color: "#888", marginTop: 4 }}>
+              <div style={{ fontSize: 12, color: "var(--color-reig-text-secondary)", marginTop: 4 }}>
                 Original: {eur(totalGlobal)} {ajustesTotal > 0 ? "+" : ""}{eur(ajustesTotal)} ajustes
               </div>
             )}
@@ -333,20 +333,20 @@ export default function RetiradasPage() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
               {BILLETES_CONTEO.map(({ key, label, valor }) => (
                 <div key={key} style={{ textAlign: "center" }}>
-                  <label style={{ fontSize: 11, color: "#888", display: "block", marginBottom: 4 }}>{label}</label>
+                  <label style={{ fontSize: 11, color: "var(--color-reig-text-secondary)", display: "block", marginBottom: 4 }}>{label}</label>
                   <input
                     type="number"
                     min={0}
                     value={conteo[key] || ""}
                     onChange={(e) => setConteo((p) => ({ ...p, [key]: Math.max(0, parseInt(e.target.value) || 0) }))}
                     style={{
-                      width: "100%", padding: "8px 4px", border: "1px solid #e0e0e0",
+                      width: "100%", padding: "8px 4px", border: "1px solid var(--color-reig-border)",
                       borderRadius: 6, textAlign: "center", fontSize: 16, fontWeight: 600,
                     }}
                     placeholder="0"
                   />
                   {conteo[key] > 0 && (
-                    <div style={{ fontSize: 10, color: "#888", marginTop: 2 }}>{eur(conteo[key] * valor)}</div>
+                    <div style={{ fontSize: 10, color: "var(--color-reig-text-secondary)", marginTop: 2 }}>{eur(conteo[key] * valor)}</div>
                   )}
                 </div>
               ))}
@@ -365,7 +365,7 @@ export default function RetiradasPage() {
             }}>
               {cuadra ? (
                 <>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: color, marginBottom: 8 }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: color, marginBottom: 8, fontWeight: 700 }}>
                     El conteo cuadra
                   </div>
                   <button
@@ -385,10 +385,10 @@ export default function RetiradasPage() {
                 </>
               ) : (
                 <>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: "#dc2626", marginBottom: 4 }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: "var(--color-reig-danger)", marginBottom: 4 }}>
                     No cuadra — diferencia: {eur(diferencia)}
                   </div>
-                  <p style={{ fontSize: 13, color: "#888", marginBottom: 12 }}>
+                  <p style={{ fontSize: 13, color: "var(--color-reig-text-secondary)", marginBottom: 12 }}>
                     {diferencia > 0
                       ? "El conteo tiene MAS dinero que la suma de cajas."
                       : "El conteo tiene MENOS dinero que la suma de cajas."}
@@ -396,13 +396,13 @@ export default function RetiradasPage() {
                   <div style={{ display: "flex", gap: 8 }}>
                     <button
                       onClick={() => setShowModal("sacar")}
-                      style={{ ...btnBase, flex: 1, background: "#fee2e2", color: "#dc2626" }}
+                      style={{ ...btnBase, flex: 1, background: "var(--color-reig-danger-light)", color: "var(--color-reig-danger)" }}
                     >
                       Sacar de una caja
                     </button>
                     <button
                       onClick={() => setShowModal("ingresar")}
-                      style={{ ...btnBase, flex: 1, background: "#dbeafe", color: "#2563eb" }}
+                      style={{ ...btnBase, flex: 1, background: "var(--color-reig-optica-light)", color: "var(--color-reig-optica)" }}
                     >
                       Ingresar en caja
                     </button>
@@ -416,7 +416,7 @@ export default function RetiradasPage() {
                         width: "100%",
                         padding: "12px 0",
                         fontSize: 14,
-                        background: saving ? "#aaa" : "#f59e0b",
+                        background: saving ? "var(--color-reig-text-muted)" : "var(--color-reig-warn)",
                         color: "#fff",
                       }}
                     >
@@ -435,17 +435,17 @@ export default function RetiradasPage() {
               {movimientos.map((m, i) => (
                 <div key={i} style={{
                   display: "flex", justifyContent: "space-between", alignItems: "center",
-                  padding: "6px 0", borderBottom: "1px solid #f0f0f0", fontSize: 13,
+                  padding: "6px 0", borderBottom: "1px solid var(--color-reig-border-light)", fontSize: 13,
                 }}>
                   <span>
-                    <span style={{ color: m.tipo === "ingresar" ? color : "#dc2626", fontWeight: 700 }}>
+                    <span style={{ color: m.tipo === "ingresar" ? color : "var(--color-reig-danger)", fontWeight: 700 }}>
                       {m.tipo === "ingresar" ? "+" : "-"}{eur(m.importe)}
                     </span>
                     {" "}Caja {m.caja_num} — {m.motivo || "Sin motivo"}
                   </span>
                   <button
                     onClick={() => setMovimientos((p) => p.filter((_, j) => j !== i))}
-                    style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 16 }}
+                    style={{ background: "none", border: "none", color: "var(--color-reig-text-muted)", cursor: "pointer", fontSize: 16 }}
                   >
                     x
                   </button>
@@ -457,12 +457,12 @@ export default function RetiradasPage() {
           {/* Botón volver */}
           <button
             onClick={() => setPaso(1)}
-            style={{ ...btnBase, background: "#f3f4f6", color: "#666", marginBottom: 20 }}
+            style={{ ...btnBase, background: "var(--color-reig-bg)", color: "var(--color-reig-text-secondary)", marginBottom: 20 }}
           >
             Volver a cajas
           </button>
 
-          {error && <div style={{ color: "#dc2626", fontSize: 13, marginTop: 8 }}>{error}</div>}
+          {error && <div style={{ color: "var(--color-reig-danger)", fontSize: 13, marginTop: 8 }}>{error}</div>}
 
           {/* Modal ajuste */}
           {showModal && (
@@ -472,44 +472,44 @@ export default function RetiradasPage() {
             }}
               onClick={() => setShowModal(null)}
             >
-              <div style={{ background: "#fff", borderRadius: 16, padding: 24, width: 340, maxWidth: "90vw" }}
+              <div style={{ background: "var(--color-reig-bg-surface)", borderRadius: 16, padding: 24, width: 340, maxWidth: "90vw" }}
                 onClick={(e) => e.stopPropagation()}
               >
-                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: "var(--color-reig-text)" }}>
                   {showModal === "sacar" ? "Sacar de una caja" : "Ingresar en caja"}
                 </h3>
-                <label style={{ fontSize: 12, color: "#888" }}>Caja</label>
+                <label style={{ fontSize: 12, color: "var(--color-reig-text-secondary)" }}>Caja</label>
                 <select
                   value={modalCaja}
                   onChange={(e) => setModalCaja(Number(e.target.value))}
-                  style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #e0e0e0", marginBottom: 12 }}
+                  style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid var(--color-reig-border)", marginBottom: 12 }}
                 >
                   {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
                     <option key={n} value={n}>Caja {n}</option>
                   ))}
                 </select>
-                <label style={{ fontSize: 12, color: "#888" }}>Importe</label>
+                <label style={{ fontSize: 12, color: "var(--color-reig-text-secondary)" }}>Importe</label>
                 <input
                   type="number"
                   min={0}
                   step={0.01}
                   value={modalImporte || ""}
                   onChange={(e) => setModalImporte(parseFloat(e.target.value) || 0)}
-                  style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #e0e0e0", marginBottom: 12, fontSize: 16 }}
+                  style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid var(--color-reig-border)", marginBottom: 12, fontSize: 16 }}
                   placeholder="0.00"
                 />
-                <label style={{ fontSize: 12, color: "#888" }}>Motivo</label>
+                <label style={{ fontSize: 12, color: "var(--color-reig-text-secondary)" }}>Motivo</label>
                 <input
                   type="text"
                   value={modalMotivo}
                   onChange={(e) => setModalMotivo(e.target.value)}
-                  style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #e0e0e0", marginBottom: 16 }}
+                  style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid var(--color-reig-border)", marginBottom: 16 }}
                   placeholder="Motivo del ajuste"
                 />
                 <div style={{ display: "flex", gap: 8 }}>
                   <button
                     onClick={() => setShowModal(null)}
-                    style={{ ...btnBase, flex: 1, background: "#f3f4f6", color: "#666" }}
+                    style={{ ...btnBase, flex: 1, background: "var(--color-reig-bg)", color: "var(--color-reig-text-secondary)" }}
                   >
                     Cancelar
                   </button>
@@ -518,7 +518,7 @@ export default function RetiradasPage() {
                     disabled={modalImporte <= 0}
                     style={{
                       ...btnBase, flex: 1,
-                      background: showModal === "ingresar" ? "#2563eb" : "#dc2626",
+                      background: showModal === "ingresar" ? "var(--color-reig-optica)" : "var(--color-reig-danger)",
                       color: "#fff",
                       opacity: modalImporte <= 0 ? 0.5 : 1,
                     }}
@@ -540,11 +540,11 @@ export default function RetiradasPage() {
             Retirada guardada
           </h2>
           <div style={{ fontSize: 28, fontWeight: 800, marginBottom: 4 }}>{eur(resultado.total)}</div>
-          <div style={{ fontSize: 13, color: "#888", marginBottom: 24 }}>
+          <div style={{ fontSize: 13, color: "var(--color-reig-text-secondary)", marginBottom: 24 }}>
             {cajasActivas.size} caja{cajasActivas.size > 1 ? "s" : ""} — ID #{resultado.id}
           </div>
           {!cuadra && (
-            <div style={{ fontSize: 13, color: "#f59e0b", marginBottom: 16 }}>
+            <div style={{ fontSize: 13, color: "var(--color-reig-warn)", marginBottom: 16 }}>
               Guardada con diferencia de {eur(diferencia)}
             </div>
           )}
@@ -554,7 +554,7 @@ export default function RetiradasPage() {
             </button>
             <button
               onClick={() => window.location.href = "/retiradas?view=historial"}
-              style={{ ...btnBase, background: "#f3f4f6", color: "#666", padding: "12px 24px" }}
+              style={{ ...btnBase, background: "var(--color-reig-bg)", color: "var(--color-reig-text-secondary)", padding: "12px 24px" }}
             >
               Ver historial
             </button>

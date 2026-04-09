@@ -140,7 +140,7 @@ function SesionDetalle({ sesionId, accentColor }: { sesionId: number; accentColo
             <span className="text-xs font-semibold" style={{ color: accentColor }}>
               Caja {c.num_caja}
             </span>
-            <span className="font-mono text-sm font-bold">{Number(c.total).toFixed(0)}€</span>
+            <span className="font-mono-metric text-sm font-bold">{Number(c.total).toFixed(0)}€</span>
           </div>
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-500">
             {DENOMS.map((d) => {
@@ -162,7 +162,7 @@ function SesionDetalle({ sesionId, accentColor }: { sesionId: number; accentColo
             <span className={`font-semibold ${audit.cuadra ? "text-green-700" : "text-red-700"}`}>
               {audit.cuadra ? "✓ Auditoría OK" : "✗ Descuadre"}
             </span>
-            <span className="font-mono font-bold">{Number(audit.total).toFixed(0)}€</span>
+            <span className="font-mono-metric font-bold">{Number(audit.total).toFixed(0)}€</span>
           </div>
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-gray-500">
             {DENOMS.map((d) => {
@@ -228,7 +228,7 @@ function CajaFuerteDashboard({ data, zona, accentColor, accentLight }: {
       </div>
       <div className="flex items-end justify-between">
         <div>
-          <span className="font-mono text-3xl font-bold" style={{ color: alerta ? "#dc2626" : accentColor }}>
+          <span className="font-mono-metric text-3xl font-bold" style={{ color: alerta ? "var(--color-reig-danger)" : accentColor }}>
             {balance.toFixed(0)} €
           </span>
           <span className="text-xs text-gray-400 ml-2">estimado pendiente</span>
@@ -402,7 +402,7 @@ export default function HistorialPage() {
   return (
     <div className="max-w-2xl">
       <div className="flex items-center justify-between mb-1">
-        <h2 className="font-serif text-3xl" style={{ color: accentColor }}>
+        <h2 className="font-display text-3xl" style={{ color: accentColor }}>
           Historial — {isFarma ? "Farmacia" : "Óptica"}
         </h2>
         <Link
@@ -482,7 +482,7 @@ export default function HistorialPage() {
               <span className="font-semibold" style={{ color: accentColor }}>
                 Total ({filtros.find((f) => f.key === filtro)?.label.toLowerCase()})
               </span>
-              <span className="font-mono font-bold text-xl" style={{ color: accentColor }}>
+              <span className="font-mono-metric font-bold text-xl" style={{ color: accentColor }}>
                 {totalPeriodo.toFixed(2)} €
               </span>
             </div>
@@ -614,7 +614,7 @@ export default function HistorialPage() {
                             </span>
                           )}
 
-                          <span className="font-mono font-bold text-sm sm:text-base">
+                          <span className="font-mono-metric font-bold text-sm sm:text-base">
                             {Number(s.total_cajas).toFixed(0)}€
                           </span>
                           <span
@@ -694,7 +694,7 @@ export default function HistorialPage() {
                           </span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="font-mono font-bold text-lg">
+                          <span className="font-mono-metric font-bold text-lg">
                             {Number(r.total).toFixed(2)} €
                           </span>
                           <span className="text-amber-500 text-lg">⏳</span>
@@ -736,7 +736,7 @@ export default function HistorialPage() {
                           )}
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="font-mono font-bold text-lg">
+                          <span className="font-mono-metric font-bold text-lg">
                             {Number(r.total).toFixed(2)} €
                           </span>
                           <span className="text-green-600 text-lg">✓</span>

@@ -44,23 +44,23 @@ const HORAS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 
 // Paleta coherente con el diseño de gestion.vidalreig.com
 const C = {
-  verde: "#2E7D32",
-  verdeDark: "#1B5E20",
-  verdeLight: "#E8F5E9",
-  verdeMid: "#4CAF50",
-  amarillo: "#F59E0B",
-  rojo: "#DC2626",
-  azul: "#1565C0",
-  gris: "#4B5563",
-  fondo: "#F7FAF8",
-  borde: "#E5E7EB",
+  verde: "var(--color-reig-green)",
+  verdeDark: "var(--color-reig-green-dark)",
+  verdeLight: "var(--color-reig-green-light)",
+  verdeMid: "var(--color-reig-green-mid)",
+  amarillo: "var(--color-reig-warn)",
+  rojo: "var(--color-reig-danger)",
+  azul: "var(--color-reig-optica)",
+  gris: "var(--color-reig-text-secondary)",
+  fondo: "var(--color-reig-bg)",
+  borde: "var(--color-reig-border)",
 };
 
 const COLORES_PIE = [C.verde, C.azul, C.amarillo, "#8b5cf6", "#ec4899", "#14b8a6"];
 const COLORES_ANIO: Record<string, string> = {
   "2024": "#3b82f6",
   "2025": "#1a8c3a",
-  "2026": "#f59e0b",
+  "2026": "var(--color-reig-warn)",
 };
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -155,11 +155,10 @@ function KpiCard({
         {label}
       </p>
       {loading ? (
-        <div className="h-7 w-24 rounded animate-pulse" style={{ background: "#e5e7eb" }} />
+        <div className="h-7 w-24 rounded animate-pulse" style={{ background: "var(--color-reig-border)" }} />
       ) : (
         <p
-          className="text-xl font-semibold"
-          style={{ color, fontFamily: "'JetBrains Mono', monospace" }}
+          className="text-xl font-semibold font-mono-metric" style={{ color }}
         >
           {value}
         </p>
@@ -189,8 +188,7 @@ function SectionCard({
       <div className="flex items-start justify-between mb-4">
         <div>
           <h2
-            className="text-base font-semibold"
-            style={{ color: "#2a2e2b", fontFamily: "'DM Serif Display', serif" }}
+            className="text-base font-semibold font-display" style={{ color: "var(--color-reig-text)" }}
           >
             {title}
           </h2>
@@ -209,7 +207,7 @@ function SectionCard({
 
 function Skeleton({ h = "h-48" }: { h?: string }) {
   return (
-    <div className={`${h} rounded-lg animate-pulse`} style={{ background: "#f3f4f6" }} />
+    <div className={`${h} rounded-lg animate-pulse`} style={{ background: "var(--color-reig-bg)" }} />
   );
 }
 
@@ -233,13 +231,13 @@ function CronogramaHeatmap({
 
   function cellColor(tickets: number): string {
     const ratio = tickets / maxTickets;
-    if (ratio === 0) return "#f9fafb";
-    if (ratio < 0.15) return "#dcfce7";
-    if (ratio < 0.3) return "#bbf7d0";
-    if (ratio < 0.5) return "#86efac";
-    if (ratio < 0.7) return "#4ade80";
-    if (ratio < 0.85) return "#22c55e";
-    return "#16a34a";
+    if (ratio === 0) return "var(--color-reig-bg)";
+    if (ratio < 0.15) return "var(--color-reig-green-light)";
+    if (ratio < 0.3) return "var(--color-reig-green-light)";
+    if (ratio < 0.5) return "var(--color-reig-green-light)";
+    if (ratio < 0.7) return "var(--color-reig-green-mid)";
+    if (ratio < 0.85) return "var(--color-reig-green-mid)";
+    return "var(--color-reig-green)";
   }
 
   return (
@@ -247,7 +245,7 @@ function CronogramaHeatmap({
       <div className="flex items-center gap-2 mb-3 text-xs" style={{ color: C.gris }}>
         <span>Menos</span>
         {["#f9fafb", "#dcfce7", "#bbf7d0", "#86efac", "#4ade80", "#22c55e", "#16a34a"].map((bg) => (
-          <div key={bg} className="w-5 h-3 rounded-sm" style={{ background: bg, border: "1px solid #e5e7eb" }} />
+          <div key={bg} className="w-5 h-3 rounded-sm" style={{ background: bg, border: "1px solid var(--color-reig-border)" }} />
         ))}
         <span>Más tickets</span>
       </div>
@@ -261,7 +259,7 @@ function CronogramaHeatmap({
               <div
                 key={h}
                 className="flex-1 text-center text-xs pb-1"
-                style={{ color: C.gris, fontFamily: "'JetBrains Mono', monospace" }}
+                className="font-mono-metric" style={{ color: C.gris }}
               >
                 {h}h
               </div>
@@ -286,10 +284,10 @@ function CronogramaHeatmap({
                     <div
                       key={h}
                       className="flex-1 h-8 rounded-sm flex items-center justify-center cursor-default transition-transform hover:scale-110"
+                      className="font-mono-metric"
                       style={{
                         background: cellColor(tickets),
-                        fontFamily: "'JetBrains Mono', monospace",
-                        color: tickets > maxTickets * 0.5 ? "white" : "#374151",
+                        color: tickets > maxTickets * 0.5 ? "white" : "var(--color-reig-text)",
                         fontSize: "0.65rem",
                       }}
                       title={`${dia} ${h}h: ${num(tickets)} tickets · ${eurDec(cell?.facturacion || 0)}`}
@@ -321,7 +319,7 @@ function TooltipVentas({
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-white rounded-lg shadow-lg border p-3 text-xs" style={{ borderColor: C.borde }}>
-      <p className="font-semibold mb-1" style={{ color: "#2a2e2b" }}>{label}</p>
+      <p className="font-semibold mb-1" style={{ color: "var(--color-reig-text)" }}>{label}</p>
       {payload.map((p) => (
         <p key={p.name} style={{ color: p.color }}>
           {p.name}: <span className="font-mono">{eur(p.value)}</span>
@@ -484,7 +482,7 @@ export default function CrmPage() {
         <div className="flex-1">
           <h1
             className="text-2xl md:text-3xl font-semibold"
-            style={{ fontFamily: "'DM Serif Display', serif", color: "#2a2e2b" }}
+            className="font-display" style={{ color: "var(--color-reig-text)" }}
           >
             CRM — Análisis de Ventas
           </h1>
@@ -544,9 +542,9 @@ export default function CrmPage() {
 
       {/* ─── ERROR BANNER ─────────────────────────────────────────────── */}
       {fetchError && (
-        <div className="rounded-lg p-3 text-sm flex items-start gap-2" style={{ background: "#fef2f2", color: "#c0392b", border: "1px solid #fecaca" }}>
+        <div className="rounded-lg p-3 text-sm flex items-start gap-2" style={{ background: "#fef2f2", color: "var(--color-reig-danger)", border: "1px solid #fecaca" }}>
           <span style={{ fontWeight: 700 }}>Error al cargar datos:</span>
-          <span style={{ fontFamily: "monospace", fontSize: 12 }}>{fetchError}</span>
+          <span className="font-mono-metric" style={{ fontSize: 12 }}>{fetchError}</span>
         </div>
       )}
 
@@ -633,7 +631,7 @@ export default function CrmPage() {
               data={tendenciaChartData}
               margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-reig-border)" />
               <XAxis
                 dataKey="label"
                 tick={{ fontSize: 10, fill: C.gris }}
@@ -642,7 +640,7 @@ export default function CrmPage() {
                 interval="preserveStartEnd"
               />
               <YAxis
-                tick={{ fontSize: 10, fill: C.gris, fontFamily: "'JetBrains Mono', monospace" }}
+                tick={{ fontSize: 10, fill: C.gris }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
@@ -656,7 +654,7 @@ export default function CrmPage() {
                       className="bg-white rounded-lg shadow-lg border p-3 text-xs"
                       style={{ borderColor: C.borde }}
                     >
-                      <p className="font-semibold mb-1.5" style={{ color: "#2a2e2b" }}>{label}</p>
+                      <p className="font-semibold mb-1.5" style={{ color: "var(--color-reig-text)" }}>{label}</p>
                       <p style={{ color: C.verde }}>
                         Facturación: <span className="font-mono font-bold">{eur(d.facturacion)}</span>
                       </p>
@@ -697,7 +695,7 @@ export default function CrmPage() {
               data={comparativaChartData}
               margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-reig-border)" />
               <XAxis
                 dataKey="mes"
                 tick={{ fontSize: 10, fill: C.gris }}
@@ -705,7 +703,7 @@ export default function CrmPage() {
                 axisLine={false}
               />
               <YAxis
-                tick={{ fontSize: 10, fill: C.gris, fontFamily: "'JetBrains Mono', monospace" }}
+                tick={{ fontSize: 10, fill: C.gris }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
@@ -749,7 +747,7 @@ export default function CrmPage() {
                         className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
                         style={{
                           background:
-                            i === 0 ? "#f59e0b"
+                            i === 0 ? "var(--color-reig-warn)"
                             : i === 1 ? "#94a3b8"
                             : i === 2 ? "#b45309"
                             : C.gris,
@@ -757,7 +755,7 @@ export default function CrmPage() {
                       >
                         {i + 1}
                       </span>
-                      <span className="text-sm font-medium" style={{ color: "#2a2e2b" }}>
+                      <span className="text-sm font-medium" style={{ color: "var(--color-reig-text)" }}>
                         {v.vendedor}
                       </span>
                     </div>
@@ -768,7 +766,7 @@ export default function CrmPage() {
                     </div>
                   </div>
                   {/* Barra de progreso */}
-                  <div className="h-1.5 rounded-full mb-1" style={{ background: "#f3f4f6" }}>
+                  <div className="h-1.5 rounded-full mb-1" style={{ background: "var(--color-reig-bg)" }}>
                     <div
                       className="h-full rounded-full transition-all duration-700"
                       style={{
@@ -818,7 +816,7 @@ export default function CrmPage() {
                         key={t.tipo || `tipo-${i}`}
                         className="rounded-lg p-3"
                         style={{
-                          background: i === 0 ? C.verdeLight : "#eff6ff",
+                          background: i === 0 ? C.verdeLight : "var(--color-reig-optica-light)",
                           border: `1px solid ${C.borde}`,
                         }}
                       >
@@ -882,7 +880,7 @@ export default function CrmPage() {
                               <span className="text-xs" style={{ color: C.gris }}>{r.tipo || "Otros"}</span>
                             </div>
                             <div className="text-right">
-                              <span className="text-xs font-mono font-semibold" style={{ color: "#2a2e2b" }}>
+                              <span className="text-xs font-mono font-semibold" style={{ color: "var(--color-reig-text)" }}>
                                 {pctVal.toFixed(1)}%
                               </span>
                               <span className="text-xs font-mono ml-2" style={{ color: C.gris }}>
@@ -914,7 +912,7 @@ export default function CrmPage() {
                         <div className="w-20 text-xs truncate shrink-0" style={{ color: C.gris }}>
                           {p.tipo_pago || "Otros"}
                         </div>
-                        <div className="flex-1 h-2 rounded-full" style={{ background: "#f3f4f6" }}>
+                        <div className="flex-1 h-2 rounded-full" style={{ background: "var(--color-reig-bg)" }}>
                           <div
                             className="h-full rounded-full"
                             style={{
@@ -923,7 +921,7 @@ export default function CrmPage() {
                             }}
                           />
                         </div>
-                        <span className="text-xs font-mono w-8 text-right shrink-0" style={{ color: "#2a2e2b" }}>
+                        <span className="text-xs font-mono w-8 text-right shrink-0" style={{ color: "var(--color-reig-text)" }}>
                           {pctVal.toFixed(0)}%
                         </span>
                         <span className="text-xs font-mono w-20 text-right shrink-0 hidden sm:block" style={{ color: C.gris }}>
@@ -1004,13 +1002,13 @@ export default function CrmPage() {
                     >
                       {i + 1}
                     </td>
-                    <td className="py-2 px-3 text-xs font-medium" style={{ color: "#2a2e2b", maxWidth: 260 }}>
+                    <td className="py-2 px-3 text-xs font-medium" style={{ color: "var(--color-reig-text)", maxWidth: 260 }}>
                       <span className="block truncate">{p.descripcion}</span>
                     </td>
                     <td className="py-2 px-3 text-xs font-mono hidden sm:table-cell" style={{ color: C.gris }}>
                       {p.codigo}
                     </td>
-                    <td className="py-2 px-3 text-xs font-mono text-right font-semibold" style={{ color: "#2a2e2b" }}>
+                    <td className="py-2 px-3 text-xs font-mono text-right font-semibold" style={{ color: "var(--color-reig-text)" }}>
                       {num(p.unidades)}
                     </td>
                     <td className="py-2 px-3 text-xs font-mono text-right font-semibold" style={{ color: C.verde }}>
@@ -1039,7 +1037,7 @@ export default function CrmPage() {
       </SectionCard>
 
       {/* ─── FOOTER ──────────────────────────────────────────────────────── */}
-      <div className="text-center text-xs pb-4" style={{ color: "#d1d5db" }}>
+      <div className="text-center text-xs pb-4" style={{ color: "var(--color-reig-text-muted)" }}>
         Farmacia Reig — CRM interno · Datos actualizados desde Turso · Confidencial
       </div>
     </div>

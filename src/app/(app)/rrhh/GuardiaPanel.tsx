@@ -71,7 +71,7 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
       padding: "16px",
     }}>
       <div style={{
-        background: "#fff", borderRadius: 14, padding: 20,
+        background: "var(--color-reig-surface)", borderRadius: 14, padding: 20,
         maxWidth: 720, width: "100%", maxHeight: "90vh", overflowY: "auto",
         boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
       }}>
@@ -86,8 +86,8 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
               <span style={{
                 padding: "4px 12px", borderRadius: 20,
                 fontWeight: 700, fontSize: 10,
-                background: tipo === "lab" ? GREEN_LIGHT : "#fdecea",
-                color: tipo === "lab" ? GREEN_DARK : "#c0392b",
+                background: tipo === "lab" ? GREEN_LIGHT : "var(--color-reig-danger-light)",
+                color: tipo === "lab" ? GREEN_DARK : "var(--color-reig-danger)",
               }}>
                 {tipo === "lab" ? "⚙ LABORABLE" : "🎉 FESTIVO"}
               </span>
@@ -97,14 +97,14 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
                 style={{
                   padding: "4px 12px", borderRadius: 20, border: "none", cursor: "pointer",
                   fontWeight: 700, fontSize: 10,
-                  background: tipo === "lab" ? GREEN_LIGHT : "#fdecea",
-                  color: tipo === "lab" ? GREEN_DARK : "#c0392b",
+                  background: tipo === "lab" ? GREEN_LIGHT : "var(--color-reig-danger-light)",
+                  color: tipo === "lab" ? GREEN_DARK : "var(--color-reig-danger)",
                 }}
               >
                 {tipo === "lab" ? "⚙ LABORABLE" : "🎉 FESTIVO"}
               </button>
             )}
-            <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "#999", lineHeight: 1 }}>×</button>
+            <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "var(--color-reig-text-muted)", lineHeight: 1 }}>×</button>
           </div>
         </div>
 
@@ -124,7 +124,7 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
               <td style={{ padding: "0 0 4px 0" }}>
                 <div style={{ display: "grid", gridTemplateColumns: `repeat(${HORAS_GRID.length}, 1fr)`, gap: 1 }}>
                   {HORAS_GRID.map(h => (
-                    <div key={h} style={{ textAlign: "center", fontSize: 7, color: "#bbb", fontFamily: "'JetBrains Mono', monospace" }}>{h}</div>
+                    <div key={h} style={{ textAlign: "center", fontSize: 7, color: "var(--color-reig-text-muted)", fontFamily: "'JetBrains Mono', monospace" }}>{h}</div>
                   ))}
                 </div>
               </td>
@@ -144,12 +144,12 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
                 <td style={{ padding: "4px 4px 4px 0", verticalAlign: "middle" }}>
                   <div style={{
                     fontSize: 10, fontWeight: isFarma ? 700 : 400,
-                    color: isVac ? "#ccc" : isFarma ? GREEN_DARK : "#333",
+                    color: isVac ? "var(--color-reig-border)" : isFarma ? GREEN_DARK : "var(--color-reig-text)",
                     textDecoration: isVac ? "line-through" : "none",
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const,
                   }}>
                     {slot.nombre}
-                    {isVac && <span style={{ color: "#ef4444", fontSize: 7, marginLeft: 2 }}>VAC</span>}
+                    {isVac && <span style={{ color: "var(--color-reig-danger)", fontSize: 7, marginLeft: 2 }}>VAC</span>}
                     {slot.empresa === "mirelus" && (
                       <span style={{ fontSize: 7, background: "#a9d18e", padding: "0 3px", borderRadius: 2, marginLeft: 3 }}>M</span>
                     )}
@@ -163,16 +163,16 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
                       value={slot.hora_inicio}
                       onChange={e => updateSlot(slot.empleado_id, "hora_inicio", parseInt(e.target.value))}
                       disabled={isVac || readOnly}
-                      style={{ width: 52, border: "1px solid #ddd", borderRadius: 4, fontSize: 9, padding: "2px 0", textAlign: "center", background: (isVac || readOnly) ? "#f5f5f5" : "#fff", color: (isVac || readOnly) ? "#888" : "#333" }}
+                      style={{ width: 52, border: "1px solid var(--color-reig-border)", borderRadius: 4, fontSize: 9, padding: "2px 0", textAlign: "center", background: (isVac || readOnly) ? "var(--color-reig-bg)" : "var(--color-reig-surface)", color: (isVac || readOnly) ? "var(--color-reig-text-secondary)" : "var(--color-reig-text)" }}
                     >
                       {HRS24.map(h => <option key={h} value={h}>{fmtHora(h)}</option>)}
                     </select>
-                    <span style={{ color: "#ccc", fontSize: 9 }}>→</span>
+                    <span style={{ color: "var(--color-reig-border)", fontSize: 9 }}>→</span>
                     <select
                       value={slot.hora_fin}
                       onChange={e => updateSlot(slot.empleado_id, "hora_fin", parseInt(e.target.value))}
                       disabled={isVac || readOnly}
-                      style={{ width: 60, border: "1px solid #ddd", borderRadius: 4, fontSize: 9, padding: "2px 0", textAlign: "center", background: (isVac || readOnly) ? "#f5f5f5" : "#fff", color: (isVac || readOnly) ? "#888" : "#333" }}
+                      style={{ width: 60, border: "1px solid var(--color-reig-border)", borderRadius: 4, fontSize: 9, padding: "2px 0", textAlign: "center", background: (isVac || readOnly) ? "var(--color-reig-bg)" : "var(--color-reig-surface)", color: (isVac || readOnly) ? "var(--color-reig-text-secondary)" : "var(--color-reig-text)" }}
                     >
                       {HRS34.map(h => <option key={h} value={h}>{fmtHora(h)}</option>)}
                     </select>
@@ -184,7 +184,7 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
                         value={slot.hora_inicio2!}
                         onChange={e => updateSlot(slot.empleado_id, "hora_inicio2", parseInt(e.target.value))}
                         disabled={readOnly}
-                        style={{ width: 52, border: "1px solid #e9d5ff", borderRadius: 3, fontSize: 8, padding: "1px 0", textAlign: "center", background: readOnly ? "#f5f5f5" : "#faf5ff", color: readOnly ? "#888" : "#7c3aed" }}
+                        style={{ width: 52, border: "1px solid #e9d5ff", borderRadius: 3, fontSize: 8, padding: "1px 0", textAlign: "center", background: readOnly ? "var(--color-reig-bg)" : "#faf5ff", color: readOnly ? "var(--color-reig-text-secondary)" : "#7c3aed" }}
                       >
                         {HRS24.map(h => <option key={h} value={h}>{fmtHora(h)}</option>)}
                       </select>
@@ -193,7 +193,7 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
                         value={slot.hora_fin2!}
                         onChange={e => updateSlot(slot.empleado_id, "hora_fin2", parseInt(e.target.value))}
                         disabled={readOnly}
-                        style={{ width: 60, border: "1px solid #e9d5ff", borderRadius: 3, fontSize: 8, padding: "1px 0", textAlign: "center", background: readOnly ? "#f5f5f5" : "#faf5ff", color: readOnly ? "#888" : "#7c3aed" }}
+                        style={{ width: 60, border: "1px solid #e9d5ff", borderRadius: 3, fontSize: 8, padding: "1px 0", textAlign: "center", background: readOnly ? "var(--color-reig-bg)" : "#faf5ff", color: readOnly ? "var(--color-reig-text-secondary)" : "#7c3aed" }}
                       >
                         {HRS34.map(h => <option key={h} value={h}>{fmtHora(h)}</option>)}
                       </select>
@@ -214,12 +214,12 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
                         <div key={h} style={{
                           height: 14, borderRadius: 2,
                           background: isVac
-                            ? "#f0f0f0"
+                            ? "var(--color-reig-bg)"
                             : active2
                             ? "#c4b5fd"
                             : active
                             ? (h >= 22 ? GREEN_DARK : GREEN)
-                            : "#f0f0f0",
+                            : "var(--color-reig-bg)",
                           outline: isFarma && active && !isVac ? "1.5px solid #0a4a1e" : "none",
                           outlineOffset: -1,
                         }} />
@@ -229,7 +229,7 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
                 </td>
 
                 {/* Col 4: Total horas */}
-                <td style={{ textAlign: "center", fontSize: 10, fontWeight: 600, color: isVac ? "#ddd" : "#333", verticalAlign: "middle" }}>
+                <td style={{ textAlign: "center", fontSize: 10, fontWeight: 600, color: isVac ? "var(--color-reig-border)" : "var(--color-reig-text)", verticalAlign: "middle" }}>
                   {isVac ? "—" : totalH}
                 </td>
               </tr>
@@ -241,8 +241,8 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
         {/* Validación farmacéutico */}
         <div style={{
           padding: "5px 10px", borderRadius: 6, marginBottom: 10,
-          background: hasFarma ? GREEN_LIGHT : "#fdecea",
-          color: hasFarma ? GREEN_DARK : "#c0392b",
+          background: hasFarma ? GREEN_LIGHT : "var(--color-reig-danger-light)",
+          color: hasFarma ? GREEN_DARK : "var(--color-reig-danger)",
           fontWeight: 700, fontSize: 10,
         }}>
           {hasFarma ? "✓ Farmacéutico cubierto" : "✗ ¡FALTA FARMACÉUTICO!"}
@@ -258,7 +258,7 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
                 <div style={{
                   height: `${(cobertura[i] / maxCob) * 32}px`,
                   borderRadius: "2px 2px 0 0",
-                  background: h >= 22 ? GREEN_DARK : cobertura[i] <= 1 ? "#ef4444" : cobertura[i] <= 2 ? "#f59e0b" : GREEN,
+                  background: h >= 22 ? GREEN_DARK : cobertura[i] <= 1 ? "var(--color-reig-danger)" : cobertura[i] <= 2 ? "var(--color-reig-warn)" : GREEN,
                   minHeight: cobertura[i] > 0 ? 4 : 0,
                 }} />
               </div>
@@ -266,7 +266,7 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
           </div>
           <div style={{ display: "flex", gap: 2, marginTop: 2 }}>
             {HORAS_GRID.map(h => (
-              <div key={h} style={{ flex: 1, textAlign: "center", fontSize: 7, color: "#bbb", fontFamily: "'JetBrains Mono', monospace" }}>{h}</div>
+              <div key={h} style={{ flex: 1, textAlign: "center", fontSize: 7, color: "var(--color-reig-text-muted)", fontFamily: "'JetBrains Mono', monospace" }}>{h}</div>
             ))}
           </div>
         </div>
@@ -278,7 +278,7 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
               <button
                 onClick={() => handleSave(guardia.publicada)}
                 disabled={saving}
-                style={{ background: GREEN, color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontSize: 12, fontWeight: 600 }}
+                style={{ background: GREEN, color: "var(--color-reig-surface)", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontSize: 12, fontWeight: 600 }}
               >
                 {saving ? "Guardando…" : "Guardar cambios"}
               </button>
@@ -286,9 +286,9 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
                 onClick={() => handleSave(1)}
                 disabled={saving || !hasFarma}
                 style={{
-                  background: hasFarma ? "#fff" : "#f5f5f5",
-                  color: hasFarma ? GREEN : "#ccc",
-                  border: `2px solid ${hasFarma ? GREEN : "#ddd"}`,
+                  background: hasFarma ? "var(--color-reig-surface)" : "var(--color-reig-bg)",
+                  color: hasFarma ? GREEN : "var(--color-reig-border)",
+                  border: `2px solid ${hasFarma ? GREEN : "var(--color-reig-border)"}`,
                   borderRadius: 8, padding: "8px 16px", cursor: hasFarma ? "pointer" : "not-allowed",
                   fontSize: 12, fontWeight: 600,
                 }}
@@ -299,7 +299,7 @@ export default function GuardiaPanel({ guardia, slots: initSlots, vacaciones, on
           )}
           <button
             onClick={onClose}
-            style={{ background: readOnly ? GREEN : "#f5f5f5", color: readOnly ? "#fff" : "#666", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontSize: 12, fontWeight: 600, marginLeft: "auto" }}
+            style={{ background: readOnly ? GREEN : "var(--color-reig-bg)", color: readOnly ? "var(--color-reig-surface)" : "var(--color-reig-text-secondary)", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontSize: 12, fontWeight: 600, marginLeft: "auto" }}
           >
             Cerrar
           </button>

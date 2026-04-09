@@ -1,17 +1,20 @@
 /**
  * Webhook Descuadres — POST
- * Endpoint protegido por API key para la tarea programada de Cowork.
+ * Endpoint protegido por API key para el Google Apps Script autónomo.
  *
- * La tarea de las 8:30 (L-S) lee Gmail, parsea los emails de Farmatic
- * con subject "Cierre de caja", y los envía aquí ya procesados.
+ * Un Apps Script en Google (trigger diario ~8:30) lee Gmail, parsea
+ * los emails de Farmatic con subject "Cierre de caja", agrupa por
+ * fecha, asigna caja por orden de hora, y envía aquí los datos.
  *
  * Autenticación: header "x-api-key" debe coincidir con DESCUADRES_WEBHOOK_KEY env var.
  *
  * Body esperado:
- *   { emails: [{ messageId, fecha_cierre, hora_cierre, saldo, tarjetas_dia_anterior,
- *                descuadre, importe_apertura, email_fecha_envio }] }
+ *   { cierres: [{ email_id, fecha_cierre, hora_cierre, caja, saldo,
+ *                 tarjetas_dia_anterior, descuadre, importe_apertura,
+ *                 email_fecha_envio }] }
  *
- * La asignación de caja por orden ya viene hecha desde la tarea de Cowork.
+ * La asignación de caja por orden ya viene hecha desde el Apps Script.
+ * Fuente del script: scripts/descuadres-apps-script.gs
  */
 import { NextRequest, NextResponse } from "next/server";
 import { guardarCierresBatch, existeEmailId, type CierreInput } from "@/lib/descuadres";

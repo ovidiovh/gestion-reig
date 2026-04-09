@@ -25,12 +25,12 @@ interface ResumenUsuario {
 /* ───── Helpers ───── */
 
 const MODULO_COLORS: Record<string, string> = {
-  financiero: "#059669",
+  financiero: "var(--color-reig-success)",
   marketing: "#7c3aed",
-  rrhh: "#dc2626",
-  admin: "#d97706",
-  inicio: "#6b7280",
-  otro: "#9ca3af",
+  rrhh: "var(--color-reig-danger)",
+  admin: "var(--color-reig-warn)",
+  inicio: "var(--color-reig-text-secondary)",
+  otro: "var(--color-reig-text-muted)",
 };
 
 function formatFecha(ts: string): string {
@@ -155,45 +155,45 @@ export default function AccesosPage() {
       {/* Header */}
       <div className="mb-6">
         <h1
-          className="text-2xl font-semibold"
-          style={{ fontFamily: "'DM Serif Display', serif", color: "#2a2e2b" }}
+          className="text-2xl font-semibold font-display"
+          style={{ color: "var(--color-reig-text)" }}
         >
           Historial de accesos
         </h1>
-        <p className="text-sm mt-1" style={{ color: "#5a615c" }}>
+        <p className="text-sm mt-1" style={{ color: "var(--color-reig-text-secondary)" }}>
           Page views por usuario — quien entra, que ve, cuanto tiempo pasa
         </p>
       </div>
 
       {/* Filtros */}
-      <div className="bg-white rounded-xl border p-4 mb-6 flex flex-wrap gap-4 items-end" style={{ borderColor: "#e5e7eb" }}>
+      <div className="bg-white rounded-xl border p-4 mb-6 flex flex-wrap gap-4 items-end" style={{ borderColor: "var(--color-reig-border)" }}>
         <div>
-          <label className="block text-xs font-medium mb-1" style={{ color: "#5a615c" }}>Desde</label>
+          <label className="block text-xs font-medium mb-1" style={{ color: "var(--color-reig-text-secondary)" }}>Desde</label>
           <input
             type="date"
             value={desde}
             onChange={(e) => setDesde(e.target.value)}
             className="border rounded-lg px-3 py-1.5 text-sm"
-            style={{ borderColor: "#d1d5db" }}
+            style={{ borderColor: "var(--color-reig-border)" }}
           />
         </div>
         <div>
-          <label className="block text-xs font-medium mb-1" style={{ color: "#5a615c" }}>Hasta</label>
+          <label className="block text-xs font-medium mb-1" style={{ color: "var(--color-reig-text-secondary)" }}>Hasta</label>
           <input
             type="date"
             value={hasta}
             onChange={(e) => setHasta(e.target.value)}
             className="border rounded-lg px-3 py-1.5 text-sm"
-            style={{ borderColor: "#d1d5db" }}
+            style={{ borderColor: "var(--color-reig-border)" }}
           />
         </div>
         <div>
-          <label className="block text-xs font-medium mb-1" style={{ color: "#5a615c" }}>Usuario</label>
+          <label className="block text-xs font-medium mb-1" style={{ color: "var(--color-reig-text-secondary)" }}>Usuario</label>
           <select
             value={emailFiltro}
             onChange={(e) => setEmailFiltro(e.target.value)}
             className="border rounded-lg px-3 py-1.5 text-sm"
-            style={{ borderColor: "#d1d5db" }}
+            style={{ borderColor: "var(--color-reig-border)" }}
           >
             <option value="">Todos</option>
             {emailsUnicos.map((e) => (
@@ -204,7 +204,7 @@ export default function AccesosPage() {
         <button
           onClick={cargar}
           className="px-4 py-1.5 rounded-lg text-sm font-medium text-white"
-          style={{ background: "#0C6D32" }}
+          style={{ background: "var(--color-reig-green)" }}
         >
           Actualizar
         </button>
@@ -218,8 +218,8 @@ export default function AccesosPage() {
             onClick={() => setTab(t)}
             className="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors"
             style={{
-              background: tab === t ? "#0C6D32" : "#f3f4f6",
-              color: tab === t ? "#fff" : "#5a615c",
+              background: tab === t ? "var(--color-reig-green)" : "var(--color-reig-bg)",
+              color: tab === t ? "white" : "var(--color-reig-text-secondary)",
             }}
           >
             {t === "resumen" ? "Resumen por usuario" : "Detalle de visitas"}
@@ -228,12 +228,12 @@ export default function AccesosPage() {
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-sm" style={{ color: "#9ca3af" }}>
+        <div className="text-center py-12 text-sm" style={{ color: "var(--color-reig-text-muted)" }}>
           Cargando datos...
         </div>
       ) : views.length === 0 ? (
-        <div className="bg-white rounded-xl border p-8 text-center" style={{ borderColor: "#e5e7eb" }}>
-          <p className="text-sm" style={{ color: "#9ca3af" }}>
+        <div className="bg-white rounded-xl border p-8 text-center" style={{ borderColor: "var(--color-reig-border)" }}>
+          <p className="text-sm" style={{ color: "var(--color-reig-text-muted)" }}>
             No hay page views en el periodo seleccionado.
             {desde === hace30 && " Ejecuta la migracion en /api/admin/migrate para crear las tablas."}
           </p>
@@ -245,20 +245,20 @@ export default function AccesosPage() {
             <div
               key={u.email}
               className="bg-white rounded-xl border p-5"
-              style={{ borderColor: "#e5e7eb" }}
+              style={{ borderColor: "var(--color-reig-border)" }}
             >
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h3 className="text-sm font-semibold" style={{ color: "#2a2e2b" }}>
+                  <h3 className="text-sm font-semibold" style={{ color: "var(--color-reig-text)" }}>
                     {u.nombre}
                   </h3>
-                  <p className="text-xs" style={{ color: "#9ca3af" }}>{u.email}</p>
+                  <p className="text-xs" style={{ color: "var(--color-reig-text-muted)" }}>{u.email}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-bold" style={{ color: "#0C6D32" }}>
+                  <p className="text-lg font-bold" style={{ color: "var(--color-reig-green)" }}>
                     {u.minutosEstimados} min
                   </p>
-                  <p className="text-xs" style={{ color: "#9ca3af" }}>
+                  <p className="text-xs" style={{ color: "var(--color-reig-text-muted)" }}>
                     {u.totalViews} paginas · Ultima: {u.ultimaVisita ? formatFechaCorta(u.ultimaVisita) : "—"}
                   </p>
                 </div>
@@ -281,10 +281,10 @@ export default function AccesosPage() {
               </div>
               <div className="flex gap-3 mt-2 flex-wrap">
                 {u.modulosFrecuentes.map((m) => (
-                  <span key={m.modulo} className="flex items-center gap-1 text-xs" style={{ color: "#5a615c" }}>
+                  <span key={m.modulo} className="flex items-center gap-1 text-xs" style={{ color: "var(--color-reig-text-secondary)" }}>
                     <span
                       className="w-2 h-2 rounded-full inline-block"
-                      style={{ background: MODULO_COLORS[m.modulo] || "#9ca3af" }}
+                      style={{ background: MODULO_COLORS[m.modulo] || "var(--color-reig-text-muted)" }}
                     />
                     {m.modulo} ({m.count})
                   </span>
@@ -295,15 +295,15 @@ export default function AccesosPage() {
         </div>
       ) : (
         /* ═══ TAB DETALLE ═══ */
-        <div className="bg-white rounded-xl border overflow-hidden" style={{ borderColor: "#e5e7eb" }}>
+        <div className="bg-white rounded-xl border overflow-hidden" style={{ borderColor: "var(--color-reig-border)" }}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b" style={{ borderColor: "#e5e7eb", background: "#f9fafb" }}>
-                  <th className="text-left px-4 py-2 font-medium" style={{ color: "#5a615c" }}>Fecha</th>
-                  <th className="text-left px-4 py-2 font-medium" style={{ color: "#5a615c" }}>Usuario</th>
-                  <th className="text-left px-4 py-2 font-medium" style={{ color: "#5a615c" }}>Ruta</th>
-                  <th className="text-left px-4 py-2 font-medium" style={{ color: "#5a615c" }}>Modulo</th>
+                <tr className="border-b" style={{ borderColor: "var(--color-reig-border)", background: "var(--color-reig-bg)" }}>
+                  <th className="text-left px-4 py-2 font-medium" style={{ color: "var(--color-reig-text-secondary)" }}>Fecha</th>
+                  <th className="text-left px-4 py-2 font-medium" style={{ color: "var(--color-reig-text-secondary)" }}>Usuario</th>
+                  <th className="text-left px-4 py-2 font-medium" style={{ color: "var(--color-reig-text-secondary)" }}>Ruta</th>
+                  <th className="text-left px-4 py-2 font-medium" style={{ color: "var(--color-reig-text-secondary)" }}>Modulo</th>
                 </tr>
               </thead>
               <tbody>
@@ -311,21 +311,21 @@ export default function AccesosPage() {
                   <tr
                     key={v.id}
                     className="border-b last:border-0 hover:bg-gray-50 transition-colors"
-                    style={{ borderColor: "#f3f4f6" }}
+                    style={{ borderColor: "var(--color-reig-bg)" }}
                   >
-                    <td className="px-4 py-2 whitespace-nowrap" style={{ color: "#5a615c" }}>
+                    <td className="px-4 py-2 whitespace-nowrap" style={{ color: "var(--color-reig-text-secondary)" }}>
                       {formatFecha(v.timestamp)}
                     </td>
-                    <td className="px-4 py-2" style={{ color: "#2a2e2b" }}>
+                    <td className="px-4 py-2" style={{ color: "var(--color-reig-text)" }}>
                       {v.usuario_nombre || v.usuario_email.split("@")[0]}
                     </td>
-                    <td className="px-4 py-2 font-mono text-xs" style={{ color: "#5a615c" }}>
+                    <td className="px-4 py-2 font-mono text-xs" style={{ color: "var(--color-reig-text-secondary)" }}>
                       {v.ruta}
                     </td>
                     <td className="px-4 py-2">
                       <span
                         className="inline-block px-2 py-0.5 rounded-full text-xs font-medium text-white"
-                        style={{ background: MODULO_COLORS[v.modulo] || "#9ca3af" }}
+                        style={{ background: MODULO_COLORS[v.modulo] || "var(--color-reig-text-muted)" }}
                       >
                         {v.modulo}
                       </span>
@@ -336,7 +336,7 @@ export default function AccesosPage() {
             </table>
           </div>
           {views.length > 200 && (
-            <div className="px-4 py-2 text-xs text-center" style={{ color: "#9ca3af", background: "#f9fafb" }}>
+            <div className="px-4 py-2 text-xs text-center" style={{ color: "var(--color-reig-text-muted)", background: "var(--color-reig-bg)" }}>
               Mostrando 200 de {views.length} registros. Usa los filtros para acotar.
             </div>
           )}

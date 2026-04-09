@@ -43,12 +43,12 @@ import {
 import data from "@/data/marketing/clientes/latest.json";
 
 /* ── Identidad de marca Reig ─────────────────────────────────────────── */
-const VERDE = "#1B5E20";
-const VERDE_OSC = "#0d3d10";
-const VERDE_CLARO = "#e7f3ec";
-const VERDE_MED = "#388e3c";
-const TXT = "#2a2e2b";
-const TXT_SUAVE = "#5a615c";
+const VERDE = "var(--color-reig-green)";
+const VERDE_OSC = "var(--color-reig-green-dark)";
+const VERDE_CLARO = "var(--color-reig-green-light)";
+const VERDE_MED = "var(--color-reig-green-mid)";
+const TXT = "var(--color-reig-text)";
+const TXT_SUAVE = "var(--color-reig-text-secondary)";
 
 /* Paleta degradada para los segmentos TSI (de más vulnerable a más alto) */
 const SEG_COLORS: Record<string, string> = {
@@ -142,15 +142,15 @@ export default function MarketingClientesPage() {
   };
 
   return (
-    <div style={{ color: TXT, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+    <div style={{ color: TXT }}>
       {/* ── Cabecera ───────────────────────────────────────────────── */}
       <header className="mb-6">
         <p className="text-xs uppercase tracking-wider" style={{ color: TXT_SUAVE }}>
           Marketing · Clientes
         </p>
         <h1
-          className="text-3xl md:text-4xl font-bold mt-1"
-          style={{ fontFamily: "'DM Serif Display', serif", color: VERDE_OSC }}
+          className="text-3xl md:text-4xl font-bold mt-1 font-display"
+          style={{ color: VERDE_OSC }}
         >
           Quiénes son nuestros pacientes
         </h1>
@@ -207,7 +207,7 @@ export default function MarketingClientesPage() {
                 stackOffset="sign"
                 margin={{ top: 4, right: 16, left: 4, bottom: 4 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#e8e8e8" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-reig-border)" />
                 <XAxis
                   type="number"
                   tickFormatter={(v) => fmtN(Math.abs(Number(v)))}
@@ -308,7 +308,7 @@ export default function MarketingClientesPage() {
               layout="vertical"
               margin={{ top: 4, right: 80, left: 200, bottom: 4 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#e8e8e8" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-reig-border)" />
               <XAxis
                 type="number"
                 stroke={TXT_SUAVE}
@@ -421,7 +421,7 @@ export default function MarketingClientesPage() {
             <tbody>
               {hmFilas.map((fila) => (
                 <tr key={fila.patologia}>
-                  <td className="p-2 sticky left-0 bg-white border-t border-gray-100">
+                  <td className="p-2 sticky left-0 bg-white border-t" style={{ borderColor: "var(--color-reig-border-light)" }}>
                     {fila.patologia}
                   </td>
                   {fila.valores.map((v, i) => {
@@ -475,21 +475,22 @@ export default function MarketingClientesPage() {
             </thead>
             <tbody>
               {topGrupos.map((g, idx) => (
-                <tr key={g.cod} className="border-t border-gray-100">
-                  <td className="p-2 font-mono">{g.cod}</td>
+                <tr key={g.cod} className="border-t" style={{ borderColor: "var(--color-reig-border-light)" }}>
+                  <td className="p-2 font-mono-metric">{g.cod}</td>
                   <td className="p-2 relative">
                     <div
                       className="absolute inset-y-0 left-0 rounded-sm"
                       style={{
                         width: `${(g.pct / maxTopPct) * 100}%`,
-                        background: idx % 2 === 0 ? "#e7f3ec" : "#dbecdf",
+                        background: idx % 2 === 0 ? VERDE_CLARO : VERDE_CLARO,
+                        opacity: 0.4,
                         zIndex: 0,
                       }}
                     />
                     <span className="relative">{g.nombre}</span>
                   </td>
-                  <td className="p-2 text-right tabular-nums">{fmtN(g.pacientes)}</td>
-                  <td className="p-2 text-right tabular-nums">{g.pct.toFixed(1)}%</td>
+                  <td className="p-2 text-right font-mono-metric">{fmtN(g.pacientes)}</td>
+                  <td className="p-2 text-right font-mono-metric">{g.pct.toFixed(1)}%</td>
                 </tr>
               ))}
             </tbody>
@@ -500,7 +501,7 @@ export default function MarketingClientesPage() {
       {/* ── Pie / metodología ──────────────────────────────────────── */}
       <details
         className="mt-8 text-xs rounded-xl p-4"
-        style={{ background: VERDE_CLARO, color: TXT }}
+        style={{ background: VERDE_CLARO, color: TXT, borderLeft: `4px solid ${VERDE_OSC}` }}
       >
         <summary className="cursor-pointer font-bold" style={{ color: VERDE_OSC }}>
           Metodología y notas
@@ -554,13 +555,13 @@ function Card({
 }) {
   return (
     <section
-      className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-2"
-      style={{ borderColor: "#eef0ee" }}
+      className="bg-white rounded-2xl p-5 shadow-sm border mb-2 font-display"
+      style={{ borderColor: "var(--color-reig-border-light)" }}
     >
       <header className="mb-3">
         <h2
-          className="text-lg font-bold"
-          style={{ fontFamily: "'DM Serif Display', serif", color: VERDE_OSC }}
+          className="text-lg font-bold font-display"
+          style={{ color: VERDE_OSC }}
         >
           {titulo}
         </h2>
@@ -587,11 +588,11 @@ function KpiCard({
   return (
     <div
       className="rounded-2xl p-4 shadow-sm border"
-      style={{ background: "#fff", borderColor: "#eef0ee" }}
+      style={{ background: "#fff", borderColor: "var(--color-reig-border-light)" }}
     >
       <div
-        className="text-3xl font-bold leading-none"
-        style={{ fontFamily: "'DM Serif Display', serif", color: VERDE_OSC }}
+        className="text-3xl font-bold leading-none font-display"
+        style={{ color: VERDE_OSC }}
       >
         {big}
       </div>
@@ -623,7 +624,7 @@ function Anillo({
   return (
     <div className="flex flex-col items-center">
       <svg width={100} height={100} viewBox="0 0 100 100">
-        <circle cx={50} cy={50} r={r} fill="none" stroke="#eef0ee" strokeWidth={10} />
+        <circle cx={50} cy={50} r={r} fill="none" stroke="var(--color-reig-border-light)" strokeWidth={10} />
         <circle
           cx={50}
           cy={50}
@@ -643,7 +644,7 @@ function Anillo({
           fontSize={18}
           fontWeight={700}
           fill={VERDE_OSC}
-          style={{ fontFamily: "'DM Serif Display', serif" }}
+          className="font-display"
         >
           {valor.toFixed(1)}%
         </text>
@@ -671,8 +672,8 @@ function BigStat({
       style={{ background: VERDE_CLARO }}
     >
       <div
-        className="text-3xl font-bold"
-        style={{ fontFamily: "'DM Serif Display', serif", color: VERDE_OSC }}
+        className="text-3xl font-bold font-display"
+        style={{ color: VERDE_OSC }}
       >
         {valor}
       </div>
@@ -690,7 +691,7 @@ function Aviso({ children }: { children: React.ReactNode }) {
   return (
     <div
       className="mt-4 p-3 rounded-lg text-[11px] leading-relaxed"
-      style={{ background: "#fff8e1", border: "1px solid #ffe082", color: "#5a4500" }}
+      style={{ background: "var(--color-reig-warn-light)", border: "1px solid var(--color-reig-warn)", color: "var(--color-reig-text)" }}
     >
       {children}
     </div>

@@ -115,9 +115,9 @@ interface RespuestaCierre {
   error?: string;
 }
 
-const GREEN = "#1f6b4a";
-const GREEN_DARK = "#164d36";
-const GREEN_LIGHT = "#e7f3ec";
+const GREEN = "var(--color-reig-green)";
+const GREEN_DARK = "var(--color-reig-green-dark)";
+const GREEN_LIGHT = "var(--color-reig-green-light)";
 
 function mesPorDefecto(): string {
   const d = new Date();
@@ -197,18 +197,18 @@ function TablaNomina({
   if (!resultados.length) {
     return (
       <div style={{ marginBottom: 24 }}>
-        <h2 style={{ color: GREEN_DARK, fontSize: 18, margin: "16px 0 8px" }}>{titulo}</h2>
-        <p style={{ color: "#888", fontSize: 14 }}>Sin empleados en esta categoría.</p>
+        <h2 style={{ color: "var(--color-reig-green-dark)", fontSize: 18, margin: "16px 0 8px" }}>{titulo}</h2>
+        <p style={{ color: "var(--color-reig-text-secondary)", fontSize: 14 }}>Sin empleados en esta categoría.</p>
       </div>
     );
   }
   return (
     <div style={{ marginBottom: 32 }}>
-      <h2 style={{ color: GREEN_DARK, fontSize: 18, margin: "16px 0 8px" }}>{titulo}</h2>
-      <div style={{ overflowX: "auto", border: `1px solid ${GREEN_LIGHT}`, borderRadius: 8 }}>
+      <h2 style={{ color: "var(--color-reig-green-dark)", fontSize: 18, margin: "16px 0 8px" }}>{titulo}</h2>
+      <div style={{ overflowX: "auto", border: `1px solid var(--color-reig-green-light)`, borderRadius: 8 }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
           <thead>
-            <tr style={{ background: GREEN_LIGHT, color: GREEN_DARK, textAlign: "left" }}>
+            <tr style={{ background: "var(--color-reig-green-light)", color: "var(--color-reig-green-dark)", textAlign: "left" }}>
               <th style={{ padding: "8px 12px" }}>Nombre nómina</th>
               <th style={{ padding: "8px 12px", textAlign: "right" }}>Laborables</th>
               <th style={{ padding: "8px 12px", textAlign: "right" }}>Festivos</th>
@@ -223,13 +223,13 @@ function TablaNomina({
               const nombre = r.nombre_formal_nomina || r.nombre;
               const hasWarn = r.warnings.length > 0;
               return (
-                <tr key={r.empleado_id} style={{ borderTop: `1px solid ${GREEN_LIGHT}` }}>
+                <tr key={r.empleado_id} style={{ borderTop: `1px solid var(--color-reig-green-light)` }}>
                   <td style={{ padding: "8px 12px" }}>
                     <div style={{ fontWeight: 600 }}>{nombre}</div>
-                    <div style={{ fontSize: 11, color: "#888" }}>
+                    <div style={{ fontSize: 11, color: "var(--color-reig-text-secondary)" }}>
                       {r.empleado_id} · {r.tipo_calculo || "sin tipo"}
                     </div>
-                    <div style={{ fontSize: 11, color: GREEN_DARK, marginTop: 2, fontStyle: "italic" }}>
+                    <div style={{ fontSize: 11, color: "var(--color-reig-green-dark)", marginTop: 2, fontStyle: "italic" }}>
                       {fmtDesglose(r.desglose, r.tipo_calculo)}
                     </div>
                   </td>
@@ -248,7 +248,7 @@ function TablaNomina({
                   <td style={{ padding: "8px 12px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
                     {fmtEur(r.complementos_eur)}
                   </td>
-                  <td style={{ padding: "8px 12px", color: hasWarn ? "#b56" : "#888", fontSize: 12 }}>
+                  <td style={{ padding: "8px 12px", color: hasWarn ? "var(--color-reig-danger)" : "var(--color-reig-text-secondary)", fontSize: 12 }}>
                     {hasWarn ? `⚠ ${r.warnings.length} aviso(s)` : "—"}
                   </td>
                 </tr>
@@ -400,14 +400,14 @@ export default function NominasPage() {
   return (
     <div>
       <header style={{ marginBottom: 24 }}>
-        <h1 style={{ color: GREEN_DARK, fontSize: 24, marginBottom: 4 }}>Nóminas</h1>
-        <p style={{ color: "#666", fontSize: 14 }}>
+        <h1 style={{ color: "var(--color-reig-green-dark)", fontSize: 24, marginBottom: 4 }}>Nóminas</h1>
+        <p style={{ color: "var(--color-reig-text-secondary)", fontSize: 14 }}>
           Cálculo mensual automático (Paso 2.0). Sin generación de PDF ni historial todavía.
         </p>
       </header>
 
       <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 20 }}>
-        <label style={{ color: GREEN_DARK, fontWeight: 600, fontSize: 14 }}>
+        <label style={{ color: "var(--color-reig-green-dark)", fontWeight: 600, fontSize: 14 }}>
           Mes:&nbsp;
           <input
             type="month"
@@ -427,8 +427,8 @@ export default function NominasPage() {
           disabled={loading}
           style={{
             padding: "6px 14px",
-            background: GREEN,
-            color: "white",
+            background: "var(--color-reig-green)",
+            color: "var(--color-reig-surface)",
             border: "none",
             borderRadius: 6,
             fontWeight: 600,
@@ -443,8 +443,8 @@ export default function NominasPage() {
           rel="noreferrer"
           style={{
             padding: "6px 14px",
-            background: GREEN_DARK,
-            color: "white",
+            background: "var(--color-reig-green-dark)",
+            color: "var(--color-reig-surface)",
             border: "none",
             borderRadius: 6,
             fontWeight: 600,
@@ -460,8 +460,8 @@ export default function NominasPage() {
           rel="noreferrer"
           style={{
             padding: "6px 14px",
-            background: "#555",
-            color: "white",
+            background: "var(--color-reig-text-secondary)",
+            color: "var(--color-reig-surface)",
             border: "none",
             borderRadius: 6,
             fontWeight: 600,
@@ -479,8 +479,8 @@ export default function NominasPage() {
           disabled={loading || cierreLoading || !data}
           style={{
             padding: "6px 14px",
-            background: "#a04a00",
-            color: "white",
+            background: "var(--color-reig-warn)",
+            color: "var(--color-reig-surface)",
             border: "none",
             borderRadius: 6,
             fontWeight: 700,
@@ -492,7 +492,7 @@ export default function NominasPage() {
           🔒 Cerrar mes y archivar
         </button>
         {data?.total !== undefined && (
-          <span style={{ color: "#666", fontSize: 13 }}>
+          <span style={{ color: "var(--color-reig-text-secondary)", fontSize: 13 }}>
             {data.total} empleado(s) · mes {data.mes}
           </span>
         )}
@@ -501,9 +501,9 @@ export default function NominasPage() {
       {error && (
         <div
           style={{
-            background: "#fee",
-            border: "1px solid #c33",
-            color: "#900",
+            background: "var(--color-reig-danger-light)",
+            border: "1px solid var(--color-reig-danger)",
+            color: "var(--color-reig-danger)",
             padding: 12,
             borderRadius: 6,
             marginBottom: 16,
@@ -521,17 +521,17 @@ export default function NominasPage() {
           {todosWarnings.length > 0 && (
             <div
               style={{
-                background: "#fff8e1",
-                border: "1px solid #e0b400",
+                background: "var(--color-reig-warn-light)",
+                border: "1px solid var(--color-reig-warn)",
                 borderRadius: 8,
                 padding: 16,
                 marginBottom: 16,
               }}
             >
-              <h3 style={{ color: "#7a5c00", margin: "0 0 8px 0", fontSize: 16 }}>
+              <h3 style={{ color: "var(--color-reig-warn)", margin: "0 0 8px 0", fontSize: 16 }}>
                 Avisos del motor ({todosWarnings.length})
               </h3>
-              <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: "#7a5c00" }}>
+              <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: "var(--color-reig-warn)" }}>
                 {todosWarnings.map((w, i) => (
                   <li key={i} style={{ marginBottom: 4 }}>
                     <strong>{w.nombre}:</strong> {w.warning}
@@ -544,12 +544,12 @@ export default function NominasPage() {
           {cierreUltimo?.ok && cierreUltimo.farmacia && cierreUltimo.mirelus && (
             <div
               style={{
-                background: "#e7f5ec",
-                border: "1px solid #1f6b4a",
+                background: "var(--color-reig-green-light)",
+                border: "1px solid var(--color-reig-green)",
                 borderRadius: 8,
                 padding: 16,
                 marginBottom: 16,
-                color: "#0c3320",
+                color: "var(--color-reig-green-dark)",
                 fontSize: 14,
               }}
             >
@@ -578,34 +578,34 @@ export default function NominasPage() {
 
           {/* ── Sección histórico del mes ───────────────────────────── */}
           <div style={{ marginTop: 32 }}>
-            <h2 style={{ color: GREEN_DARK, fontSize: 18, margin: "0 0 8px 0" }}>
+            <h2 style={{ color: "var(--color-reig-green-dark)", fontSize: 18, margin: "0 0 8px 0" }}>
               📁 Historial de versiones del mes
             </h2>
-            <p style={{ color: "#666", fontSize: 13, margin: "0 0 12px 0" }}>
+            <p style={{ color: "var(--color-reig-text-secondary)", fontSize: 13, margin: "0 0 12px 0" }}>
               Cada cierre crea una versión nueva — nunca sobrescribe. Los PDFs viven en
               la carpeta Drive compartida con tu cuenta de Farmacia.
             </p>
 
             {historialLoading ? (
-              <p style={{ color: "#888", fontSize: 13 }}>Cargando historial…</p>
+              <p style={{ color: "var(--color-reig-text-secondary)", fontSize: 13 }}>Cargando historial…</p>
             ) : historial.length === 0 ? (
               <p
                 style={{
-                  color: "#888",
+                  color: "var(--color-reig-text-secondary)",
                   fontSize: 13,
                   fontStyle: "italic",
                   padding: 12,
-                  background: "#f7f7f7",
+                  background: "var(--color-reig-bg)",
                   borderRadius: 6,
                 }}
               >
                 Sin versiones archivadas para este mes. Pulsa <strong>🔒 Cerrar mes y archivar</strong> para crear la primera.
               </p>
             ) : (
-              <div style={{ overflowX: "auto", border: `1px solid ${GREEN_LIGHT}`, borderRadius: 8 }}>
+              <div style={{ overflowX: "auto", border: `1px solid var(--color-reig-green-light)`, borderRadius: 8 }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
-                    <tr style={{ background: GREEN_LIGHT, color: GREEN_DARK, textAlign: "left" }}>
+                    <tr style={{ background: "var(--color-reig-green-light)", color: "var(--color-reig-green-dark)", textAlign: "left" }}>
                       <th style={{ padding: "8px 12px" }}>Empresa</th>
                       <th style={{ padding: "8px 12px" }}>Versión</th>
                       <th style={{ padding: "8px 12px" }}>Cerrado</th>
@@ -625,7 +625,7 @@ export default function NominasPage() {
                         <tr
                           key={h.id}
                           style={{
-                            borderTop: `1px solid ${GREEN_LIGHT}`,
+                            borderTop: `1px solid var(--color-reig-green-light)`,
                             opacity: h.obsoleto ? 0.5 : 1,
                           }}
                         >
@@ -637,8 +637,8 @@ export default function NominasPage() {
                               style={{
                                 padding: "2px 8px",
                                 borderRadius: 999,
-                                background: esUltima ? GREEN : "#999",
-                                color: "white",
+                                background: esUltima ? "var(--color-reig-green)" : "var(--color-reig-text-secondary)",
+                                color: "var(--color-reig-surface)",
                                 fontWeight: 600,
                                 fontSize: 11,
                               }}
@@ -650,7 +650,7 @@ export default function NominasPage() {
                           <td style={{ padding: "8px 12px", fontVariantNumeric: "tabular-nums" }}>
                             {fmtFechaCorta(h.cerrado_at)}
                           </td>
-                          <td style={{ padding: "8px 12px", fontSize: 12, color: "#666" }}>
+                          <td style={{ padding: "8px 12px", fontSize: 12, color: "var(--color-reig-text-secondary)" }}>
                             {h.cerrado_por_email}
                           </td>
                           <td style={{ padding: "8px 12px", fontVariantNumeric: "tabular-nums" }}>
@@ -661,13 +661,13 @@ export default function NominasPage() {
                               padding: "8px 12px",
                               fontFamily: "monospace",
                               fontSize: 11,
-                              color: "#888",
+                              color: "var(--color-reig-text-secondary)",
                             }}
                             title={h.hash_pdf}
                           >
                             {h.hash_pdf.slice(0, 12)}…
                           </td>
-                          <td style={{ padding: "8px 12px", fontSize: 12, color: "#555", maxWidth: 200 }}>
+                          <td style={{ padding: "8px 12px", fontSize: 12, color: "var(--color-reig-text)", maxWidth: 200 }}>
                             {h.notas || "—"}
                           </td>
                           <td style={{ padding: "8px 12px" }}>
@@ -676,7 +676,7 @@ export default function NominasPage() {
                               target="_blank"
                               rel="noreferrer"
                               style={{
-                                color: GREEN_DARK,
+                                color: "var(--color-reig-green-dark)",
                                 fontWeight: 600,
                                 textDecoration: "none",
                                 marginRight: 12,
@@ -689,8 +689,8 @@ export default function NominasPage() {
                               disabled={verificandoId === h.id}
                               style={{
                                 background: "transparent",
-                                border: `1px solid ${GREEN}`,
-                                color: GREEN_DARK,
+                                border: `1px solid var(--color-reig-green)`,
+                                color: "var(--color-reig-green-dark)",
                                 padding: "2px 8px",
                                 borderRadius: 4,
                                 fontSize: 11,
@@ -713,8 +713,8 @@ export default function NominasPage() {
                 style={{
                   marginTop: 12,
                   padding: 12,
-                  background: "#f7f7f7",
-                  border: "1px solid #ddd",
+                  background: "var(--color-reig-bg)",
+                  border: "1px solid var(--color-reig-border)",
                   borderRadius: 6,
                   fontSize: 12,
                   whiteSpace: "pre-wrap",
@@ -744,7 +744,7 @@ export default function NominasPage() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: "white",
+              background: "var(--color-reig-surface)",
               padding: 24,
               borderRadius: 12,
               maxWidth: 520,
@@ -752,10 +752,10 @@ export default function NominasPage() {
               boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
             }}
           >
-            <h2 style={{ margin: "0 0 12px 0", color: GREEN_DARK, fontSize: 20 }}>
+            <h2 style={{ margin: "0 0 12px 0", color: "var(--color-reig-green-dark)", fontSize: 20 }}>
               🔒 Cerrar mes {mes}
             </h2>
-            <p style={{ margin: "0 0 12px 0", fontSize: 14, color: "#444" }}>
+            <p style={{ margin: "0 0 12px 0", fontSize: 14, color: "var(--color-reig-text)" }}>
               Vas a crear la <strong>versión {proximaVersion}</strong> del mes <strong>{mes}</strong>.
               Se generarán dos PDFs (Farmacia + Mirelus), se hashearán con SHA-256
               y se subirán a la carpeta Drive compartida.
@@ -765,8 +765,8 @@ export default function NominasPage() {
                 style={{
                   margin: "0 0 12px 0",
                   fontSize: 13,
-                  color: "#666",
-                  background: "#f7f7f7",
+                  color: "var(--color-reig-text-secondary)",
+                  background: "var(--color-reig-bg)",
                   padding: 8,
                   borderRadius: 6,
                 }}
@@ -776,7 +776,7 @@ export default function NominasPage() {
                 versiones anteriores quedan accesibles abajo en el histórico — no se borran.
               </p>
             )}
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: GREEN_DARK, marginBottom: 4 }}>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--color-reig-green-dark)", marginBottom: 4 }}>
               Notas (opcional)
             </label>
             <textarea
@@ -787,7 +787,7 @@ export default function NominasPage() {
               style={{
                 width: "100%",
                 padding: 8,
-                border: `1px solid ${GREEN}`,
+                border: `1px solid var(--color-reig-green)`,
                 borderRadius: 6,
                 fontSize: 13,
                 fontFamily: "inherit",
@@ -799,9 +799,9 @@ export default function NominasPage() {
             {cierreError && (
               <div
                 style={{
-                  background: "#fee",
-                  border: "1px solid #c33",
-                  color: "#900",
+                  background: "var(--color-reig-danger-light)",
+                  border: "1px solid var(--color-reig-danger)",
+                  color: "var(--color-reig-danger)",
                   padding: 10,
                   borderRadius: 6,
                   marginBottom: 12,
@@ -818,8 +818,8 @@ export default function NominasPage() {
                 style={{
                   padding: "8px 16px",
                   background: "transparent",
-                  border: "1px solid #999",
-                  color: "#444",
+                  border: "1px solid var(--color-reig-text-secondary)",
+                  color: "var(--color-reig-text)",
                   borderRadius: 6,
                   cursor: cierreLoading ? "not-allowed" : "pointer",
                   fontSize: 14,
@@ -832,9 +832,9 @@ export default function NominasPage() {
                 disabled={cierreLoading}
                 style={{
                   padding: "8px 16px",
-                  background: "#a04a00",
+                  background: "var(--color-reig-warn)",
                   border: "none",
-                  color: "white",
+                  color: "var(--color-reig-surface)",
                   borderRadius: 6,
                   cursor: cierreLoading ? "wait" : "pointer",
                   fontWeight: 700,

@@ -100,12 +100,12 @@ export default function VentasPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1
-            className="text-xl md:text-2xl font-semibold"
-            style={{ fontFamily: "'DM Serif Display', serif", color: "#2a2e2b" }}
+            className="text-xl md:text-2xl font-semibold font-display"
+            style={{ color: "var(--color-reig-text)" }}
           >
             Ventas
           </h1>
-          <p className="text-sm mt-0.5" style={{ color: "#5a615c" }}>
+          <p className="text-sm mt-0.5" style={{ color: "var(--color-reig-text-secondary)" }}>
             Facturacion por {agrupacion === "mes" ? "mes" : agrupacion === "semana" ? "semana" : "dia"}
           </p>
         </div>
@@ -114,20 +114,20 @@ export default function VentasPage() {
             <button
               onClick={resetView}
               className="text-sm px-3 py-1.5 rounded-lg border hover:bg-gray-50 transition-colors"
-              style={{ borderColor: "#d1d5db", color: "#5a615c" }}
+              style={{ borderColor: "var(--color-reig-border)", color: "var(--color-reig-text-secondary)" }}
             >
               Vista mensual
             </button>
           )}
-          <div className="flex rounded-lg border overflow-hidden" style={{ borderColor: "#d1d5db" }}>
+          <div className="flex rounded-lg border overflow-hidden" style={{ borderColor: "var(--color-reig-border)" }}>
             {(["mes", "semana", "dia"] as const).map((a) => (
               <button
                 key={a}
                 onClick={() => { setAgrupacion(a); setSelectedDate(null); }}
                 className="px-3 py-1.5 text-xs font-medium transition-colors"
                 style={{
-                  background: agrupacion === a ? "#1a8c3a" : "transparent",
-                  color: agrupacion === a ? "white" : "#5a615c",
+                  background: agrupacion === a ? "var(--color-reig-green-mid)" : "transparent",
+                  color: agrupacion === a ? "white" : "var(--color-reig-text-secondary)",
                 }}
               >
                 {a.charAt(0).toUpperCase() + a.slice(1)}
@@ -152,7 +152,7 @@ export default function VentasPage() {
               label="Cross-sell"
               value={`${kpis.crossSellPct.toFixed(1)}%`}
               subtitle={`${kpis.ticketsCross} / ${kpis.ticketsReceta} receta`}
-              color={kpis.crossSellPct >= 25 ? "#1a8c3a" : kpis.crossSellPct >= 20 ? "#b45309" : "#dc2626"}
+              color={kpis.crossSellPct >= 25 ? "var(--color-reig-green-mid)" : kpis.crossSellPct >= 20 ? "var(--color-reig-warn)" : "var(--color-reig-danger)"}
             />
             <KpiCard
               label="Tickets receta"
@@ -163,13 +163,13 @@ export default function VentasPage() {
         )}
 
         {/* Chart */}
-        <div className="bg-white rounded-xl border p-5" style={{ borderColor: "#e5e7eb" }}>
+        <div className="bg-white rounded-xl border p-5" style={{ borderColor: "var(--color-reig-border)" }}>
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-medium" style={{ color: "#5a615c" }}>
+            <h2 className="text-sm font-medium" style={{ color: "var(--color-reig-text-secondary)" }}>
               {agrupacion === "dia" ? "Click en una barra para ver vendedores" : agrupacion === "mes" ? "Click para ver dias" : ""}
             </h2>
             {loading && (
-              <span className="text-xs" style={{ color: "#5a615c" }}>Cargando...</span>
+              <span className="text-xs" style={{ color: "var(--color-reig-text-secondary)" }}>Cargando...</span>
             )}
           </div>
           <TimeChart

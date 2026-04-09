@@ -16,7 +16,7 @@ const GRUPOS_TIPO_AUSENCIA: Array<{
 }> = [
   {
     label: "Tiempo libre",
-    color: "#15803d",
+    color: "var(--color-reig-green)",
     opciones: [
       { value: "vac",              label: "Vacaciones" },
       { value: "ap",               label: "Asuntos propios" },
@@ -26,7 +26,7 @@ const GRUPOS_TIPO_AUSENCIA: Array<{
   },
   {
     label: "Incapacidad temporal (solo ≥7 días descuenta)",
-    color: "#b91c1c",
+    color: "var(--color-reig-danger)",
     opciones: [
       { value: "it_enf",                  label: "IT enfermedad común" },
       { value: "it_acc",                  label: "IT accidente no laboral" },
@@ -50,7 +50,7 @@ const GRUPOS_TIPO_AUSENCIA: Array<{
   },
   {
     label: "Otras",
-    color: "#6b7280",
+    color: "var(--color-reig-text-secondary)",
     opciones: [
       { value: "no_retribuido", label: "Permiso no retribuido" },
       { value: "otro",          label: "Otro" },
@@ -74,7 +74,7 @@ interface Props {
   onUpdateGuardiasManual: (empId: string, value: number | null) => Promise<void>;
 }
 
-const STATUS_COLOR: Record<string, string> = { done: GREEN, conf: "#3b82f6", pend: "#f59e0b" };
+const STATUS_COLOR: Record<string, string> = { done: GREEN, conf: "var(--color-reig-optica)", pend: "var(--color-reig-warn)" };
 const STATUS_LABEL: Record<string, string> = { done: "Disfrutado", conf: "Confirmado", pend: "Pendiente" };
 
 function VacStats(vacs: Vacacion[]) {
@@ -151,49 +151,49 @@ function GuardiasEditor({ stat, onSave }: {
 
   if (editing) {
     return (
-      <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", background: "#fffbeb", borderRadius: 8, border: "1px solid #fde68a" }}>
-        <span style={{ fontSize: 11, color: "#555" }}>Guardias realizadas:</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", background: "var(--color-reig-warn-light)", borderRadius: 8, border: "1px solid var(--color-reig-warn)" }}>
+        <span style={{ fontSize: 11, color: "var(--color-reig-text)" }}>Guardias realizadas:</span>
         <input
           type="number"
           min={0}
           value={draft}
           onChange={e => setDraft(e.target.value)}
           autoFocus
-          style={{ width: 56, border: "1px solid #ddd", borderRadius: 4, padding: "3px 8px", fontSize: 14, fontWeight: 700, textAlign: "center" }}
+          style={{ width: 56, border: "1px solid var(--color-reig-border)", borderRadius: 4, padding: "3px 8px", fontSize: 14, fontWeight: 700, textAlign: "center" }}
         />
-        <button onClick={handleSave} disabled={saving} style={{ background: GREEN, color: "#fff", border: "none", borderRadius: 4, padding: "4px 12px", cursor: "pointer", fontSize: 11, fontWeight: 600 }}>
+        <button onClick={handleSave} disabled={saving} style={{ background: GREEN, color: "var(--color-reig-surface)", border: "none", borderRadius: 4, padding: "4px 12px", cursor: "pointer", fontSize: 11, fontWeight: 600 }}>
           {saving ? "…" : "Guardar"}
         </button>
         {isOverride && (
-          <button onClick={handleReset} disabled={saving} style={{ background: "#f3f4f6", color: "#555", border: "none", borderRadius: 4, padding: "4px 10px", cursor: "pointer", fontSize: 11 }}
+          <button onClick={handleReset} disabled={saving} style={{ background: "var(--color-reig-bg)", color: "var(--color-reig-text)", border: "none", borderRadius: 4, padding: "4px 10px", cursor: "pointer", fontSize: 11 }}
             title="Volver al valor calculado automáticamente">
             Restablecer
           </button>
         )}
-        <button onClick={() => setEditing(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#aaa" }}>×</button>
+        <button onClick={() => setEditing(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "var(--color-reig-text-muted)" }}>×</button>
       </div>
     );
   }
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <div style={{ fontSize: 20, fontWeight: 700, color: "#333", fontFamily: "'JetBrains Mono', monospace" }}>
+      <div style={{ fontSize: 20, fontWeight: 700, color: "var(--color-reig-text)", className: "font-mono-metric" }}>
         {effective}
       </div>
       {isOverride && (
-        <span style={{ fontSize: 9, background: "#fef3c7", color: "#92400e", padding: "1px 5px", borderRadius: 4, fontWeight: 600 }}>
+        <span style={{ fontSize: 9, background: "var(--color-reig-warn-light)", color: "var(--color-reig-warn)", padding: "1px 5px", borderRadius: 4, fontWeight: 600 }}>
           manual
         </span>
       )}
       {!isOverride && computed > 0 && (
-        <span style={{ fontSize: 9, background: "#f0fdf4", color: "#166534", padding: "1px 5px", borderRadius: 4 }}>
+        <span style={{ fontSize: 9, background: "var(--color-reig-success-light)", color: "var(--color-reig-success)", padding: "1px 5px", borderRadius: 4 }}>
           auto
         </span>
       )}
       <button
         onClick={startEdit}
         title="Editar número de guardias realizadas"
-        style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 4, padding: "3px 8px", cursor: "pointer", fontSize: 10, color: "#555" }}
+        style={{ background: "var(--color-reig-bg)", border: "1px solid var(--color-reig-border)", borderRadius: 4, padding: "3px 8px", cursor: "pointer", fontSize: 10, color: "var(--color-reig-text)" }}
       >
         ✎ editar
       </button>
@@ -284,7 +284,7 @@ export default function VacacionesTab({
       <div>
         <button
           onClick={() => { setSelEmp(null); setShowAdd(false); setBancoHoras([]); setShowAddBH(false); }}
-          style={{ background: "#fff", color: GREEN, border: `1px solid ${GREEN}`, borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontSize: 10, marginBottom: 12 }}
+          style={{ background: "var(--color-reig-surface)", color: GREEN, border: `1px solid ${GREEN}`, borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontSize: 10, marginBottom: 12 }}
         >
           ← Volver
         </button>
@@ -307,9 +307,9 @@ export default function VacacionesTab({
           if (pendDias <= 0) return null;
           return (
             <div style={{
-              padding: "10px 14px", background: "#fef2f2", border: "1px solid #fecaca",
-              borderLeft: "4px solid #ef4444", borderRadius: 8, marginBottom: 12,
-              fontSize: 11, color: "#991b1b",
+              padding: "10px 14px", background: "var(--color-reig-danger-light)", border: "1px solid #fecaca",
+              borderLeft: "4px solid var(--color-reig-danger)", borderRadius: 8, marginBottom: 12,
+              fontSize: 11, color: "var(--color-reig-danger)",
             }}>
               <b>⚠ Atención:</b> estamos en el último tramo del año y a {emp.nombre} le quedan{" "}
               <b>{pendDias} días</b> sin disfrutar. Recuerda que las vacaciones del año en curso
@@ -320,33 +320,33 @@ export default function VacacionesTab({
         })()}
 
         {/* Vacaciones ordinarias */}
-        <div style={{ fontSize: 10, fontWeight: 600, color: "#666", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Vacaciones ordinarias (30 días)</div>
+        <div style={{ fontSize: 10, fontWeight: 600, color: "var(--color-reig-text-secondary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Vacaciones ordinarias (30 días)</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6, marginBottom: 10 }}>
           {([
-            ["Total",       30,       "#333"],
+            ["Total",       30,       "var(--color-reig-text)"],
             ["Disfrutados", st.done,  GREEN],
-            ["Confirmados", st.conf,  "#3b82f6"],
-            ["Pedidos",     st.pend,  "#f59e0b"],
-            ["Disponibles", st.avail, st.avail <= 5 ? "#ef4444" : "#333"],
+            ["Confirmados", st.conf,  "var(--color-reig-optica)"],
+            ["Pedidos",     st.pend,  "var(--color-reig-warn)"],
+            ["Disponibles", st.avail, st.avail <= 5 ? "var(--color-reig-danger)" : "var(--color-reig-text)"],
           ] as [string, number, string][]).map(([l, v, c]) => (
-            <div key={l} style={{ textAlign: "center", padding: "8px 4px", background: "#f9fafb", borderRadius: 8 }}>
-              <div style={{ fontSize: 22, fontWeight: 700, color: c, fontFamily: "'JetBrains Mono', monospace" }}>{v}</div>
-              <div style={{ fontSize: 8, color: "#999", marginTop: 2 }}>{l}</div>
+            <div key={l} style={{ textAlign: "center", padding: "8px 4px", background: "var(--color-reig-bg)", borderRadius: 8 }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: c, className: "font-mono-metric" }}>{v}</div>
+              <div style={{ fontSize: 8, color: "var(--color-reig-text-muted)", marginTop: 2 }}>{l}</div>
             </div>
           ))}
         </div>
 
         {/* Barra progreso */}
-        <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden", background: "#eee", marginBottom: 16 }}>
+        <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden", background: "var(--color-reig-border)", marginBottom: 16 }}>
           <div style={{ width: `${(st.done / 30) * 100}%`, background: GREEN }} />
-          <div style={{ width: `${(st.conf / 30) * 100}%`, background: "#3b82f6" }} />
-          <div style={{ width: `${(st.pend / 30) * 100}%`, background: "#f59e0b" }} />
+          <div style={{ width: `${(st.conf / 30) * 100}%`, background: "var(--color-reig-optica)" }} />
+          <div style={{ width: `${(st.pend / 30) * 100}%`, background: "var(--color-reig-warn)" }} />
         </div>
 
         {/* Bolsa de vacaciones arrastradas (art. 38.3 ET) */}
         {bolsas.length > 0 && (
-          <div style={{ padding: "14px 16px", background: "#fffbeb", borderRadius: 8, border: "1px solid #fde68a", marginBottom: 16 }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: "#92400e", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>
+          <div style={{ padding: "14px 16px", background: "var(--color-reig-warn-light)", borderRadius: 8, border: "1px solid var(--color-reig-warn)", marginBottom: 16 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: "var(--color-reig-warn)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>
               Bolsa de vacaciones arrastradas (art. 38.3 ET)
             </div>
             {(() => {
@@ -422,9 +422,9 @@ export default function VacacionesTab({
 
             {/* Editor de guardias realizadas */}
             <div style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 10, color: "#6b7280", marginBottom: 4 }}>
+              <div style={{ fontSize: 10, color: "var(--color-reig-text-secondary)", marginBottom: 4 }}>
                 Guardias realizadas
-                <span style={{ marginLeft: 6, color: "#9ca3af" }}>
+                <span style={{ marginLeft: 6, color: "var(--color-reig-text-muted)" }}>
                   (calculado automáticamente desde guardias pasadas; editable si hay discrepancia)
                 </span>
               </div>
@@ -438,16 +438,16 @@ export default function VacacionesTab({
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
               {([
                 ["Días ganados",  comp.earned,  GREEN],
-                ["Días usados",   comp.used,    "#3b82f6"],
-                ["Balance",       comp.balance, comp.balance < 0 ? "#ef4444" : comp.balance === 0 ? "#666" : GREEN],
+                ["Días usados",   comp.used,    "var(--color-reig-optica)"],
+                ["Balance",       comp.balance, comp.balance < 0 ? "var(--color-reig-danger)" : comp.balance === 0 ? "var(--color-reig-text-secondary)" : GREEN],
               ] as [string, number, string][]).map(([l, v, c]) => (
-                <div key={l} style={{ textAlign: "center", padding: "8px 4px", background: "#fff", borderRadius: 8, border: "1px solid #d1fae5" }}>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: c, fontFamily: "'JetBrains Mono', monospace" }}>{v}</div>
-                  <div style={{ fontSize: 8, color: "#6b7280", marginTop: 2 }}>{l}</div>
+                <div key={l} style={{ textAlign: "center", padding: "8px 4px", background: "var(--color-reig-surface)", borderRadius: 8, border: "1px solid var(--color-reig-success-light)" }}>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: c, className: "font-mono-metric" }}>{v}</div>
+                  <div style={{ fontSize: 8, color: "var(--color-reig-text-secondary)", marginTop: 2 }}>{l}</div>
                 </div>
               ))}
             </div>
-            <div style={{ fontSize: 9, color: "#6b7280", marginTop: 8 }}>
+            <div style={{ fontSize: 9, color: "var(--color-reig-text-secondary)", marginTop: 8 }}>
               Cada guardia con franja nocturna genera <strong>medio día</strong> de descanso compensatorio. Sólo aplica al farmacéutico/a que cubre la noche. Registra los días usados con tipo «Comp.» abajo.
             </div>
           </div>
@@ -458,7 +458,7 @@ export default function VacacionesTab({
           <div style={{ fontSize: 12, fontWeight: 700, color: GREEN_DARK }}>Períodos registrados</div>
           <button
             onClick={() => setShowAdd(!showAdd)}
-            style={{ background: GREEN, color: "#fff", border: "none", borderRadius: 6, padding: "4px 12px", cursor: "pointer", fontSize: 10, fontWeight: 600 }}
+            style={{ background: GREEN, color: "var(--color-reig-surface)", border: "none", borderRadius: 6, padding: "4px 12px", cursor: "pointer", fontSize: 10, fontWeight: 600 }}
           >
             + Añadir
           </button>

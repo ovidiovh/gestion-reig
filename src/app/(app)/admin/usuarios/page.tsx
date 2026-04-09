@@ -46,8 +46,8 @@ const CATEGORIAS: Categoria[] = [
     id: "financiero",
     label: "Finanzas",
     icono: "💰",
-    color: "#92400e",
-    bgColor: "#fef3c7",
+    color: "var(--color-reig-warn)",
+    bgColor: "var(--color-reig-warn-light)",
     modulos: [
       { key: "financiero_retiradas", label: "Retiradas", descripcion: "Registrar retirada de efectivo de las cajas" },
       { key: "financiero_historial", label: "Historial retiradas", descripcion: "Consultar retiradas pasadas y remesas" },
@@ -69,8 +69,8 @@ const CATEGORIAS: Categoria[] = [
     id: "rrhh",
     label: "RRHH",
     icono: "👥",
-    color: "#065f46",
-    bgColor: "#ecfdf5",
+    color: "var(--color-reig-success)",
+    bgColor: "var(--color-reig-success-light)",
     modulos: [
       { key: "rrhh_calendario", label: "Calendario", descripcion: "Planning mensual del equipo" },
       { key: "rrhh_guardias", label: "Guardias", descripcion: "Elaboracion y gestion de guardias" },
@@ -83,8 +83,8 @@ const CATEGORIAS: Categoria[] = [
     id: "admin",
     label: "Administracion",
     icono: "⚙️",
-    color: "#991b1b",
-    bgColor: "#fef2f2",
+    color: "var(--color-reig-danger)",
+    bgColor: "var(--color-reig-danger-light)",
     modulos: [
       { key: "admin_panel", label: "Administracion", descripcion: "Panel de usuarios, permisos y accesos" },
     ],
@@ -294,12 +294,12 @@ export default function UsuariosPage() {
       {/* Header */}
       <div className="mb-6">
         <h1
-          className="text-2xl font-semibold"
-          style={{ fontFamily: "'DM Serif Display', serif", color: "#2a2e2b" }}
+          className="text-2xl font-semibold font-display"
+          style={{ color: "var(--color-reig-text)" }}
         >
           Usuarios y permisos
         </h1>
-        <p className="text-sm mt-1" style={{ color: "#5a615c" }}>
+        <p className="text-sm mt-1" style={{ color: "var(--color-reig-text-secondary)" }}>
           Gestionar accesos, roles y whitelists de la plataforma
         </p>
       </div>
@@ -309,9 +309,9 @@ export default function UsuariosPage() {
         <div
           className="mb-4 px-4 py-2 rounded-lg text-sm font-medium"
           style={{
-            background: msg.type === "ok" ? "#ecfdf5" : "#fef2f2",
-            color: msg.type === "ok" ? "#065f46" : "#991b1b",
-            border: `1px solid ${msg.type === "ok" ? "#a7f3d0" : "#fecaca"}`,
+            background: msg.type === "ok" ? "var(--color-reig-success-light)" : "var(--color-reig-danger-light)",
+            color: msg.type === "ok" ? "var(--color-reig-success)" : "var(--color-reig-danger)",
+            border: `1px solid ${msg.type === "ok" ? "var(--color-reig-success)" : "var(--color-reig-danger)"}`,
           }}
         >
           {msg.text}
@@ -326,8 +326,8 @@ export default function UsuariosPage() {
             onClick={() => setTab(t)}
             className="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors"
             style={{
-              background: tab === t ? "#0C6D32" : "#f3f4f6",
-              color: tab === t ? "#fff" : "#5a615c",
+              background: tab === t ? "var(--color-reig-green)" : "var(--color-reig-bg)",
+              color: tab === t ? "white" : "var(--color-reig-text-secondary)",
             }}
           >
             {t === "usuarios" ? "Usuarios" : "Whitelists / Permisos"}
@@ -336,7 +336,7 @@ export default function UsuariosPage() {
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-sm" style={{ color: "#9ca3af" }}>
+        <div className="text-center py-12 text-sm" style={{ color: "var(--color-reig-text-muted)" }}>
           Cargando...
         </div>
       ) : tab === "usuarios" ? (
@@ -347,21 +347,21 @@ export default function UsuariosPage() {
             <button
               onClick={() => setShowAlta(true)}
               className="w-full border-2 border-dashed rounded-xl p-4 text-sm font-medium transition-colors hover:border-green-400 hover:bg-green-50"
-              style={{ borderColor: "#d1d5db", color: "#5a615c" }}
+              style={{ borderColor: "var(--color-reig-border)", color: "var(--color-reig-text-secondary)" }}
             >
               + Dar de alta nuevo usuario
             </button>
           ) : (
             <div
               className="bg-white rounded-xl border p-5"
-              style={{ borderColor: "#0C6D32", borderWidth: 2 }}
+              style={{ borderColor: "var(--color-reig-green)", borderWidth: 2 }}
             >
-              <h3 className="text-sm font-semibold mb-4" style={{ color: "#2a2e2b" }}>
+              <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--color-reig-text)" }}>
                 Alta de nuevo usuario
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 <div>
-                  <label className="text-xs font-medium block mb-1" style={{ color: "#5a615c" }}>
+                  <label className="text-xs font-medium block mb-1" style={{ color: "var(--color-reig-text-secondary)" }}>
                     Email
                   </label>
                   <div className="flex items-center">
@@ -371,18 +371,18 @@ export default function UsuariosPage() {
                       onChange={(e) => setNuevoUser((p) => ({ ...p, email: e.target.value }))}
                       placeholder="nombre"
                       className="border rounded-l-lg px-3 py-1.5 text-sm flex-1"
-                      style={{ borderColor: "#d1d5db" }}
+                      style={{ borderColor: "var(--color-reig-border)" }}
                     />
                     <span
                       className="border border-l-0 rounded-r-lg px-2 py-1.5 text-xs"
-                      style={{ borderColor: "#d1d5db", background: "#f9fafb", color: "#6b7280" }}
+                      style={{ borderColor: "var(--color-reig-border)", background: "var(--color-reig-bg)", color: "var(--color-reig-text-secondary)" }}
                     >
                       @farmaciareig.net
                     </span>
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-medium block mb-1" style={{ color: "#5a615c" }}>
+                  <label className="text-xs font-medium block mb-1" style={{ color: "var(--color-reig-text-secondary)" }}>
                     Nombre completo
                   </label>
                   <input
@@ -391,32 +391,32 @@ export default function UsuariosPage() {
                     onChange={(e) => setNuevoUser((p) => ({ ...p, nombre: e.target.value }))}
                     placeholder="Ana Garcia"
                     className="border rounded-lg px-3 py-1.5 text-sm w-full"
-                    style={{ borderColor: "#d1d5db" }}
+                    style={{ borderColor: "var(--color-reig-border)" }}
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium block mb-1" style={{ color: "#5a615c" }}>
+                  <label className="text-xs font-medium block mb-1" style={{ color: "var(--color-reig-text-secondary)" }}>
                     Rol
                   </label>
                   <select
                     value={nuevoUser.role}
                     onChange={(e) => setNuevoUser((p) => ({ ...p, role: e.target.value as "admin" | "usuario" }))}
                     className="border rounded-lg px-3 py-1.5 text-sm w-full"
-                    style={{ borderColor: "#d1d5db" }}
+                    style={{ borderColor: "var(--color-reig-border)" }}
                   >
                     <option value="usuario">usuario</option>
                     <option value="admin">admin</option>
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-medium block mb-1" style={{ color: "#5a615c" }}>
+                  <label className="text-xs font-medium block mb-1" style={{ color: "var(--color-reig-text-secondary)" }}>
                     Departamento
                   </label>
                   <select
                     value={nuevoUser.departamento}
                     onChange={(e) => setNuevoUser((p) => ({ ...p, departamento: e.target.value as "farmacia" | "optica" | "ambos" }))}
                     className="border rounded-lg px-3 py-1.5 text-sm w-full"
-                    style={{ borderColor: "#d1d5db" }}
+                    style={{ borderColor: "var(--color-reig-border)" }}
                   >
                     <option value="farmacia">farmacia</option>
                     <option value="optica">optica</option>
@@ -429,19 +429,19 @@ export default function UsuariosPage() {
                   onClick={darDeAlta}
                   disabled={altaCargando}
                   className="px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-50"
-                  style={{ background: "#0C6D32" }}
+                  style={{ background: "var(--color-reig-green)" }}
                 >
                   {altaCargando ? "Creando..." : "Crear usuario"}
                 </button>
                 <button
                   onClick={() => setShowAlta(false)}
                   className="px-4 py-2 rounded-lg text-sm font-medium border"
-                  style={{ borderColor: "#d1d5db", color: "#5a615c" }}
+                  style={{ borderColor: "var(--color-reig-border)", color: "var(--color-reig-text-secondary)" }}
                 >
                   Cancelar
                 </button>
               </div>
-              <p className="text-xs mt-3" style={{ color: "#9ca3af" }}>
+              <p className="text-xs mt-3" style={{ color: "var(--color-reig-text-muted)" }}>
                 Una vez dado de alta, el usuario podra iniciar sesion con su cuenta Google de @farmaciareig.net.
                 Recuerda asignarle permisos en la pestaña de Permisos.
               </p>
@@ -453,7 +453,7 @@ export default function UsuariosPage() {
               key={u.email}
               className="bg-white rounded-xl border p-5"
               style={{
-                borderColor: "#e5e7eb",
+                borderColor: "var(--color-reig-border)",
                 opacity: u.activo ? 1 : 0.5,
               }}
             >
@@ -461,14 +461,14 @@ export default function UsuariosPage() {
                 {/* Info */}
                 <div className="flex-1 min-w-[200px]">
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-sm font-semibold" style={{ color: "#2a2e2b" }}>
+                    <h3 className="text-sm font-semibold" style={{ color: "var(--color-reig-text)" }}>
                       {u.nombre || u.email.split("@")[0]}
                     </h3>
                     <span
                       className="text-[10px] px-2 py-0.5 rounded-full font-medium"
                       style={{
-                        background: u.role === "admin" ? "#fef3c7" : "#f3f4f6",
-                        color: u.role === "admin" ? "#92400e" : "#6b7280",
+                        background: u.role === "admin" ? "var(--color-reig-warn-light)" : "var(--color-reig-bg)",
+                        color: u.role === "admin" ? "var(--color-reig-warn)" : "var(--color-reig-text-secondary)",
                       }}
                     >
                       {u.role}
@@ -476,15 +476,15 @@ export default function UsuariosPage() {
                     <span
                       className="text-[10px] px-2 py-0.5 rounded-full font-medium"
                       style={{
-                        background: u.activo ? "#ecfdf5" : "#fef2f2",
-                        color: u.activo ? "#065f46" : "#991b1b",
+                        background: u.activo ? "var(--color-reig-success-light)" : "var(--color-reig-danger-light)",
+                        color: u.activo ? "var(--color-reig-success)" : "var(--color-reig-danger)",
                       }}
                     >
                       {u.activo ? "Activo" : "Desactivado"}
                     </span>
                   </div>
-                  <p className="text-xs" style={{ color: "#9ca3af" }}>{u.email}</p>
-                  <div className="flex gap-4 mt-2 text-xs" style={{ color: "#5a615c" }}>
+                  <p className="text-xs" style={{ color: "var(--color-reig-text-muted)" }}>{u.email}</p>
+                  <div className="flex gap-4 mt-2 text-xs" style={{ color: "var(--color-reig-text-secondary)" }}>
                     <span>Dpto: {u.departamento}</span>
                     <span>Ultimo login: {formatFecha(u.last_login)}</span>
                     <span>{u.total_views} paginas · {u.dias_activo} dias activo</span>
@@ -497,7 +497,7 @@ export default function UsuariosPage() {
                     value={u.role}
                     onChange={(e) => cambiarCampo(u.email, "role", e.target.value)}
                     className="border rounded-lg px-2 py-1 text-xs"
-                    style={{ borderColor: "#d1d5db" }}
+                    style={{ borderColor: "var(--color-reig-border)" }}
                   >
                     <option value="admin">admin</option>
                     <option value="usuario">usuario</option>
@@ -506,7 +506,7 @@ export default function UsuariosPage() {
                     value={u.departamento}
                     onChange={(e) => cambiarCampo(u.email, "departamento", e.target.value)}
                     className="border rounded-lg px-2 py-1 text-xs"
-                    style={{ borderColor: "#d1d5db" }}
+                    style={{ borderColor: "var(--color-reig-border)" }}
                   >
                     <option value="farmacia">farmacia</option>
                     <option value="optica">optica</option>
@@ -515,7 +515,7 @@ export default function UsuariosPage() {
                   <button
                     onClick={() => cambiarCampo(u.email, "activo", u.activo ? 0 : 1)}
                     className="px-3 py-1 rounded-lg text-xs font-medium text-white transition-colors"
-                    style={{ background: u.activo ? "#dc2626" : "#059669" }}
+                    style={{ background: u.activo ? "var(--color-reig-danger)" : "var(--color-reig-success)" }}
                   >
                     {u.activo ? "Desactivar" : "Activar"}
                   </button>
@@ -525,8 +525,8 @@ export default function UsuariosPage() {
           ))}
 
           {usuarios.length === 0 && (
-            <div className="bg-white rounded-xl border p-8 text-center" style={{ borderColor: "#e5e7eb" }}>
-              <p className="text-sm" style={{ color: "#9ca3af" }}>
+            <div className="bg-white rounded-xl border p-8 text-center" style={{ borderColor: "var(--color-reig-border)" }}>
+              <p className="text-sm" style={{ color: "var(--color-reig-text-muted)" }}>
                 No hay usuarios. Ejecuta la migracion en /api/admin/migrate.
               </p>
             </div>
@@ -538,7 +538,7 @@ export default function UsuariosPage() {
           {/* Explicación */}
           <div
             className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-sm"
-            style={{ color: "#92400e" }}
+            style={{ color: "var(--color-reig-warn)" }}
           >
             Los <strong>admins</strong> tienen acceso implicito a todo. Los permisos aqui controlan
             que secciones restringidas puede ver un usuario con rol &quot;usuario&quot;.
@@ -558,13 +558,13 @@ export default function UsuariosPage() {
               <div
                 key={cat.id}
                 className="rounded-xl border mb-4 overflow-hidden"
-                style={{ borderColor: "#e5e7eb" }}
+                style={{ borderColor: "var(--color-reig-border)" }}
               >
                 {/* Header de categoría — clickable */}
                 <button
                   onClick={() => toggleCat(cat.id)}
                   className="w-full flex items-center justify-between px-5 py-4 transition-colors"
-                  style={{ background: abierta ? cat.bgColor : "#fff" }}
+                  style={{ background: abierta ? cat.bgColor : "white" }}
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-lg">{cat.icono}</span>
@@ -576,14 +576,14 @@ export default function UsuariosPage() {
                     </span>
                     <span
                       className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-                      style={{ background: "#f3f4f6", color: "#6b7280" }}
+                      style={{ background: "var(--color-reig-bg)", color: "var(--color-reig-text-secondary)" }}
                     >
                       {cat.modulos.length} modulo{cat.modulos.length > 1 ? "s" : ""}
                     </span>
                     {totalPermisosCat > 0 && (
                       <span
                         className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-                        style={{ background: "#ecfdf5", color: "#065f46" }}
+                        style={{ background: "var(--color-reig-success-light)", color: "var(--color-reig-success)" }}
                       >
                         {totalPermisosCat} permiso{totalPermisosCat > 1 ? "s" : ""} activo{totalPermisosCat > 1 ? "s" : ""}
                       </span>
@@ -595,7 +595,7 @@ export default function UsuariosPage() {
                       transform: abierta ? "rotate(180deg)" : "rotate(0deg)",
                       width: 16,
                       height: 16,
-                      color: "#9ca3af",
+                      color: "var(--color-reig-text-muted)",
                     }}
                     fill="none"
                     stroke="currentColor"
@@ -611,16 +611,16 @@ export default function UsuariosPage() {
                     {/* Acción rápida: conceder toda la categoría a un usuario */}
                     <div
                       className="flex gap-2 items-center mb-4 p-3 rounded-lg"
-                      style={{ background: "#f9fafb", border: "1px dashed #d1d5db" }}
+                      style={{ background: "var(--color-reig-bg)", border: "1px dashed var(--color-reig-border)" }}
                     >
-                      <span className="text-xs font-medium whitespace-nowrap" style={{ color: "#5a615c" }}>
+                      <span className="text-xs font-medium whitespace-nowrap" style={{ color: "var(--color-reig-text-secondary)" }}>
                         Conceder toda la categoria:
                       </span>
                       <select
                         value={catUsuario[cat.id] || ""}
                         onChange={(e) => setCatUsuario((prev) => ({ ...prev, [cat.id]: e.target.value }))}
                         className="border rounded-lg px-2 py-1 text-xs flex-1"
-                        style={{ borderColor: "#d1d5db" }}
+                        style={{ borderColor: "var(--color-reig-border)" }}
                       >
                         <option value="">Seleccionar usuario...</option>
                         {usuarios
@@ -640,7 +640,7 @@ export default function UsuariosPage() {
                         }}
                         disabled={!catUsuario[cat.id]}
                         className="px-3 py-1 rounded-lg text-xs font-medium text-white disabled:opacity-40 whitespace-nowrap"
-                        style={{ background: "#0C6D32" }}
+                        style={{ background: "var(--color-reig-green)" }}
                       >
                         Conceder todo
                       </button>
@@ -653,7 +653,7 @@ export default function UsuariosPage() {
                             }
                           }}
                           className="px-3 py-1 rounded-lg text-xs font-medium text-white whitespace-nowrap"
-                          style={{ background: "#dc2626" }}
+                          style={{ background: "var(--color-reig-danger)" }}
                         >
                           Revocar todo
                         </button>
@@ -668,22 +668,22 @@ export default function UsuariosPage() {
                         <div
                           key={mod.key}
                           className="border rounded-lg p-4 mb-3 last:mb-0"
-                          style={{ borderColor: "#e5e7eb" }}
+                          style={{ borderColor: "var(--color-reig-border)" }}
                         >
                           <div className="flex items-center justify-between mb-1">
-                            <h4 className="text-sm font-semibold" style={{ color: "#2a2e2b" }}>
+                            <h4 className="text-sm font-semibold" style={{ color: "var(--color-reig-text)" }}>
                               {mod.label}
                             </h4>
                             {permisosModulo.length > 0 && (
                               <span
                                 className="text-[10px] px-2 py-0.5 rounded-full"
-                                style={{ background: "#ecfdf5", color: "#065f46" }}
+                                style={{ background: "var(--color-reig-success-light)", color: "var(--color-reig-success)" }}
                               >
                                 {permisosModulo.length} usuario{permisosModulo.length > 1 ? "s" : ""}
                               </span>
                             )}
                           </div>
-                          <p className="text-xs mb-3" style={{ color: "#9ca3af" }}>{mod.descripcion}</p>
+                          <p className="text-xs mb-3" style={{ color: "var(--color-reig-text-muted)" }}>{mod.descripcion}</p>
 
                           {/* Lista de emails con permiso */}
                           {permisosModulo.length > 0 && (
@@ -692,19 +692,20 @@ export default function UsuariosPage() {
                                 <div
                                   key={`${p.modulo}-${p.email}`}
                                   className="flex items-center justify-between px-3 py-1.5 rounded-lg"
-                                  style={{ background: "#f9fafb" }}
+                                  style={{ background: "var(--color-reig-bg)" }}
                                 >
                                   <div>
-                                    <span className="text-sm font-medium" style={{ color: "#2a2e2b" }}>
+                                    <span className="text-sm font-medium" style={{ color: "var(--color-reig-text)" }}>
                                       {p.email.split("@")[0]}
                                     </span>
-                                    <span className="text-xs ml-2" style={{ color: "#9ca3af" }}>
+                                    <span className="text-xs ml-2" style={{ color: "var(--color-reig-text-muted)" }}>
                                       por {p.concedido_por.split("@")[0]} · {p.fecha ? formatFecha(p.fecha) : ""}
                                     </span>
                                   </div>
                                   <button
                                     onClick={() => revocar(p.modulo, p.email)}
-                                    className="text-xs px-2 py-0.5 rounded text-red-600 hover:bg-red-50 transition-colors"
+                                    className="text-xs px-2 py-0.5 rounded transition-colors"
+                                    style={{ color: "var(--color-reig-danger)" }}
                                   >
                                     Revocar
                                   </button>
@@ -719,7 +720,7 @@ export default function UsuariosPage() {
                               value={nuevoPermiso.modulo === mod.key ? nuevoPermiso.email : ""}
                               onChange={(e) => setNuevoPermiso({ modulo: mod.key, email: e.target.value })}
                               className="border rounded-lg px-2 py-1 text-xs flex-1"
-                              style={{ borderColor: "#d1d5db" }}
+                              style={{ borderColor: "var(--color-reig-border)" }}
                             >
                               <option value="">Añadir usuario...</option>
                               {usuarios
@@ -739,7 +740,7 @@ export default function UsuariosPage() {
                               }}
                               disabled={nuevoPermiso.modulo !== mod.key || !nuevoPermiso.email}
                               className="px-3 py-1 rounded-lg text-xs font-medium text-white disabled:opacity-40"
-                              style={{ background: "#0C6D32" }}
+                              style={{ background: "var(--color-reig-green)" }}
                             >
                               Conceder
                             </button>

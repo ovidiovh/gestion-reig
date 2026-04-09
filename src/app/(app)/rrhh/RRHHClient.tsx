@@ -262,12 +262,12 @@ export default function RRHHClient({
           borderRadius: size === "xs" ? 2 : 4,
           padding: size === "xs" ? "1px 2px" : size === "sm" ? "2px 3px" : "4px 5px",
           cursor: size === "xs" ? "pointer" : "pointer",
-          background: isG ? GREEN_LIGHT : isF ? "#fff0f0" : isWE ? "#f8f8f8" : "#fff",
+          background: isG ? GREEN_LIGHT : isF ? "var(--color-reig-danger-light)" : isWE ? "var(--color-reig-bg)" : "var(--color-reig-surface)",
           border: isG
             ? `${bw}px solid ${GREEN}`
             : isToday
             ? `${bw}px solid #3b82f6`
-            : "1px solid #eee",
+            : "1px solid var(--color-reig-border)",
           position: "relative" as const,
           overflow: "hidden",
         }}
@@ -275,7 +275,7 @@ export default function RRHHClient({
         {/* Número de día */}
         <div style={{
           fontWeight: 700, fontSize: fSize,
-          color: isF ? "#c0392b" : isG ? GREEN_DARK : isWE ? "#888" : "#2a2e2b",
+          color: isF ? "var(--color-reig-danger)" : isG ? GREEN_DARK : isWE ? "var(--color-reig-text-secondary)" : "var(--color-reig-text)",
         }}>
           {d}
         </div>
@@ -283,8 +283,8 @@ export default function RRHHClient({
         {/* ─── FULL (mensual) ─── */}
         {size === "full" && isG && (
           <div style={{
-            background: gdb?.publicada ? GREEN : "#a0d9b4",
-            color: "#fff", fontSize: 7, fontWeight: 700,
+            background: gdb?.publicada ? GREEN : "var(--color-reig-green-mid)",
+            color: "var(--color-reig-surface)", fontSize: 7, fontWeight: 700,
             padding: "1px 4px", borderRadius: 3,
             display: "inline-block", marginTop: 1,
           }}>
@@ -292,7 +292,7 @@ export default function RRHHClient({
           </div>
         )}
         {size === "full" && isF && !isG && (
-          <div style={{ fontSize: 7, color: "#c0392b", fontWeight: 600, marginTop: 2 }}>
+          <div style={{ fontSize: 7, color: "var(--color-reig-danger)", fontWeight: 600, marginTop: 2 }}>
             {festivos.find(f => f.fecha === ds)?.nombre.split(" ").slice(0, 2).join(" ")}
           </div>
         )}
@@ -314,18 +314,18 @@ export default function RRHHClient({
           );
         })}
         {size === "full" && vacsH.length > 2 && (
-          <div style={{ fontSize: 7, color: "#aaa" }}>+{vacsH.length - 2}</div>
+          <div style={{ fontSize: 7, color: "var(--color-reig-text-muted)" }}>+{vacsH.length - 2}</div>
         )}
 
         {/* ─── SM (trimestral) ─── */}
         {size === "sm" && isG && (
           <div style={{
             width: "100%", height: 2, borderRadius: 1, marginTop: 2,
-            background: gdb?.publicada ? GREEN : "#a0d9b4",
+            background: gdb?.publicada ? GREEN : "var(--color-reig-green-mid)",
           }} />
         )}
         {size === "sm" && isF && !isG && (
-          <div style={{ width: "100%", height: 2, borderRadius: 1, marginTop: 2, background: "#fca5a5" }} />
+          <div style={{ width: "100%", height: 2, borderRadius: 1, marginTop: 2, background: "var(--color-reig-danger)" }} />
         )}
         {size === "sm" && vacsH.length > 0 && (
           <div style={{ display: "flex", gap: 1, marginTop: 2, flexWrap: "wrap" as const }}>
@@ -382,7 +382,7 @@ export default function RRHHClient({
             padding: "4px 12px", borderRadius: 20, border: "none",
             cursor: "pointer", fontSize: 11, fontWeight: calView === cv ? 700 : 400,
             background: calView === cv ? GREEN : GREEN_LIGHT,
-            color: calView === cv ? "#fff" : GREEN_DARK,
+            color: calView === cv ? "var(--color-reig-surface)" : GREEN_DARK,
           }}
         >
           {cv === "mes" ? "Mes" : cv === "trimestre" ? "Trimestre" : "Año"}
@@ -396,7 +396,7 @@ export default function RRHHClient({
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <button onClick={() => setMonth(m => Math.max(0, m - 1))} style={btnBase}>◀</button>
-        <span style={{ fontSize: 17, fontWeight: 700, color: GREEN_DARK, fontFamily: "'DM Serif Display', serif" }}>
+        <span style={{ fontSize: 17, fontWeight: 700, color: GREEN_DARK, className: "font-display" }}>
           {MESES[month]} 2026
         </span>
         <button onClick={() => setMonth(m => Math.min(11, m + 1))} style={btnBase}>▶</button>
@@ -404,7 +404,7 @@ export default function RRHHClient({
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginBottom: 4 }}>
         {DIAS_SEMANA.map(d => (
-          <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 700, color: "#aaa", padding: "2px 0" }}>{d}</div>
+          <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 700, color: "var(--color-reig-text-muted)", padding: "2px 0" }}>{d}</div>
         ))}
       </div>
 
@@ -412,10 +412,10 @@ export default function RRHHClient({
         {cellsForMonth(month, "full")}
       </div>
 
-      <div style={{ display: "flex", gap: 12, marginTop: 10, fontSize: 9, color: "#888", flexWrap: "wrap" as const }}>
-        <span><span style={{ background: GREEN, color: "#fff", padding: "0 4px", borderRadius: 3 }}>■</span> Guardia publicada</span>
-        <span><span style={{ background: "#a0d9b4", padding: "0 4px", borderRadius: 3 }}>■</span> Guardia pendiente</span>
-        <span style={{ color: "#c0392b" }}>■ Festivo / Farm. vac.</span>
+      <div style={{ display: "flex", gap: 12, marginTop: 10, fontSize: 9, color: "var(--color-reig-text-secondary)", flexWrap: "wrap" as const }}>
+        <span><span style={{ background: GREEN, color: "var(--color-reig-surface)", padding: "0 4px", borderRadius: 3 }}>■</span> Guardia publicada</span>
+        <span><span style={{ background: "var(--color-reig-green-mid)", padding: "0 4px", borderRadius: 3 }}>■</span> Guardia pendiente</span>
+        <span style={{ color: "var(--color-reig-danger)" }}>■ Festivo / Farm. vac.</span>
         <span style={{ color: "#1d4ed8" }}>■ Aux. vacaciones</span>
         <span style={{ color: GREEN, fontSize: 8 }}>Clic en cualquier día → vista diaria</span>
       </div>
@@ -435,7 +435,7 @@ export default function RRHHClient({
             disabled={quarter === 0}
             style={{ ...btnBase, opacity: quarter === 0 ? 0.35 : 1, cursor: quarter === 0 ? "not-allowed" : "pointer" }}
           >◀</button>
-          <span style={{ fontSize: 15, fontWeight: 700, color: GREEN_DARK, fontFamily: "'DM Serif Display', serif" }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: GREEN_DARK, className: "font-display" }}>
             T{quarter + 1} · {MESES[startM]} – {MESES[startM + 2]} 2026
           </span>
           <button
@@ -452,7 +452,7 @@ export default function RRHHClient({
                 onClick={() => { setMonth(m); setCalView("mes"); }}
                 style={{
                   textAlign: "center", fontSize: 12, fontWeight: 700, color: GREEN_DARK,
-                  marginBottom: 5, fontFamily: "'DM Serif Display', serif",
+                  marginBottom: 5, className: "font-display",
                   cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2,
                 }}
               >
@@ -460,7 +460,7 @@ export default function RRHHClient({
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, marginBottom: 2 }}>
                 {DIAS_SEMANA.map(d => (
-                  <div key={d} style={{ textAlign: "center", fontSize: 7, fontWeight: 700, color: "#bbb" }}>{d}</div>
+                  <div key={d} style={{ textAlign: "center", fontSize: 7, fontWeight: 700, color: "var(--color-reig-text-muted)" }}>{d}</div>
                 ))}
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
@@ -470,9 +470,9 @@ export default function RRHHClient({
           ))}
         </div>
 
-        <div style={{ display: "flex", gap: 10, marginTop: 10, fontSize: 9, color: "#888", flexWrap: "wrap" as const }}>
-          <span><span style={{ background: GREEN, color: "#fff", padding: "0 3px", borderRadius: 2 }}>■</span> Guardia</span>
-          <span style={{ color: "#c0392b" }}>— Festivo / Farm.vac.</span>
+        <div style={{ display: "flex", gap: 10, marginTop: 10, fontSize: 9, color: "var(--color-reig-text-secondary)", flexWrap: "wrap" as const }}>
+          <span><span style={{ background: GREEN, color: "var(--color-reig-surface)", padding: "0 3px", borderRadius: 2 }}>■</span> Guardia</span>
+          <span style={{ color: "var(--color-reig-danger)" }}>— Festivo / Farm.vac.</span>
           <span style={{ color: "#1d4ed8" }}>● Aux.vac.</span>
           <span style={{ color: GREEN, fontSize: 8 }}>Clic en nombre de mes → vista mensual · Clic en guardia → abrir plantilla</span>
         </div>
@@ -485,7 +485,7 @@ export default function RRHHClient({
     <div>
       <div style={{
         textAlign: "center", fontSize: 16, fontWeight: 700, color: GREEN_DARK,
-        marginBottom: 14, fontFamily: "'DM Serif Display', serif",
+        marginBottom: 14, className: "font-display",
       }}>
         2026 — Vista anual
       </div>
@@ -505,7 +505,7 @@ export default function RRHHClient({
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 1, marginBottom: 1 }}>
               {DIAS_SEMANA.map(d => (
-                <div key={d} style={{ textAlign: "center", fontSize: 5, color: "#ccc" }}>{d.charAt(0)}</div>
+                <div key={d} style={{ textAlign: "center", fontSize: 5, color: "var(--color-reig-border)" }}>{d.charAt(0)}</div>
               ))}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 1 }}>
@@ -515,7 +515,7 @@ export default function RRHHClient({
         ))}
       </div>
 
-      <div style={{ fontSize: 9, color: "#888", textAlign: "center", marginTop: 10 }}>
+      <div style={{ fontSize: 9, color: "var(--color-reig-text-secondary)", textAlign: "center", marginTop: 10 }}>
         Clic en el nombre del mes para abrir vista mensual
       </div>
     </div>
@@ -532,7 +532,7 @@ export default function RRHHClient({
 
   if (error) {
     return (
-      <div style={{ padding: 20, background: "#fef2f2", borderRadius: 8, color: "#c0392b" }}>
+      <div style={{ padding: 20, background: "var(--color-reig-danger-light)", borderRadius: 8, color: "var(--color-reig-danger)" }}>
         <strong>Error:</strong> {error}
       </div>
     );
@@ -543,10 +543,10 @@ export default function RRHHClient({
     <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", maxWidth: 960, margin: "0 auto" }}>
       {/* Título */}
       <div style={{ marginBottom: 16 }}>
-        <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 24, color: GREEN_DARK, margin: 0 }}>
+        <h1 style={{ className: "font-display", fontSize: 24, color: GREEN_DARK, margin: 0 }}>
           RRHH — Farmacia Reig
         </h1>
-        <p style={{ fontSize: 11, color: "#888", margin: "4px 0 0" }}>
+        <p style={{ fontSize: 11, color: "var(--color-reig-text-secondary)", margin: "4px 0 0" }}>
           Guardias · Vacaciones · Planificación 2026
         </p>
       </div>
@@ -567,7 +567,7 @@ export default function RRHHClient({
             style={{
               flex: 1, padding: "10px 4px", border: "none", cursor: "pointer",
               background: view === k ? GREEN : "transparent",
-              color: "#fff", fontSize: 11, fontWeight: view === k ? 700 : 400,
+              color: "var(--color-reig-surface)", fontSize: 11, fontWeight: view === k ? 700 : 400,
               borderBottom: view === k ? `3px solid ${GREEN_LIGHT}` : "3px solid transparent",
               transition: "background 0.15s",
             }}
@@ -579,7 +579,7 @@ export default function RRHHClient({
       </div>
 
       {/* Contenido */}
-      <div style={{ background: "#fff", borderRadius: 12, padding: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+      <div style={{ background: "var(--color-reig-surface)", borderRadius: 12, padding: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
 
         {/* ── CALENDARIO ── */}
         {view === "cal" && (
@@ -594,7 +594,7 @@ export default function RRHHClient({
         {/* ── GUARDIA (lista próximas) ── */}
         {view === "guard" && !activeGuardia && (
           <div>
-            <p style={{ color: "#888", fontSize: 13 }}>
+            <p style={{ color: "var(--color-reig-text-secondary)", fontSize: 13 }}>
               Haz clic en un día de guardia en el{" "}
               <button
                 onClick={() => setView("cal")}
@@ -629,11 +629,11 @@ export default function RRHHClient({
                       <span style={{ fontSize: 12, fontWeight: 600, color: GREEN_DARK, textTransform: "capitalize" }}>{dow}</span>
                       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                         {g?.publicada ? (
-                          <span style={{ fontSize: 10, background: GREEN,      color: "#fff", padding: "2px 6px", borderRadius: 4 }}>Publicada</span>
+                          <span style={{ fontSize: 10, background: GREEN,      color: "var(--color-reig-surface)", padding: "2px 6px", borderRadius: 4 }}>Publicada</span>
                         ) : g ? (
-                          <span style={{ fontSize: 10, background: "#f59e0b", color: "#fff", padding: "2px 6px", borderRadius: 4 }}>Borrador</span>
+                          <span style={{ fontSize: 10, background: "var(--color-reig-warn)", color: "var(--color-reig-surface)", padding: "2px 6px", borderRadius: 4 }}>Borrador</span>
                         ) : (
-                          <span style={{ fontSize: 10, background: "#e5e7eb", color: "#555", padding: "2px 6px", borderRadius: 4 }}>Sin crear</span>
+                          <span style={{ fontSize: 10, background: "var(--color-reig-border)", color: "var(--color-reig-text)", padding: "2px 6px", borderRadius: 4 }}>Sin crear</span>
                         )}
                         <span style={{ fontSize: 10, color: GREEN }}>Abrir →</span>
                       </div>

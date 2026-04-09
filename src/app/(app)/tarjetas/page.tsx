@@ -92,18 +92,18 @@ function rangoTrimestre(fecha: Date): { desde: string; hasta: string } {
 /* ───── Estilos ───── */
 
 const COLOR = {
-  primary: "#1565C0",
-  primaryLight: "#e3f2fd",
-  primaryDark: "#0D47A1",
-  header: "#2a2e2b",
-  text: "#333",
-  muted: "#666",
-  border: "#e0e0e0",
-  bg: "#fafafa",
+  primary: "var(--color-reig-optica)",
+  primaryLight: "var(--color-reig-optica-light)",
+  primaryDark: "var(--color-reig-optica-dark)",
+  header: "var(--color-reig-text)",
+  text: "var(--color-reig-text)",
+  muted: "var(--color-reig-text-secondary)",
+  border: "var(--color-reig-border)",
+  bg: "var(--color-reig-bg)",
   white: "#fff",
-  green: "#2e7d32",
-  greenLight: "#e8f5e9",
-  accent: "#1565C0",
+  green: "var(--color-reig-green)",
+  greenLight: "var(--color-reig-green-light)",
+  accent: "var(--color-reig-optica)",
 };
 
 const card: React.CSSProperties = {
@@ -315,7 +315,7 @@ export default function TarjetasPage() {
           </div>
           <div style={statCard}>
             <div style={{ fontSize: 12, color: COLOR.muted, marginBottom: 4 }}>Peor día</div>
-            <div style={{ fontSize: 16, fontWeight: 600, color: "#c62828" }}>
+            <div style={{ fontSize: 16, fontWeight: 600, color: "var(--color-reig-danger)" }}>
               {stats.peor_dia ? `${fmt(stats.peor_dia.total)} €` : "—"}
             </div>
             <div style={{ fontSize: 11, color: COLOR.muted }}>
@@ -451,7 +451,7 @@ export default function TarjetasPage() {
                       {fmt(a.total)} €
                     </td>
                     <td style={{ padding: "10px 12px", textAlign: "right" }}>{fmt(a.media)} €</td>
-                    <td style={{ padding: "10px 12px", textAlign: "right", color: "#c62828" }}>{fmt(a.min)} €</td>
+                    <td style={{ padding: "10px 12px", textAlign: "right", color: "var(--color-reig-danger)" }}>{fmt(a.min)} €</td>
                     <td style={{ padding: "10px 12px", textAlign: "right", color: COLOR.green }}>{fmt(a.max)} €</td>
                     <td style={{ padding: "10px 12px", textAlign: "center", color: COLOR.muted }}>{a.dias}</td>
                   </tr>
@@ -484,7 +484,7 @@ export default function TarjetasPage() {
                     <div style={{ width: 90, fontWeight: 500, fontSize: 14, color: COLOR.text }}>
                       {d.dia_nombre}
                     </div>
-                    <div style={{ flex: 1, background: "#f5f5f5", borderRadius: 6, height: 32, position: "relative", overflow: "hidden" }}>
+                    <div style={{ flex: 1, background: "var(--color-reig-bg)", borderRadius: 6, height: 32, position: "relative", overflow: "hidden" }}>
                       <div
                         style={{
                           width: `${pct}%`,
@@ -534,7 +534,7 @@ export default function TarjetasPage() {
                     <td style={{ padding: "6px 8px", fontWeight: 500 }}>{d.dia_nombre}</td>
                     <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600, color: COLOR.primary }}>{fmt(d.total)} €</td>
                     <td style={{ padding: "6px 8px", textAlign: "right" }}>{fmt(d.media)} €</td>
-                    <td style={{ padding: "6px 8px", textAlign: "right", color: "#c62828" }}>{fmt(d.min)} €</td>
+                    <td style={{ padding: "6px 8px", textAlign: "right", color: "var(--color-reig-danger)" }}>{fmt(d.min)} €</td>
                     <td style={{ padding: "6px 8px", textAlign: "right", color: COLOR.green }}>{fmt(d.max)} €</td>
                     <td style={{ padding: "6px 8px", textAlign: "center", color: COLOR.muted }}>{d.dias}</td>
                   </tr>
@@ -576,7 +576,7 @@ export default function TarjetasPage() {
                   <div style={{
                     marginTop: 6,
                     height: 4,
-                    background: "#f0f0f0",
+                    background: "var(--color-reig-bg)",
                     borderRadius: 2,
                     overflow: "hidden",
                   }}>

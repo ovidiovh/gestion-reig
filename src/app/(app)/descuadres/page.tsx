@@ -92,34 +92,34 @@ function rangoSemana(fecha: Date): { desde: string; hasta: string } {
 
 /** Color del descuadre — positivo=falta=rojo, negativo=sobra=verde, 0=neutro */
 function colorDescuadre(val: number): string {
-  if (Math.abs(val) < 0.005) return "#666";
-  return val > 0 ? "#c62828" : "#2e7d32";
+  if (Math.abs(val) < 0.005) return "var(--color-reig-text-secondary)";
+  return val > 0 ? "var(--color-reig-danger)" : "var(--color-reig-green)";
 }
 
 /** Fondo del semáforo para la tabla de cierres */
 function bgDescuadre(val: number): string {
   const abs = Math.abs(val);
-  if (abs < 0.005) return "#f0f7f0";   // verde claro — cuadra
-  if (abs <= 1) return "#fff8e1";       // amarillo — leve
+  if (abs < 0.005) return "var(--color-reig-green-light)";   // verde claro — cuadra
+  if (abs <= 1) return "var(--color-reig-warn-light)";       // amarillo — leve
   if (abs <= 5) return "#fff3e0";       // naranja — moderado
-  return "#ffebee";                     // rojo — grave
+  return "var(--color-reig-danger-light)";                     // rojo — grave
 }
 
 /* ───── Estilos ───── */
 
 const COLOR = {
-  primary: "#1B5E20",
-  primaryLight: "#e8f5e9",
-  header: "#2a2e2b",
-  text: "#333",
-  muted: "#666",
-  border: "#e0e0e0",
-  bg: "#fafafa",
-  white: "#fff",
-  red: "#c62828",
-  green: "#2e7d32",
-  blue: "#1565C0",
-  optica: "#1565C0",
+  primary: "var(--color-reig-green-dark)",
+  primaryLight: "var(--color-reig-green-light)",
+  header: "var(--color-reig-text)",
+  text: "var(--color-reig-text)",
+  muted: "var(--color-reig-text-secondary)",
+  border: "var(--color-reig-border)",
+  bg: "var(--color-reig-bg)",
+  white: "var(--color-reig-surface)",
+  red: "var(--color-reig-danger)",
+  green: "var(--color-reig-green)",
+  blue: "var(--color-reig-optica)",
+  optica: "var(--color-reig-optica)",
 };
 
 const card: React.CSSProperties = {
@@ -278,7 +278,7 @@ export default function DescuadresPage() {
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
       {/* ═══ HEADER ═══ */}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontFamily: "'DM Serif Display', serif", color: COLOR.header, fontSize: 26, margin: 0 }}>
+        <h1 className="font-display" style={{ color: COLOR.header, fontSize: 26, margin: 0 }}>
           Descuadres de Caja
         </h1>
         <p style={{ color: COLOR.muted, fontSize: 13, marginTop: 4 }}>
@@ -539,11 +539,11 @@ export default function DescuadresPage() {
                           <span style={{ width: 80, fontSize: 12, color: COLOR.muted, textAlign: "right", flexShrink: 0 }}>
                             {fmtFecha(a.clave)}
                           </span>
-                          <div style={{ flex: 1, height: 22, background: "#f5f5f5", borderRadius: 4, position: "relative", overflow: "hidden" }}>
+                          <div style={{ flex: 1, height: 22, background: "var(--color-reig-border-light)", borderRadius: 4, position: "relative", overflow: "hidden" }}>
                             <div style={{
                               height: "100%",
                               width: `${pct}%`,
-                              background: esPositivo ? "#ef9a9a" : "#a5d6a7",
+                              background: esPositivo ? "var(--color-reig-danger-light)" : "var(--color-reig-green-light)",
                               borderRadius: 4,
                               transition: "width 0.3s",
                             }} />
@@ -626,15 +626,15 @@ export default function DescuadresPage() {
 
                       {/* Barra */}
                       <div style={{
-                        flex: 1, height: 28, background: "#f5f5f5",
+                        flex: 1, height: 28, background: "var(--color-reig-border-light)",
                         borderRadius: 6, position: "relative", overflow: "hidden",
                       }}>
                         <div style={{
                           height: "100%",
                           width: `${pct}%`,
                           background: esPositivo
-                            ? "linear-gradient(90deg, #ef9a9a, #e57373)"
-                            : "linear-gradient(90deg, #a5d6a7, #81c784)",
+                            ? "linear-gradient(90deg, var(--color-reig-danger-light), var(--color-reig-danger))"
+                            : "linear-gradient(90deg, var(--color-reig-green-light), var(--color-reig-green))",
                           borderRadius: 6,
                           transition: "width 0.3s",
                         }} />
