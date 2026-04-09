@@ -110,10 +110,23 @@ export default function RRHHClient({
     vacaciones.filter(v => ds >= v.fecha_inicio && ds <= v.fecha_fin);
 
   // ── Abrir / crear guardia ──────────────────────────────────────────────────
-  const openGuardia = useCallback(async (fecha: string) => {
+  // readOnly = true → solo abre guardias publicadas, sin crear nuevas
+  const [guardiaReadOnly, setGuardiaReadOnly] = useState(false);
+
+  const openGuardia = useCallback(async (fecha: string, forceReadOnly?: boolean) => {
+    const isReadOnly = forceReadOnly ?? !puedeVerGuardias;
     setLoadingGuardia(true);
     try {
       let guardia = guardiaMap.get(fecha);
+
+      // Si no tiene permiso de guardias, solo puede ver publicadas
+      if (isReadOnly) {
+        if (!guardia || !guardia.publicada) {
+          // No hay guardia publicada para este día — no abrir nada
+          setLoadingGuardia(false);
+          return;
+        }
+      }
 
       if (!guardia) {
         const res  = await fetch("/api/rrhh/guardias", {
@@ -136,15 +149,16 @@ export default function RRHHClient({
       const detData = await detRes.json();
       if (!detData.ok) throw new Error(detData.error);
 
+      setGuardiaReadOnly(isReadOnly);
       setActiveGuardia({ guardia: detData.guardia, slots: detData.slots });
-      setView("guard");
+      if (!isReadOnly) setView("guard");
     } catch (e) {
       alert("Error al abrir guardia: " + String(e));
     } finally {
       setLoadingGuardia(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [guardiaMap]);
+  }, [guardiaMap, puedeVerGuardias]);
 
   const saveGuardia = async (slots: GuardiaSlot[], tipo: string, publicada: number) => {
     if (!activeGuardia) return;
@@ -650,8 +664,9 @@ export default function RRHHClient({
           guardia={activeGuardia.guardia}
           slots={activeGuardia.slots}
           vacaciones={vacaciones}
-          onClose={() => setActiveGuardia(null)}
+          onClose={() => { setActiveGuardia(null); setGuardiaReadOnly(false); }}
           onSave={saveGuardia}
+          readOnly={guardiaReadOnly}
         />
       )}
 
@@ -665,6 +680,8 @@ export default function RRHHClient({
           asignaciones={asignaciones}
           guardiaId={guardiaMap.get(dayView)?.id}
           isGuardia={GUARD_DATES.has(dayView)}
+          guardiaPublicada={!!guardiaMap.get(dayView)?.publicada}
+          puedeEditarGuardia={puedeVerGuardias}
           loadingGuardia={loadingGuardia}
           onOpenGuardia={() => openGuardia(dayView)}
           onGoToVac={() => { setView("vac"); }}

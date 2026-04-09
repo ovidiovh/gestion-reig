@@ -58,6 +58,8 @@ export default function DayViewPanel({
   asignaciones,
   guardiaId,
   isGuardia,
+  guardiaPublicada = false,
+  puedeEditarGuardia = true,
   loadingGuardia,
   onOpenGuardia,
   onGoToVac,
@@ -70,6 +72,8 @@ export default function DayViewPanel({
   asignaciones: HorarioAsignacion[];
   guardiaId: number | undefined;
   isGuardia: boolean;
+  guardiaPublicada?: boolean;
+  puedeEditarGuardia?: boolean;
   loadingGuardia: boolean;
   onOpenGuardia: () => void;
   onGoToVac: () => void;
@@ -406,7 +410,7 @@ export default function DayViewPanel({
         )}
 
         {/* ── Botón guardia ── */}
-        {isGuardia && (
+        {isGuardia && (puedeEditarGuardia || guardiaPublicada) && (
           <button
             onClick={() => { onClose(); onOpenGuardia(); }}
             disabled={loadingGuardia}
@@ -416,7 +420,7 @@ export default function DayViewPanel({
               cursor: "pointer", fontSize: 13, fontWeight: 700,
             }}
           >
-            {loadingGuardia ? "Cargando…" : "🏥 Abrir plantilla de guardia"}
+            {loadingGuardia ? "Cargando…" : puedeEditarGuardia ? "🏥 Abrir plantilla de guardia" : "🏥 Ver guardia publicada"}
           </button>
         )}
       </div>
