@@ -1,6 +1,7 @@
 "use client";
 
 import Sidebar from "@/components/Sidebar";
+import { usePageView } from "@/hooks/usePageView";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -9,6 +10,8 @@ interface AppShellProps {
   userImage?: string | null;
   departamento?: "farmacia" | "optica" | "ambos";
   role?: "admin" | "usuario";
+  /** Módulos a los que el usuario tiene permiso (precargados desde server) */
+  modulosPermitidos?: string[];
 }
 
 export default function AppShell({
@@ -18,7 +21,11 @@ export default function AppShell({
   userImage,
   departamento = "farmacia",
   role = "admin",
+  modulosPermitidos = [],
 }: AppShellProps) {
+  // Tracking de page views — fire-and-forget en cada navegación
+  usePageView();
+
   return (
     <div className="min-h-screen" style={{ background: "#f8faf9" }}>
       <Sidebar
@@ -27,6 +34,7 @@ export default function AppShell({
         userImage={userImage}
         departamento={departamento}
         role={role}
+        modulosPermitidos={modulosPermitidos}
       />
 
       {/* Main content — offset for desktop sidebar */}

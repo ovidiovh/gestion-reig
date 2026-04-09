@@ -2,15 +2,14 @@
  * Layout del segmento Marketing → Clientes.
  *
  * Doble check de acceso (defensa en profundidad):
- * el middleware ya bloquea esta ruta a nivel edge para emails no autorizados,
- * pero esto re-verifica desde el Server Component por si en algún despliegue
- * futuro el middleware se reconfigura por error.
+ * el middleware deja pasar a admins, pero este Server Component re-verifica
+ * contra la tabla permisos_modulo para cualquier usuario.
  *
- * Whitelist controlada en src/lib/marketing/permisos.ts.
+ * Permisos controlados en src/lib/permisos.ts (BD, ya no hardcodeado).
  */
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { puedeVerMarketingClientes } from "@/lib/marketing/permisos";
+import { tienePermiso } from "@/lib/permisos";
 
 export default async function MarketingClientesLayout({
   children,
@@ -18,7 +17,8 @@ export default async function MarketingClientesLayout({
   children: React.ReactNode;
 }) {
   const user = await requireUser();
-  if (!puedeVerMarketingClientes(user.email)) {
+  const permitido = await tienePermiso("marketing_clientes", user.email, user.role);
+  if (!permitido) {
     redirect("/?error=sin-permisos-marketing");
   }
   return <>{children}</>;

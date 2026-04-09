@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
-import { puedeVerMarketingClientes } from "@/lib/marketing/permisos";
+import { tienePermiso } from "@/lib/permisos";
 
 /* ───── Tipos ───── */
 
@@ -15,7 +15,7 @@ interface ModuleCard {
    * la card NO se renderiza para ese usuario (mismo patrón que el Sidebar).
    * Para módulos abiertos a todo el equipo, dejar undefined.
    */
-  visibleSi?: (ctx: { email: string | null | undefined }) => boolean;
+  visibleSi?: (ctx: { email: string | null | undefined; role: string; modulosPermitidos: string[] }) => boolean;
 }
 
 interface DashboardSection {
@@ -90,7 +90,8 @@ const sections: DashboardSection[] = [
         href: "/marketing/clientes",
         activo: true,
         icon: icons.users,
-        visibleSi: ({ email }) => puedeVerMarketingClientes(email),
+        visibleSi: ({ modulosPermitidos, role }) =>
+          role === "admin" || modulosPermitidos.includes("marketing_clientes"),
       },
       { title: "Fichas producto", description: "Fichas SEO para farmaciareig.net", href: "/fichas", activo: false, icon: icons.tag },
     ],
@@ -106,7 +107,22 @@ const sections: DashboardSection[] = [
   {
     title: "Administracion",
     items: [
-      { title: "Usuarios", description: "Gestionar accesos y roles de la plataforma", href: "/admin/usuarios", activo: false, icon: icons.cog },
+      {
+        title: "Usuarios y permisos",
+        description: "Gestionar accesos, roles y whitelists de la plataforma",
+        href: "/admin/usuarios",
+        activo: true,
+        icon: icons.users,
+        visibleSi: ({ role }) => role === "admin",
+      },
+      {
+        title: "Historial de accesos",
+        description: "Ver que paginas visita cada usuario y cuanto tiempo pasa",
+        href: "/admin/accesos",
+        activo: true,
+        icon: icons.cog,
+        visibleSi: ({ role }) => role === "admin",
+      },
     ],
   },
 ];
@@ -114,17 +130,31 @@ const sections: DashboardSection[] = [
 /* ───── Componente ───── */
 
 export default async function HomePage() {
-  // Necesitamos el email para evaluar las cards con `visibleSi`
+  // Necesitamos el email y permisos para evaluar las cards con `visibleSi`
   // (mismo patrón que el Sidebar, para que la home sea espejo coherente).
   const user = await requireUser();
   const email = user?.email ?? null;
+  const role = user?.role ?? "usuario";
+
+  // Pre-calcular permisos del usuario para módulos restringidos
+  const modulosPermitidos: string[] = [];
+  if (role === "admin") {
+    modulosPermitidos.push("marketing_clientes", "admin_panel");
+  } else {
+    const [mktg] = await Promise.all([
+      tienePermiso("marketing_clientes", email),
+    ]);
+    if (mktg) modulosPermitidos.push("marketing_clientes");
+  }
 
   // Filtramos primero por visibilidad y descartamos secciones que se quedan
   // sin items (evita ver un título "Marketing" sin nada debajo).
   const visibleSections = sections
     .map((section) => ({
       ...section,
-      items: section.items.filter((it) => (it.visibleSi ? it.visibleSi({ email }) : true)),
+      items: section.items.filter((it) =>
+        it.visibleSi ? it.visibleSi({ email, role, modulosPermitidos }) : true
+      ),
     }))
     .filter((section) => section.items.length > 0);
 

@@ -43,13 +43,26 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/login?error=desactivado", req.url));
   }
 
-  // Marketing → Clientes: whitelist hardcodeada (Ovidio + Beatriz).
-  // Decisión 2026-04-07: dashboard epidemiológico solo visible para gestión.
+  // ── Rutas restringidas por rol ──
+
+  // Administración: solo admins
+  if (pathname.startsWith("/admin")) {
+    if (req.auth.user?.role !== "admin") {
+      if (pathname.startsWith("/api/admin")) {
+        return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+      }
+      return NextResponse.redirect(new URL("/?error=sin-permisos", req.url));
+    }
+  }
+
+  // Marketing → Clientes: whitelist por rol (admin) + permisos en BD.
+  // Primera línea: solo admins pasan aquí. Segunda línea: layout.tsx re-chequea
+  // contra permisos_modulo en BD (defensa en profundidad).
   if (pathname.startsWith("/marketing/clientes")) {
-    const email = req.auth.user?.email?.toLowerCase();
-    const allow = email === "ovidio@farmaciareig.net" || email === "brs@farmaciareig.net";
-    if (!allow) {
-      return NextResponse.redirect(new URL("/?error=sin-permisos-marketing", req.url));
+    if (req.auth.user?.role !== "admin") {
+      // Usuarios no-admin: el layout verificará permisos_modulo.
+      // Aquí dejamos pasar porque la tabla puede tener permisos para no-admins.
+      // Si no tiene permiso, el layout redirige.
     }
   }
 

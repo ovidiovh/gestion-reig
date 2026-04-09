@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { puedeVerMarketingClientes } from "@/lib/marketing/permisos";
+import { puedeVer } from "@/lib/permisos";
 
 /* ───── Tipos ───── */
 
@@ -14,6 +14,8 @@ interface SidebarProps {
   userImage?: string | null;
   departamento?: "farmacia" | "optica" | "ambos";
   role?: "admin" | "usuario";
+  /** Módulos a los que el usuario tiene permiso (precargados desde server) */
+  modulosPermitidos?: string[];
 }
 
 interface NavItem {
@@ -22,7 +24,7 @@ interface NavItem {
   activo: boolean;
   icon: React.ReactNode;
   /** Si está definido, el item solo se muestra si la función devuelve true */
-  visibleSi?: (ctx: { email: string | null | undefined; role: string }) => boolean;
+  visibleSi?: (ctx: { email: string | null | undefined; role: string; modulosPermitidos: string[] }) => boolean;
 }
 
 interface NavSection {
@@ -130,7 +132,8 @@ const sections: NavSection[] = [
         href: "/marketing/clientes",
         activo: true,
         icon: icons.chart,
-        visibleSi: ({ email }) => puedeVerMarketingClientes(email),
+        visibleSi: ({ email, role, modulosPermitidos }) =>
+          puedeVer("marketing_clientes", modulosPermitidos || [], role),
       },
       { label: "Fichas producto", href: "/fichas", activo: false, icon: icons.tag },
     ],
@@ -151,7 +154,8 @@ const sections: NavSection[] = [
     adminOnly: true,
     collapsible: true,
     items: [
-      { label: "Usuarios", href: "/admin/usuarios", activo: false, icon: icons.cog },
+      { label: "Usuarios y permisos", href: "/admin/usuarios", activo: true, icon: icons.users },
+      { label: "Historial de accesos", href: "/admin/accesos", activo: true, icon: icons.clock },
     ],
   },
 ];
@@ -164,6 +168,7 @@ export default function Sidebar({
   userImage,
   departamento = "farmacia",
   role = "admin",
+  modulosPermitidos = [],
 }: SidebarProps) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -183,11 +188,11 @@ export default function Sidebar({
       .map((s) => ({
         ...s,
         items: s.items.filter(
-          (it) => !it.visibleSi || it.visibleSi({ email: userEmail, role })
+          (it) => !it.visibleSi || it.visibleSi({ email: userEmail, role, modulosPermitidos })
         ),
       }))
       .filter((s) => s.items.length > 0);
-  }, [userEmail, role]);
+  }, [userEmail, role, modulosPermitidos]);
 
   // Auto-expand sections that contain the current active route
   const sectionHasActiveRoute = (section: NavSection) =>
