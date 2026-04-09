@@ -301,8 +301,10 @@ export default function Dashboard({ userName, role, modulosPermitidos }: Dashboa
               const r = await fetch(`/api/ventas/dia?fecha=${fecha}`);
               if (r.ok) {
                 const data = await r.json();
-                if (data.vendedores && data.vendedores.length > 0) {
-                  setVentas(data.vendedores);
+                // La API devuelve un array directo de VendedorDia[]
+                const vendedores = Array.isArray(data) ? data : data.vendedores;
+                if (vendedores && vendedores.length > 0) {
+                  setVentas(vendedores);
                   setVentasFecha(fecha);
                   return;
                 }
