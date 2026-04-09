@@ -73,7 +73,8 @@ export async function GET() {
       // Nota: INSERT OR IGNORE = idempotente, se puede re-ejecutar sin miedo.
       ...["financiero_retiradas", "financiero_historial", "financiero_ingresos",
           "marketing_crm", "marketing_clientes",
-          "rrhh_calendario", "rrhh_equipo", "rrhh_nominas",
+          "rrhh_calendario", "rrhh_guardias", "rrhh_vacaciones",
+          "rrhh_equipo", "rrhh_nominas",
           "admin_panel"
       ].flatMap((modulo) => [
         {

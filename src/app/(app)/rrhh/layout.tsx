@@ -16,12 +16,14 @@ export default async function RrhhLayout({
 }) {
   const user = await requireUser();
   // Dejar pasar si tiene CUALQUIER permiso de RRHH
-  const [cal, equipo, nominas] = await Promise.all([
+  const [cal, guardias, vacaciones, equipo, nominas] = await Promise.all([
     tienePermiso("rrhh_calendario", user.email, user.role),
+    tienePermiso("rrhh_guardias", user.email, user.role),
+    tienePermiso("rrhh_vacaciones", user.email, user.role),
     tienePermiso("rrhh_equipo", user.email, user.role),
     tienePermiso("rrhh_nominas", user.email, user.role),
   ]);
-  if (!cal && !equipo && !nominas) {
+  if (!cal && !guardias && !vacaciones && !equipo && !nominas) {
     redirect("/?error=sin-permisos");
   }
   return <>{children}</>;
