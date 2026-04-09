@@ -396,7 +396,7 @@ export default function RRHHClient({
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <button onClick={() => setMonth(m => Math.max(0, m - 1))} style={btnBase}>◀</button>
-        <span style={{ fontSize: 17, fontWeight: 700, color: GREEN_DARK, className: "font-display" }}>
+        <span style={{ fontSize: 17, fontWeight: 700, color: GREEN_DARK }} className="font-display">
           {MESES[month]} 2026
         </span>
         <button onClick={() => setMonth(m => Math.min(11, m + 1))} style={btnBase}>▶</button>
@@ -435,7 +435,7 @@ export default function RRHHClient({
             disabled={quarter === 0}
             style={{ ...btnBase, opacity: quarter === 0 ? 0.35 : 1, cursor: quarter === 0 ? "not-allowed" : "pointer" }}
           >◀</button>
-          <span style={{ fontSize: 15, fontWeight: 700, color: GREEN_DARK, className: "font-display" }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: GREEN_DARK }} className="font-display">
             T{quarter + 1} · {MESES[startM]} – {MESES[startM + 2]} 2026
           </span>
           <button
@@ -452,9 +452,10 @@ export default function RRHHClient({
                 onClick={() => { setMonth(m); setCalView("mes"); }}
                 style={{
                   textAlign: "center", fontSize: 12, fontWeight: 700, color: GREEN_DARK,
-                  marginBottom: 5, className: "font-display",
+                  marginBottom: 5,
                   cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2,
                 }}
+                className="font-display"
               >
                 {MESES[m]}
               </div>
@@ -485,8 +486,8 @@ export default function RRHHClient({
     <div>
       <div style={{
         textAlign: "center", fontSize: 16, fontWeight: 700, color: GREEN_DARK,
-        marginBottom: 14, className: "font-display",
-      }}>
+        marginBottom: 14,
+      }} className="font-display">
         2026 — Vista anual
       </div>
 
@@ -543,7 +544,7 @@ export default function RRHHClient({
     <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", maxWidth: 960, margin: "0 auto" }}>
       {/* Título */}
       <div style={{ marginBottom: 16 }}>
-        <h1 style={{ className: "font-display", fontSize: 24, color: GREEN_DARK, margin: 0 }}>
+        <h1 style={{ fontSize: 24, color: GREEN_DARK, margin: 0 }} className="font-display">
           RRHH — Farmacia Reig
         </h1>
         <p style={{ fontSize: 11, color: "var(--color-reig-text-secondary)", margin: "4px 0 0" }}>

@@ -177,7 +177,7 @@ function GuardiasEditor({ stat, onSave }: {
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <div style={{ fontSize: 20, fontWeight: 700, color: "var(--color-reig-text)", className: "font-mono-metric" }}>
+      <div style={{ fontSize: 20, fontWeight: 700, color: "var(--color-reig-text)" }} className="font-mono-metric">
         {effective}
       </div>
       {isOverride && (
@@ -330,7 +330,7 @@ export default function VacacionesTab({
             ["Disponibles", st.avail, st.avail <= 5 ? "var(--color-reig-danger)" : "var(--color-reig-text)"],
           ] as [string, number, string][]).map(([l, v, c]) => (
             <div key={l} style={{ textAlign: "center", padding: "8px 4px", background: "var(--color-reig-bg)", borderRadius: 8 }}>
-              <div style={{ fontSize: 22, fontWeight: 700, color: c, className: "font-mono-metric" }}>{v}</div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: c }} className="font-mono-metric">{v}</div>
               <div style={{ fontSize: 8, color: "var(--color-reig-text-muted)", marginTop: 2 }}>{l}</div>
             </div>
           ))}
@@ -442,7 +442,7 @@ export default function VacacionesTab({
                 ["Balance",       comp.balance, comp.balance < 0 ? "var(--color-reig-danger)" : comp.balance === 0 ? "var(--color-reig-text-secondary)" : GREEN],
               ] as [string, number, string][]).map(([l, v, c]) => (
                 <div key={l} style={{ textAlign: "center", padding: "8px 4px", background: "var(--color-reig-surface)", borderRadius: 8, border: "1px solid var(--color-reig-success-light)" }}>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: c, className: "font-mono-metric" }}>{v}</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: c }} className="font-mono-metric">{v}</div>
                   <div style={{ fontSize: 8, color: "var(--color-reig-text-secondary)", marginTop: 2 }}>{l}</div>
                 </div>
               ))}

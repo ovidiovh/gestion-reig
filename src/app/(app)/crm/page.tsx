@@ -258,8 +258,7 @@ function CronogramaHeatmap({
             {HORAS.map((h) => (
               <div
                 key={h}
-                className="flex-1 text-center text-xs pb-1"
-                className="font-mono-metric" style={{ color: C.gris }}
+                className="flex-1 text-center text-xs pb-1 font-mono-metric" style={{ color: C.gris }}
               >
                 {h}h
               </div>
@@ -283,8 +282,7 @@ function CronogramaHeatmap({
                   return (
                     <div
                       key={h}
-                      className="flex-1 h-8 rounded-sm flex items-center justify-center cursor-default transition-transform hover:scale-110"
-                      className="font-mono-metric"
+                      className="flex-1 h-8 rounded-sm flex items-center justify-center cursor-default transition-transform hover:scale-110 font-mono-metric"
                       style={{
                         background: cellColor(tickets),
                         color: tickets > maxTickets * 0.5 ? "white" : "var(--color-reig-text)",
@@ -481,8 +479,7 @@ export default function CrmPage() {
       <div className="flex flex-col sm:flex-row sm:items-start gap-4">
         <div className="flex-1">
           <h1
-            className="text-2xl md:text-3xl font-semibold"
-            className="font-display" style={{ color: "var(--color-reig-text)" }}
+            className="text-2xl md:text-3xl font-semibold font-display" style={{ color: "var(--color-reig-text)" }}
           >
             CRM — Análisis de Ventas
           </h1>

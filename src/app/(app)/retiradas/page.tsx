@@ -365,7 +365,7 @@ export default function RetiradasPage() {
             }}>
               {cuadra ? (
                 <>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: color, marginBottom: 8, fontWeight: 700 }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: color, marginBottom: 8 }}>
                     El conteo cuadra
                   </div>
                   <button
