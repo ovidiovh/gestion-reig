@@ -159,7 +159,7 @@ export function puedeVer(
  * Útil para la Home y cualquier sitio que necesite saber "a qué tiene acceso este usuario".
  */
 const TODOS_LOS_MODULOS = [
-  "financiero_retiradas", "financiero_historial", "financiero_ingresos",
+  "financiero_retiradas", "financiero_historial", "financiero_ingresos", "financiero_descuadres",
   "marketing_crm", "marketing_clientes",
   "rrhh_calendario", "rrhh_guardias", "rrhh_vacaciones",
   "rrhh_equipo", "rrhh_nominas",

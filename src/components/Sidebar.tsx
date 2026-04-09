@@ -130,7 +130,11 @@ const sections: NavSection[] = [
         visibleSi: ({ role, modulosPermitidos }) =>
           puedeVer("financiero_ingresos", modulosPermitidos || [], role),
       },
-      // Ventas: se añadirá cuando esté implementado
+      {
+        label: "Descuadres caja", href: "/descuadres", activo: true, icon: icons.chart,
+        visibleSi: ({ role, modulosPermitidos }) =>
+          puedeVer("financiero_descuadres", modulosPermitidos || [], role),
+      },
     ],
   },
   {

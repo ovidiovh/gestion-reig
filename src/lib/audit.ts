@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 
-export type AuditModulo = "retiradas" | "ingresos" | "remesas" | "rrhh" | "rrhh_guardias" | "rrhh_vacaciones" | "rrhh_equipo" | "rrhh_nominas" | "crm" | "admin" | "usuarios";
+export type AuditModulo = "retiradas" | "ingresos" | "remesas" | "descuadres" | "rrhh" | "rrhh_guardias" | "rrhh_vacaciones" | "rrhh_equipo" | "rrhh_nominas" | "crm" | "admin" | "usuarios";
 
 /**
  * Inserta un registro en audit_log de forma no bloqueante.

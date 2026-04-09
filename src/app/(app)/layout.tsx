@@ -10,6 +10,7 @@ const TODOS_LOS_MODULOS = [
   "financiero_retiradas",
   "financiero_historial",
   "financiero_ingresos",
+  "financiero_descuadres",
   "marketing_crm",
   "marketing_clientes",
   "rrhh_calendario",

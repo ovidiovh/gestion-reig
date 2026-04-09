@@ -93,7 +93,12 @@ const sections: DashboardSection[] = [
         visibleSi: ({ role, modulosPermitidos }) =>
           role === "admin" || modulosPermitidos.includes("financiero_ingresos"),
       },
-      // Ventas: se añadirá cuando esté implementado
+      {
+        title: "Descuadres caja", description: "Control de descuadres diarios por caja y patrones",
+        href: "/descuadres", activo: true, icon: icons.chart,
+        visibleSi: ({ role, modulosPermitidos }) =>
+          role === "admin" || modulosPermitidos.includes("financiero_descuadres"),
+      },
     ],
   },
   {
