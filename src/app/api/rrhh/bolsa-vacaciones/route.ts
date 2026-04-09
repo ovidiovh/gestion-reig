@@ -1,9 +1,13 @@
 import { query, db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { requirePermiso } from "@/lib/auth";
 
 // GET /api/rrhh/bolsa-vacaciones?empleado_id=xxx
 // GET /api/rrhh/bolsa-vacaciones?empleado_id=xxx&estado=activa
 export async function GET(req: NextRequest) {
+  const check = await requirePermiso("rrhh_vacaciones");
+  if ("error" in check) return check.error;
+
   try {
     const empId = req.nextUrl.searchParams.get("empleado_id");
     const estado = req.nextUrl.searchParams.get("estado");
@@ -38,6 +42,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/rrhh/bolsa-vacaciones — crear entrada manual de arrastre (art. 38.3 ET)
 export async function POST(req: NextRequest) {
+  const check = await requirePermiso("rrhh_vacaciones");
+  if ("error" in check) return check.error;
+
   try {
     const { empleado_id, anio_origen, dias, motivo, caduca_en, notas } =
       (await req.json()) as {
@@ -82,6 +89,9 @@ export async function POST(req: NextRequest) {
 
 // PATCH /api/rrhh/bolsa-vacaciones?id=xxx — actualizar dias_usados, estado, notas, caduca_en
 export async function PATCH(req: NextRequest) {
+  const check = await requirePermiso("rrhh_vacaciones");
+  if ("error" in check) return check.error;
+
   try {
     const id = req.nextUrl.searchParams.get("id");
     if (!id) {
@@ -127,6 +137,9 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE /api/rrhh/bolsa-vacaciones?id=xxx
 export async function DELETE(req: NextRequest) {
+  const check = await requirePermiso("rrhh_vacaciones");
+  if ("error" in check) return check.error;
+
   try {
     const id = req.nextUrl.searchParams.get("id");
     if (!id) {

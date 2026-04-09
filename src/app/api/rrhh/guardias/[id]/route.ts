@@ -1,11 +1,15 @@
 import { query, db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth, requirePermiso } from "@/lib/auth";
 
 // GET /api/rrhh/guardias/[id] — guardia + slots + empleados
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const check = await requireAuth();
+  if ("error" in check) return check.error;
+
   try {
     const { id } = await params;
 
@@ -40,6 +44,9 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const check = await requirePermiso("rrhh_guardias");
+  if ("error" in check) return check.error;
+
   try {
     const { id } = await params;
     const body = await req.json();

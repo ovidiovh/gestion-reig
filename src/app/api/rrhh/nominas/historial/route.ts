@@ -12,7 +12,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { getUser } from "@/lib/auth";
+import { requirePermiso } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -39,14 +39,10 @@ interface ResumenMesFila {
 }
 
 export async function GET(req: NextRequest) {
+  const check = await requirePermiso("rrhh_nominas");
+  if ("error" in check) return check.error;
+
   try {
-    const user = await getUser();
-    if (!user) {
-      return NextResponse.json(
-        { ok: false, error: "No autenticado" },
-        { status: 401 }
-      );
-    }
 
     const mes = req.nextUrl.searchParams.get("mes");
 

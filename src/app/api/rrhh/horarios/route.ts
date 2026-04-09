@@ -1,9 +1,13 @@
 import { query, db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { requirePermiso } from "@/lib/auth";
 
 // GET /api/rrhh/horarios?week=YYYY-MM-DD&weeks=4
 // Devuelve asignaciones de turno para la semana(s) indicada(s)
 export async function GET(req: NextRequest) {
+  const check = await requirePermiso("rrhh_equipo");
+  if ("error" in check) return check.error;
+
   try {
     const week  = req.nextUrl.searchParams.get("week");
     const weeks = parseInt(req.nextUrl.searchParams.get("weeks") ?? "1");
@@ -41,6 +45,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/rrhh/horarios — upsert asignación de turno
 export async function POST(req: NextRequest) {
+  const check = await requirePermiso("rrhh_equipo");
+  if ("error" in check) return check.error;
+
   try {
     const body = await req.json();
     const { week_start, empleado_id, turno, notas = null } = body as {

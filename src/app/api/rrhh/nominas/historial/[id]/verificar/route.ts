@@ -16,7 +16,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { query } from "@/lib/db";
-import { getUser } from "@/lib/auth";
+import { requirePermiso } from "@/lib/auth";
 import { getGoogleDriveAdapter } from "@/lib/nomina/storage/google-drive";
 import { renderReigPDF } from "@/lib/nomina/pdf/template-reig";
 import { renderMirelusPDF } from "@/lib/nomina/pdf/template-mirelus";
@@ -39,14 +39,10 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const check = await requirePermiso("rrhh_nominas");
+  if ("error" in check) return check.error;
+
   try {
-    const user = await getUser();
-    if (!user) {
-      return NextResponse.json(
-        { ok: false, error: "No autenticado" },
-        { status: 401 }
-      );
-    }
 
     const { id } = await params;
 

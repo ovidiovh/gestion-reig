@@ -17,9 +17,13 @@
 // No modifica BD. No genera PDFs (pendiente Paso 2.1).
 
 import { NextRequest, NextResponse } from "next/server";
+import { requirePermiso } from "@/lib/auth";
 import { calcularNominaMes } from "@/lib/nomina/engine";
 
 export async function GET(req: NextRequest) {
+  const check = await requirePermiso("rrhh_nominas");
+  if ("error" in check) return check.error;
+
   try {
     const mes = req.nextUrl.searchParams.get("mes");
     if (!mes) {

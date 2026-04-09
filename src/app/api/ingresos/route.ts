@@ -3,14 +3,13 @@
  * Requiere autenticación de usuario.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { getUser } from "@/lib/auth";
+import { requirePermiso } from "@/lib/auth";
 import { guardarIngreso, listarIngresos, estadisticasMes } from "@/lib/ingresos";
 
 export async function POST(req: NextRequest) {
-  const user = await getUser();
-  if (!user) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
+  const check = await requirePermiso("financiero_ingresos");
+  if ("error" in check) return check.error;
+  const { user } = check;
 
   try {
     const body = await req.json();
@@ -45,10 +44,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const user = await getUser();
-  if (!user) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
+  const check = await requirePermiso("financiero_ingresos");
+  if ("error" in check) return check.error;
+  const { user } = check;
 
   try {
     const filtro = req.nextUrl.searchParams.get("filtro") || "mes";

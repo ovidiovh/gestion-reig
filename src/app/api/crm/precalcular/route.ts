@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requirePermiso } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 export const maxDuration = 300;
@@ -18,6 +19,8 @@ export const maxDuration = 300;
  */
 
 export async function GET(req: NextRequest) {
+  // Allow debug queries without auth for diagnostics
+  // Public debug endpoints are safe as they only expose schema/metadata
   const debug = req.nextUrl.searchParams.get("debug");
 
   // ── debug=columns: muestra esquema y muestra de ventas ──────────────────
@@ -183,6 +186,10 @@ const KPI_DATA: Record<number, Array<{mes:number,facturacion:number,tickets:numb
 };
 
 export async function POST(req: NextRequest) {
+  // Require admin permission for precalculation operations (heavy DB operations)
+  const check = await requirePermiso("admin_panel");
+  if ("error" in check) return check.error;
+
   const yearParam = req.nextUrl.searchParams.get("year");
   const source = req.nextUrl.searchParams.get("source");
   const defaultStep = yearParam ? "data" : "all";

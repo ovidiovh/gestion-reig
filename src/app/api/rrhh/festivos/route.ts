@@ -1,7 +1,11 @@
 import { query, db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth, requirePermiso } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
+  const check = await requireAuth();
+  if ("error" in check) return check.error;
+
   try {
     const year = req.nextUrl.searchParams.get("year") || "2026";
     const festivos = await query(
@@ -16,6 +20,9 @@ export async function GET(req: NextRequest) {
 
 // Toggle override: marcar/desmarcar un festivo
 export async function POST(req: NextRequest) {
+  const check = await requirePermiso("rrhh_guardias");
+  if ("error" in check) return check.error;
+
   try {
     const body = await req.json();
     const { fecha, nombre, tipo } = body as { fecha: string; nombre?: string; tipo?: string };

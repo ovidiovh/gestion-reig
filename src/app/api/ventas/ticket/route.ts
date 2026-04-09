@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/api-helpers";
+import { requireAuth } from "@/lib/auth";
 import { getLineasTicket } from "@/lib/queries";
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
-  if (error) return error;
+  const check = await requireAuth();
+  if ("error" in check) return check.error;
 
   const numDoc = req.nextUrl.searchParams.get("numDoc");
   if (!numDoc) {

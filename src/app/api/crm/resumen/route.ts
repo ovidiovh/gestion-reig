@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requirePermiso } from "@/lib/auth";
 import { getCrmResumen } from "@/lib/crm-queries";
 
 export const maxDuration = 60;
 
 export async function GET(req: NextRequest) {
+  const check = await requirePermiso("marketing_crm");
+  if ("error" in check) return check.error;
+
   try {
     const params = req.nextUrl.searchParams;
     const desde = params.get("desde");

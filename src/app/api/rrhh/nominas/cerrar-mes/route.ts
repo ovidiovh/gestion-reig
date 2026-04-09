@@ -16,7 +16,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash, randomUUID } from "crypto";
 import { db, query } from "@/lib/db";
-import { getUser } from "@/lib/auth";
+import { requirePermiso } from "@/lib/auth";
 import { calcularNominaMes, type ResumenMes } from "@/lib/nomina/engine";
 import { renderReigPDF } from "@/lib/nomina/pdf/template-reig";
 import { renderMirelusPDF } from "@/lib/nomina/pdf/template-mirelus";
@@ -153,14 +153,11 @@ async function archivarEmpresa(
 }
 
 export async function POST(req: NextRequest) {
+  const check = await requirePermiso("rrhh_nominas");
+  if ("error" in check) return check.error;
+  const { user } = check;
+
   try {
-    const user = await getUser();
-    if (!user) {
-      return NextResponse.json(
-        { ok: false, error: "No autenticado" },
-        { status: 401 }
-      );
-    }
 
     let body: { mes?: string; notas?: string } = {};
     try {

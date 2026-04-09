@@ -1,9 +1,13 @@
 import { query } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth";
 
 // GET /api/rrhh/guardias/stats?year=2026
 // Devuelve guardias REALIZADAS (fecha <= hoy) por farmacéutico + ajuste manual
 export async function GET(req: NextRequest) {
+  const check = await requireAuth();
+  if ("error" in check) return check.error;
+
   try {
     const year = req.nextUrl.searchParams.get("year") || "2026";
 

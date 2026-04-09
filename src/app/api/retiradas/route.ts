@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUser } from "@/lib/auth";
+import { requirePermiso } from "@/lib/auth";
 import { guardarSesion, listarSesiones } from "@/lib/retiradas";
 import { db } from "@/lib/db";
 
@@ -7,10 +7,9 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function POST(req: NextRequest) {
-  const user = await getUser();
-  if (!user) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
+  const check = await requirePermiso("financiero_retiradas");
+  if ("error" in check) return check.error;
+  const { user } = check;
 
   try {
     const body = await req.json();
@@ -33,10 +32,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const user = await getUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, error: "No autenticado" }, { status: 401 });
-  }
+  const check = await requirePermiso("financiero_retiradas");
+  if ("error" in check) return check.error;
+  const { user } = check;
 
   try {
     const desde = req.nextUrl.searchParams.get("desde");
@@ -122,10 +120,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const user = await getUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, error: "No autenticado" }, { status: 401 });
-  }
+  const check = await requirePermiso("financiero_retiradas");
+  if ("error" in check) return check.error;
+  const { user } = check;
 
   try {
     const id = req.nextUrl.searchParams.get("id");

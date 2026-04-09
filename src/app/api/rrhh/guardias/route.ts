@@ -1,8 +1,12 @@
 import { query, db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth, requirePermiso } from "@/lib/auth";
 
 // GET /api/rrhh/guardias?year=2026
 export async function GET(req: NextRequest) {
+  const check = await requireAuth();
+  if ("error" in check) return check.error;
+
   try {
     const year = req.nextUrl.searchParams.get("year") || "2026";
     const guardias = await query(
@@ -17,6 +21,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/rrhh/guardias — crear guardia con slots por defecto
 export async function POST(req: NextRequest) {
+  const check = await requirePermiso("rrhh_guardias");
+  if ("error" in check) return check.error;
+
   try {
     const body = await req.json();
     const { fecha, tipo } = body as { fecha: string; tipo?: string };

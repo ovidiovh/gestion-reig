@@ -1,8 +1,12 @@
 import { query, db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { requirePermiso } from "@/lib/auth";
 
 // GET /api/rrhh/banco-horas?empleado_id=xxx
 export async function GET(req: NextRequest) {
+  const check = await requirePermiso("rrhh_equipo");
+  if ("error" in check) return check.error;
+
   try {
     const empId = req.nextUrl.searchParams.get("empleado_id");
     if (!empId) {
@@ -20,6 +24,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/rrhh/banco-horas — añadir entrada
 export async function POST(req: NextRequest) {
+  const check = await requirePermiso("rrhh_equipo");
+  if ("error" in check) return check.error;
+
   try {
     const { empleado_id, fecha, concepto, minutos, notas } = await req.json() as {
       empleado_id: string; fecha: string; concepto: string; minutos: number; notas?: string;
@@ -44,6 +51,9 @@ export async function POST(req: NextRequest) {
 
 // DELETE /api/rrhh/banco-horas?id=xxx
 export async function DELETE(req: NextRequest) {
+  const check = await requirePermiso("rrhh_equipo");
+  if ("error" in check) return check.error;
+
   try {
     const id = req.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ ok: false, error: "id requerido" }, { status: 400 });

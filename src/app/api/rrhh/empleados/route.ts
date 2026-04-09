@@ -1,5 +1,6 @@
 import { query, db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { requirePermiso } from "@/lib/auth";
 
 // GET /api/rrhh/empleados?incluir_inactivos=1&para=vacaciones|nomina|planning
 //
@@ -13,6 +14,9 @@ import { NextRequest, NextResponse } from "next/server";
 // Ver REIG-BASE → 06-OPERATIVA-FARMACIA/nominas-rrhh.md §3 sobre la distinción
 // entre "activo en planning", "activo en vacaciones" y "activo en nómina".
 export async function GET(req: NextRequest) {
+  const check = await requirePermiso("rrhh_equipo");
+  if ("error" in check) return check.error;
+
   try {
     const incluirInactivos = req.nextUrl.searchParams.get("incluir_inactivos") === "1";
     const para = req.nextUrl.searchParams.get("para");
@@ -40,6 +44,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/rrhh/empleados — crear nuevo empleado
 export async function POST(req: NextRequest) {
+  const check = await requirePermiso("rrhh_equipo");
+  if ("error" in check) return check.error;
+
   try {
     const body = await req.json();
     const {
@@ -74,6 +81,9 @@ export async function POST(req: NextRequest) {
 
 // PATCH /api/rrhh/empleados — actualizar campos de un empleado (id en body)
 export async function PATCH(req: NextRequest) {
+  const check = await requirePermiso("rrhh_equipo");
+  if ("error" in check) return check.error;
+
   try {
     const body = await req.json();
     const { id, ...fields } = body as Record<string, string | number | null>;

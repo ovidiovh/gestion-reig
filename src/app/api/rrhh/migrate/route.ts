@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/auth";
 
 const FESTIVOS_2026 = [
   { fecha: "2026-01-01", nombre: "Año Nuevo", tipo: "nacional" },
@@ -122,6 +123,8 @@ const GUARD_DEFAULTS = [
 ];
 
 export async function POST() {
+  const user = await requireAdmin();
+
   try {
     // ─── Sesión 10 (2026-04-08) — Paso 3.0: Ausencias unificadas ───
     // La tabla `rrhh_ausencias` nació en una migración anterior como esqueleto

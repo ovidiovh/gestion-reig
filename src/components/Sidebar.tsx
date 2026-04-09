@@ -130,7 +130,7 @@ const sections: NavSection[] = [
         visibleSi: ({ role, modulosPermitidos }) =>
           puedeVer("financiero_ingresos", modulosPermitidos || [], role),
       },
-      { label: "Ventas", href: "/ventas", activo: false, icon: icons.chart },
+      // Ventas: se añadirá cuando esté implementado
     ],
   },
   {
@@ -148,7 +148,7 @@ const sections: NavSection[] = [
         visibleSi: ({ role, modulosPermitidos }) =>
           puedeVer("marketing_clientes", modulosPermitidos || [], role),
       },
-      { label: "Fichas producto", href: "/fichas", activo: false, icon: icons.tag },
+      // Fichas producto: se añadirá cuando esté implementado
     ],
   },
   {

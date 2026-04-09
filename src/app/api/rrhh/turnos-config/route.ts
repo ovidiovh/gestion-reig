@@ -1,8 +1,12 @@
 import { query, db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { requirePermiso } from "@/lib/auth";
 
 // GET /api/rrhh/turnos-config — devuelve los 4 turnos configurados
 export async function GET() {
+  const check = await requirePermiso("rrhh_equipo");
+  if ("error" in check) return check.error;
+
   try {
     const rows = await query(`SELECT * FROM rrhh_turnos_config ORDER BY turno ASC`);
     return NextResponse.json({ ok: true, turnos: rows });
@@ -14,6 +18,9 @@ export async function GET() {
 // PATCH /api/rrhh/turnos-config — actualiza un turno
 // Body: { turno: 0|1|2|3, inicio_a, fin_a, inicio_b?, fin_b? }
 export async function PATCH(req: NextRequest) {
+  const check = await requirePermiso("rrhh_equipo");
+  if ("error" in check) return check.error;
+
   try {
     const body = await req.json() as {
       turno: number;

@@ -1,8 +1,12 @@
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { requirePermiso } from "@/lib/auth";
 
 // GET — listar remesas
 export async function GET(req: NextRequest) {
+  const check = await requirePermiso("financiero_retiradas");
+  if ("error" in check) return check.error;
+
   try {
     const estado = req.nextUrl.searchParams.get("estado"); // pendiente | confirmada | null=todas
     let sql = `SELECT r.*,
@@ -25,6 +29,9 @@ export async function GET(req: NextRequest) {
 
 // POST — crear remesa agrupando sesiones
 export async function POST(req: NextRequest) {
+  const check = await requirePermiso("financiero_retiradas");
+  if ("error" in check) return check.error;
+
   try {
     const { sesion_ids } = (await req.json()) as { sesion_ids: number[] };
 
@@ -84,6 +91,9 @@ export async function POST(req: NextRequest) {
 
 // PATCH — confirmar remesa (cuando llega email del banco)
 export async function PATCH(req: NextRequest) {
+  const check = await requirePermiso("financiero_retiradas");
+  if ("error" in check) return check.error;
+
   try {
     const { id, email_subject } = (await req.json()) as {
       id: number;

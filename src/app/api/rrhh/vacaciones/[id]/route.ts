@@ -1,11 +1,15 @@
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { requirePermiso } from "@/lib/auth";
 
 // PUT /api/rrhh/vacaciones/[id] — actualizar estado
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const check = await requirePermiso("rrhh_vacaciones");
+  if ("error" in check) return check.error;
+
   try {
     const { id } = await params;
     const { estado } = await req.json() as { estado: string };
@@ -26,6 +30,9 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const check = await requirePermiso("rrhh_vacaciones");
+  if ("error" in check) return check.error;
+
   try {
     const { id } = await params;
     await db.execute({ sql: `DELETE FROM rrhh_vacaciones WHERE id = ?`, args: [id] });

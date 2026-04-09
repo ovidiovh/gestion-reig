@@ -1,8 +1,12 @@
 import { query, db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { requirePermiso } from "@/lib/auth";
 
 // GET /api/rrhh/vacaciones?year=2026
 export async function GET(req: NextRequest) {
+  const check = await requirePermiso("rrhh_vacaciones");
+  if ("error" in check) return check.error;
+
   try {
     const year = req.nextUrl.searchParams.get("year") || "2026";
     const vacaciones = await query(
@@ -22,6 +26,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/rrhh/vacaciones
 export async function POST(req: NextRequest) {
+  const check = await requirePermiso("rrhh_vacaciones");
+  if ("error" in check) return check.error;
+
   try {
     const body = await req.json();
     const { empleado_id, fecha_inicio, fecha_fin, estado, tipo } = body as {

@@ -1,5 +1,6 @@
 import { query, db } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { requirePermiso } from "@/lib/auth";
 
 // Calcula todas las fechas de guardia del año (cada 19 días desde 4 abril 2026)
 function calcGuardDates(year: number): string[] {
@@ -23,6 +24,9 @@ function calcGuardDates(year: number): string[] {
 // POST /api/rrhh/guardias/auto-generar?year=2026
 // Crea todas las guardias del año que no existan todavía (con sus slots por defecto)
 export async function POST() {
+  const check = await requirePermiso("rrhh_guardias");
+  if ("error" in check) return check.error;
+
   try {
     const year = 2026;
     const guardDates = calcGuardDates(year);

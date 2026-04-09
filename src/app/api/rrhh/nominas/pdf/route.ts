@@ -11,6 +11,7 @@
 // Sin auth explícita aquí porque el middleware NextAuth ya protege /api/rrhh/*.
 
 import { NextRequest, NextResponse } from "next/server";
+import { requirePermiso } from "@/lib/auth";
 import { calcularNominaMes } from "@/lib/nomina/engine";
 import { renderReigPDF } from "@/lib/nomina/pdf/template-reig";
 import { renderMirelusPDF } from "@/lib/nomina/pdf/template-mirelus";
@@ -18,6 +19,9 @@ import { renderMirelusPDF } from "@/lib/nomina/pdf/template-mirelus";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  const check = await requirePermiso("rrhh_nominas");
+  if ("error" in check) return check.error;
+
   try {
     const mes = req.nextUrl.searchParams.get("mes");
     const empresa = req.nextUrl.searchParams.get("empresa");

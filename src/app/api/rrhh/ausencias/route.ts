@@ -1,8 +1,12 @@
 import { query, db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { requirePermiso } from "@/lib/auth";
 
 // GET /api/rrhh/ausencias?year=2026&empleado_id=xxx&mes=2026-04
 export async function GET(req: NextRequest) {
+  const check = await requirePermiso("rrhh_vacaciones");
+  if ("error" in check) return check.error;
+
   try {
     const year = req.nextUrl.searchParams.get("year");
     const empId = req.nextUrl.searchParams.get("empleado_id");
@@ -48,6 +52,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/rrhh/ausencias
 export async function POST(req: NextRequest) {
+  const check = await requirePermiso("rrhh_vacaciones");
+  if ("error" in check) return check.error;
+
   try {
     const body = await req.json();
     const {
@@ -118,6 +125,9 @@ export async function POST(req: NextRequest) {
 
 // PATCH /api/rrhh/ausencias?id=xxx — actualizar (estado, notas, fechas, tipo...)
 export async function PATCH(req: NextRequest) {
+  const check = await requirePermiso("rrhh_vacaciones");
+  if ("error" in check) return check.error;
+
   try {
     const id = req.nextUrl.searchParams.get("id");
     if (!id) {
@@ -166,6 +176,9 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE /api/rrhh/ausencias?id=xxx
 export async function DELETE(req: NextRequest) {
+  const check = await requirePermiso("rrhh_vacaciones");
+  if ("error" in check) return check.error;
+
   try {
     const id = req.nextUrl.searchParams.get("id");
     if (!id) {

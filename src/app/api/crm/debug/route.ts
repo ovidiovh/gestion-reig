@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
+import { requirePermiso } from "@/lib/auth";
 import { query } from "@/lib/db";
 
 // Diagnóstico rápido — solo queries de metadata (< 1s)
 export async function GET() {
+  const check = await requirePermiso("admin_panel");
+  if ("error" in check) return check.error;
+
   try {
     const cols = await query<{ cid: number; name: string; type: string }>(
       `PRAGMA table_info(ventas)`

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, parseFilters } from "@/lib/api-helpers";
+import { requireAuth } from "@/lib/auth";
+import { parseFilters } from "@/lib/api-helpers";
 import { getTimeSeries } from "@/lib/queries";
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAuth();
-  if (error) return error;
+  const check = await requireAuth();
+  if ("error" in check) return check.error;
 
   const params = req.nextUrl.searchParams;
   const filters = parseFilters(params);

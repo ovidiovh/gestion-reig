@@ -55,3 +55,43 @@ export async function requireAdmin(): Promise<UserSession> {
   }
   return user as UserSession;
 }
+
+/**
+ * Guard para API routes: requiere autenticación + permiso de módulo.
+ * Devuelve { user } si OK, o { error: NextResponse } si no tiene acceso.
+ * Admins pasan siempre. Uso:
+ *
+ *   const check = await requirePermiso("financiero_retiradas");
+ *   if ("error" in check) return check.error;
+ *   const { user } = check;
+ */
+export async function requirePermiso(
+  modulo: string
+): Promise<{ user: UserSession } | { error: Response }> {
+  const { NextResponse } = await import("next/server");
+  const user = await getUser();
+  if (!user) {
+    return { error: NextResponse.json({ error: "No autenticado" }, { status: 401 }) };
+  }
+  if (user.role === "admin") return { user };
+
+  const { tienePermiso } = await import("@/lib/permisos");
+  const permitido = await tienePermiso(modulo, user.email, user.role);
+  if (!permitido) {
+    return { error: NextResponse.json({ error: "Sin permiso para " + modulo }, { status: 403 }) };
+  }
+  return { user };
+}
+
+/**
+ * Guard ligero: solo requiere autenticación (cualquier usuario logueado).
+ * Para APIs que no tienen restricción de módulo pero sí necesitan sesión.
+ */
+export async function requireAuth(): Promise<{ user: UserSession } | { error: Response }> {
+  const { NextResponse } = await import("next/server");
+  const user = await getUser();
+  if (!user) {
+    return { error: NextResponse.json({ error: "No autenticado" }, { status: 401 }) };
+  }
+  return { user };
+}
