@@ -7,11 +7,15 @@
  * GET  /api/descuadres?vista=stats&desde=YYYY-MM-DD&hasta=YYYY-MM-DD
  * POST /api/descuadres  { action: "ingestar" }  → parsea emails de Gmail y graba
  * POST /api/descuadres  { action: "reset" }      → borra todos los datos (para arranque limpio)
+ * PATCH /api/descuadres { id, caja }             → corregir caja de un cierre
+ * DELETE /api/descuadres { id }                   → eliminar un cierre
  */
 import { NextRequest, NextResponse } from "next/server";
 import { requirePermiso } from "@/lib/auth";
 import { insertAuditLog } from "@/lib/audit";
 import {
+  actualizarCaja,
+  eliminarCierre,
   cierresDelDia,
   cierresPorRango,
   agregadoPorDia,
@@ -194,6 +198,76 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Acción desconocida" }, { status: 400 });
   } catch (e) {
     console.error("[api/descuadres] POST:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
+}
+
+/* ────────── PATCH — corregir caja ────────── */
+
+export async function PATCH(req: NextRequest) {
+  const check = await requirePermiso("financiero_descuadres");
+  if ("error" in check) return check.error;
+  const { user } = check;
+
+  try {
+    const body = await req.json();
+    const { id, caja } = body;
+
+    if (typeof id !== "number" || typeof caja !== "number") {
+      return NextResponse.json({ error: "Faltan id y caja (numéricos)" }, { status: 400 });
+    }
+
+    const ok = await actualizarCaja(id, caja);
+    if (!ok) {
+      return NextResponse.json({ error: `Cierre id=${id} no encontrado` }, { status: 404 });
+    }
+
+    await insertAuditLog({
+      usuario_email: user.email,
+      usuario_nombre: user.nombre,
+      accion: "modificar",
+      modulo: "descuadres",
+      detalle: `Corregir caja cierre id=${id} → caja ${caja}`,
+    });
+
+    return NextResponse.json({ ok: true, id, caja });
+  } catch (e) {
+    console.error("[api/descuadres] PATCH:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
+}
+
+/* ────────── DELETE — eliminar cierre ────────── */
+
+export async function DELETE(req: NextRequest) {
+  const check = await requirePermiso("financiero_descuadres");
+  if ("error" in check) return check.error;
+  const { user } = check;
+
+  try {
+    const body = await req.json();
+    const { id } = body;
+
+    if (typeof id !== "number") {
+      return NextResponse.json({ error: "Falta id (numérico)" }, { status: 400 });
+    }
+
+    const ok = await eliminarCierre(id);
+    if (!ok) {
+      return NextResponse.json({ error: `Cierre id=${id} no encontrado` }, { status: 404 });
+    }
+
+    await insertAuditLog({
+      usuario_email: user.email,
+      usuario_nombre: user.nombre,
+      accion: "eliminar",
+      modulo: "descuadres",
+      detalle: `Eliminar cierre id=${id}`,
+    });
+
+    return NextResponse.json({ ok: true, id });
+  } catch (e) {
+    console.error("[api/descuadres] DELETE:", e);
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
 }

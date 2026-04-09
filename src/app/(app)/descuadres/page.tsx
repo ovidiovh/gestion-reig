@@ -32,6 +32,8 @@ interface Agregado {
 interface Stats {
   total_neto: number;
   total_bruto: number;
+  total_tarjetas: number;
+  total_saldo: number;
   dias: number;
   cierres: number;
   peor_caja: string | null;
@@ -162,6 +164,26 @@ export default function DescuadresPage() {
   const [analisisData, setAnalisisData] = useState<Agregado[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+
+  // ── Cambiar caja de un cierre ──
+  const cambiarCaja = async (id: number, nuevaCaja: number) => {
+    try {
+      const res = await fetch("/api/descuadres", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, caja: nuevaCaja }),
+      });
+      if (res.ok) {
+        setCierres((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, caja: nuevaCaja } : c))
+        );
+        setEditingId(null);
+      }
+    } catch (e) {
+      console.error("Error cambiando caja:", e);
+    }
+  };
 
   // ── Rango según vista ──
   const getRango = useCallback(() => {
@@ -246,8 +268,10 @@ export default function DescuadresPage() {
     0.01
   );
 
-  // ── Total del día ──
+  // ── Totales del día ──
   const totalDia = cierres.reduce((sum, c) => sum + c.descuadre, 0);
+  const totalTarjetasDia = cierres.reduce((sum, c) => sum + c.tarjetas_dia_anterior, 0);
+  const totalSaldoDia = cierres.reduce((sum, c) => sum + c.saldo, 0);
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
@@ -299,7 +323,7 @@ export default function DescuadresPage() {
 
         {/* Info ingesta */}
         <span style={{ marginLeft: "auto", fontSize: 11, color: COLOR.muted }}>
-          Ingesta automática · L-S 8:30h
+          Ingesta automática · Apps Script · L-S ~8:30h
         </span>
       </div>
 
@@ -345,6 +369,18 @@ export default function DescuadresPage() {
                 </div>
                 <div style={{ fontSize: 11, color: COLOR.muted, marginTop: 2 }}>
                   Neto · {fmt(stats.media_diaria_bruto)} € bruto
+                </div>
+              </div>
+
+              <div style={card}>
+                <div style={{ fontSize: 11, color: COLOR.muted, textTransform: "uppercase", letterSpacing: 1 }}>
+                  Tarjetas / Retirado
+                </div>
+                <div style={{ fontSize: 28, fontWeight: 700, color: COLOR.blue, marginTop: 4 }}>
+                  {fmt(stats.total_tarjetas)} €
+                </div>
+                <div style={{ fontSize: 11, color: COLOR.muted, marginTop: 2 }}>
+                  Tarjetas del día anterior ({stats.cierres} cierres)
                 </div>
               </div>
 
@@ -409,7 +445,32 @@ export default function DescuadresPage() {
                             padding: "10px 12px", fontWeight: 600,
                             color: c.caja === 0 ? COLOR.primary : c.caja === 11 ? COLOR.optica : COLOR.text,
                           }}>
-                            {CAJA_LABEL[c.caja] || `Caja ${c.caja}`}
+                            {editingId === c.id ? (
+                              <select
+                                value={c.caja}
+                                onChange={(e) => cambiarCaja(c.id, Number(e.target.value))}
+                                onBlur={() => setEditingId(null)}
+                                autoFocus
+                                style={{
+                                  fontSize: 13, fontWeight: 600, padding: "2px 4px",
+                                  borderRadius: 4, border: `1px solid ${COLOR.primary}`,
+                                }}
+                              >
+                                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11].map((n) => (
+                                  <option key={n} value={n}>
+                                    {CAJA_LABEL[n]}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span
+                                onClick={() => setEditingId(c.id)}
+                                style={{ cursor: "pointer" }}
+                                title="Click para cambiar caja"
+                              >
+                                {CAJA_LABEL[c.caja] || `Caja ${c.caja}`} ✎
+                              </span>
+                            )}
                           </td>
                           <td style={{ padding: "10px 12px" }}>{c.hora_cierre}</td>
                           <td style={{ padding: "10px 12px", textAlign: "right" }}>{fmt(c.importe_apertura)} €</td>
@@ -426,6 +487,28 @@ export default function DescuadresPage() {
                         </tr>
                       ))}
                     </tbody>
+                    {cierres.length > 1 && (
+                      <tfoot>
+                        <tr style={{ borderTop: `2px solid ${COLOR.primary}`, background: COLOR.primaryLight }}>
+                          <td style={{ padding: "10px 12px", fontWeight: 700, color: COLOR.primary }} colSpan={2}>
+                            TOTALES ({cierres.length} cajas)
+                          </td>
+                          <td style={{ padding: "10px 12px", textAlign: "right", fontWeight: 600 }}>—</td>
+                          <td style={{ padding: "10px 12px", textAlign: "right", fontWeight: 600 }}>
+                            {fmt(totalSaldoDia)} €
+                          </td>
+                          <td style={{ padding: "10px 12px", textAlign: "right", fontWeight: 700, color: COLOR.blue }}>
+                            {fmt(totalTarjetasDia)} €
+                          </td>
+                          <td style={{
+                            padding: "10px 12px", textAlign: "right",
+                            fontWeight: 700, color: colorDescuadre(totalDia),
+                          }}>
+                            {totalDia > 0 ? "+" : ""}{fmt(totalDia)} €
+                          </td>
+                        </tr>
+                      </tfoot>
+                    )}
                   </table>
                 </div>
               )}

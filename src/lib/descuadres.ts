@@ -347,6 +347,8 @@ export async function agregadoPorSemanaDelMes(desde: string, hasta: string): Pro
 export async function estadisticasPeriodo(desde: string, hasta: string): Promise<{
   total_neto: number;
   total_bruto: number;
+  total_tarjetas: number;
+  total_saldo: number;
   dias: number;
   cierres: number;
   peor_caja: string | null;
@@ -360,10 +362,12 @@ export async function estadisticasPeriodo(desde: string, hasta: string): Promise
   await initDescuadres();
 
   // Totales
-  const totales = await query<{ neto: number; bruto: number; dias: number; cierres: number }>(
+  const totales = await query<{ neto: number; bruto: number; tarjetas: number; saldo: number; dias: number; cierres: number }>(
     `SELECT
        COALESCE(SUM(descuadre), 0) as neto,
        COALESCE(SUM(ABS(descuadre)), 0) as bruto,
+       COALESCE(SUM(tarjetas_dia_anterior), 0) as tarjetas,
+       COALESCE(SUM(saldo), 0) as saldo,
        COUNT(DISTINCT fecha_cierre) as dias,
        COUNT(*) as cierres
      FROM descuadres_cierre
@@ -405,6 +409,8 @@ export async function estadisticasPeriodo(desde: string, hasta: string): Promise
   return {
     total_neto: totales[0]?.neto || 0,
     total_bruto: totales[0]?.bruto || 0,
+    total_tarjetas: totales[0]?.tarjetas || 0,
+    total_saldo: totales[0]?.saldo || 0,
     dias,
     cierres: totales[0]?.cierres || 0,
     peor_caja: peorCaja[0]?.caja_label || null,
@@ -415,6 +421,30 @@ export async function estadisticasPeriodo(desde: string, hasta: string): Promise
     media_diaria_bruto: dias > 0 ? (totales[0]?.bruto || 0) / dias : 0,
     racha_actual: null, // se calcula client-side
   };
+}
+
+/* ───── Actualizar caja de un cierre ───── */
+
+export async function actualizarCaja(id: number, caja: number): Promise<boolean> {
+  await initDescuadres();
+  const turso = getTurso();
+  const result = await turso.execute({
+    sql: `UPDATE descuadres_cierre SET caja = ? WHERE id = ?`,
+    args: [caja, id],
+  });
+  return (result.rowsAffected ?? 0) > 0;
+}
+
+/* ───── Eliminar un cierre ───── */
+
+export async function eliminarCierre(id: number): Promise<boolean> {
+  await initDescuadres();
+  const turso = getTurso();
+  const result = await turso.execute({
+    sql: `DELETE FROM descuadres_cierre WHERE id = ?`,
+    args: [id],
+  });
+  return (result.rowsAffected ?? 0) > 0;
 }
 
 /* ───── Resetear tabla (para arranque limpio) ───── */
