@@ -157,7 +157,10 @@ const sections: NavSection[] = [
         visibleSi: ({ role, modulosPermitidos }) =>
           puedeVer("marketing_clientes", modulosPermitidos || [], role),
       },
-      // Fichas producto: se añadirá cuando esté implementado
+      {
+        label: "Paciente crónico", href: "/marketing/cronico", activo: true, icon: icons.users,
+        visibleSi: ({ role }) => role === "admin",
+      },
     ],
   },
   {

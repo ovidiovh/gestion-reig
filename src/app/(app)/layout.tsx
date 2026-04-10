@@ -13,6 +13,7 @@ const TODOS_LOS_MODULOS = [
   "financiero_descuadres",
   "marketing_crm",
   "marketing_clientes",
+  "marketing_cronico",
   "rrhh_calendario",
   "rrhh_guardias",
   "rrhh_vacaciones",

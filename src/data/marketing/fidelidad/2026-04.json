@@ -1,0 +1,699 @@
+{
+  "meta": {
+    "generated": "2026-04-09",
+    "analysis_cutoff": "2026-01-01",
+    "data_range_start": "2024-02-05",
+    "data_range_end": "2026-12-03",
+    "chronic_families": 14,
+    "total_disp_cronicas": 71473,
+    "total_pacientes_cronicos": 9662,
+    "total_pares": 15645,
+    "exclusions": [
+      "IBP crónico (regulatorio)",
+      "GLP-1 social: Ozempic/Semaglutida, Victoza/Liraglutida (uso social no financiado)"
+    ]
+  },
+  "kpis": {
+    "pacientes_cronicos": 9662,
+    "pares_evaluados": 15645,
+    "tasa_fidelidad_global": 79.9,
+    "pvp_total_evaluable": 472407.0,
+    "pvp_renovado": 366744.0,
+    "pvp_no_renovado": 105663.0,
+    "pct_renovado": 77.6,
+    "pct_no_renovado": 22.4,
+    "pvp_renovado_mensual": 10787.0,
+    "pvp_perdido_total": 36428.0,
+    "pvp_perdido_mensual": 1071.0,
+    "alertas_activas": 7
+  },
+  "status_pares": {
+    "nuevo": 3380,
+    "en_riesgo": 3097,
+    "fiel": 4795,
+    "perdido": 4316,
+    "infiel_activo": 57
+  },
+  "patient_class": {
+    "fiel": 3274,
+    "en_riesgo": 2124,
+    "parcial_perdido": 428,
+    "perdido_total": 2854
+  },
+  "family_stats": {
+    "Estatinas": {
+      "total": 2186,
+      "fiel": 702,
+      "en_riesgo": 428,
+      "infiel_activo": 3,
+      "perdido": 595,
+      "nuevo": 458,
+      "avg_renewal": 42.8,
+      "pvp_perdido": 3418.0
+    },
+    "Antihipertensivos": {
+      "total": 4170,
+      "fiel": 1392,
+      "en_riesgo": 825,
+      "infiel_activo": 9,
+      "perdido": 1183,
+      "nuevo": 761,
+      "avg_renewal": 44.1,
+      "pvp_perdido": 3772.0
+    },
+    "Antiagregantes": {
+      "total": 973,
+      "fiel": 354,
+      "en_riesgo": 184,
+      "infiel_activo": 2,
+      "perdido": 274,
+      "nuevo": 159,
+      "avg_renewal": 46.7,
+      "pvp_perdido": 584.0
+    },
+    "Anticoagulantes": {
+      "total": 371,
+      "fiel": 137,
+      "en_riesgo": 73,
+      "infiel_activo": 2,
+      "perdido": 89,
+      "nuevo": 70,
+      "avg_renewal": 47.4,
+      "pvp_perdido": 2404.0
+    },
+    "Diabetes": {
+      "total": 1303,
+      "fiel": 448,
+      "en_riesgo": 228,
+      "infiel_activo": 4,
+      "perdido": 367,
+      "nuevo": 256,
+      "avg_renewal": 43.6,
+      "pvp_perdido": 6938.0
+    },
+    "Tiroides": {
+      "total": 591,
+      "fiel": 185,
+      "en_riesgo": 96,
+      "infiel_activo": 4,
+      "perdido": 160,
+      "nuevo": 146,
+      "avg_renewal": 40.2,
+      "pvp_perdido": 647.0
+    },
+    "Respiratorio crónico": {
+      "total": 874,
+      "fiel": 217,
+      "en_riesgo": 170,
+      "infiel_activo": 5,
+      "perdido": 255,
+      "nuevo": 227,
+      "avg_renewal": 35.4,
+      "pvp_perdido": 8399.0
+    },
+    "Antidepresivos": {
+      "total": 2419,
+      "fiel": 599,
+      "en_riesgo": 520,
+      "infiel_activo": 15,
+      "perdido": 676,
+      "nuevo": 609,
+      "avg_renewal": 36.5,
+      "pvp_perdido": 5262.0
+    },
+    "Próstata": {
+      "total": 286,
+      "fiel": 85,
+      "en_riesgo": 48,
+      "infiel_activo": 1,
+      "perdido": 70,
+      "nuevo": 82,
+      "avg_renewal": 38.4,
+      "pvp_perdido": 676.0
+    },
+    "Neuro / Dolor crónico": {
+      "total": 470,
+      "fiel": 128,
+      "en_riesgo": 93,
+      "infiel_activo": 4,
+      "perdido": 117,
+      "nuevo": 128,
+      "avg_renewal": 37.7,
+      "pvp_perdido": 1044.0
+    },
+    "Ansiolíticos": {
+      "total": 1020,
+      "fiel": 227,
+      "en_riesgo": 236,
+      "infiel_activo": 4,
+      "perdido": 294,
+      "nuevo": 259,
+      "avg_renewal": 34.6,
+      "pvp_perdido": 454.0
+    },
+    "Osteoporosis": {
+      "total": 37,
+      "fiel": 13,
+      "en_riesgo": 6,
+      "infiel_activo": 0,
+      "perdido": 8,
+      "nuevo": 10,
+      "avg_renewal": 43.9,
+      "pvp_perdido": 634.0
+    },
+    "Antipsicóticos": {
+      "total": 378,
+      "fiel": 101,
+      "en_riesgo": 70,
+      "infiel_activo": 1,
+      "perdido": 103,
+      "nuevo": 103,
+      "avg_renewal": 36.6,
+      "pvp_perdido": 1613.0
+    },
+    "Cardio otros": {
+      "total": 567,
+      "fiel": 207,
+      "en_riesgo": 120,
+      "infiel_activo": 3,
+      "perdido": 125,
+      "nuevo": 112,
+      "avg_renewal": 47.6,
+      "pvp_perdido": 581.0
+    }
+  },
+  "monthly_evolution": [
+    {
+      "month": "2024-02",
+      "rate": 81.0,
+      "n": 416
+    },
+    {
+      "month": "2024-03",
+      "rate": 83.2,
+      "n": 2121
+    },
+    {
+      "month": "2024-04",
+      "rate": 82.9,
+      "n": 2098
+    },
+    {
+      "month": "2024-05",
+      "rate": 81.5,
+      "n": 2229
+    },
+    {
+      "month": "2024-06",
+      "rate": 82.7,
+      "n": 2238
+    },
+    {
+      "month": "2024-07",
+      "rate": 82.1,
+      "n": 2517
+    },
+    {
+      "month": "2024-08",
+      "rate": 83.1,
+      "n": 2710
+    },
+    {
+      "month": "2024-09",
+      "rate": 85.1,
+      "n": 2522
+    },
+    {
+      "month": "2024-10",
+      "rate": 83.0,
+      "n": 2863
+    },
+    {
+      "month": "2024-11",
+      "rate": 82.0,
+      "n": 2794
+    },
+    {
+      "month": "2024-12",
+      "rate": 81.8,
+      "n": 2857
+    },
+    {
+      "month": "2025-01",
+      "rate": 82.4,
+      "n": 2637
+    },
+    {
+      "month": "2025-02",
+      "rate": 82.8,
+      "n": 2555
+    },
+    {
+      "month": "2025-03",
+      "rate": 81.0,
+      "n": 3071
+    },
+    {
+      "month": "2025-04",
+      "rate": 79.7,
+      "n": 2994
+    },
+    {
+      "month": "2025-05",
+      "rate": 78.1,
+      "n": 2987
+    },
+    {
+      "month": "2025-06",
+      "rate": 79.8,
+      "n": 2816
+    },
+    {
+      "month": "2025-07",
+      "rate": 79.6,
+      "n": 2937
+    },
+    {
+      "month": "2025-08",
+      "rate": 75.7,
+      "n": 3052
+    },
+    {
+      "month": "2025-09",
+      "rate": 76.3,
+      "n": 2881
+    },
+    {
+      "month": "2025-10",
+      "rate": 75.0,
+      "n": 2918
+    },
+    {
+      "month": "2025-11",
+      "rate": 72.1,
+      "n": 2878
+    },
+    {
+      "month": "2025-12",
+      "rate": 73.4,
+      "n": 2932
+    },
+    {
+      "month": "2026-01",
+      "rate": 70.7,
+      "n": 740
+    }
+  ],
+  "lost_demographics": {
+    "by_age": {
+      "75+": 480,
+      "45-64": 1573,
+      "15-44": 594,
+      "65-74": 565,
+      "0-14": 47
+    },
+    "by_sex": {
+      "F": 1858,
+      "M": 1404
+    }
+  },
+  "top_drugs_by_loss": [
+    {
+      "drug": "JARDIANCE",
+      "pvp_lost": 3385.0,
+      "pacs": 85
+    },
+    {
+      "drug": "ATORVASTATINA",
+      "pvp_lost": 2763.0,
+      "pacs": 334
+    },
+    {
+      "drug": "FORXIGA",
+      "pvp_lost": 2626.0,
+      "pacs": 72
+    },
+    {
+      "drug": "SYMBICORT",
+      "pvp_lost": 2168.0,
+      "pacs": 67
+    },
+    {
+      "drug": "FOSTER",
+      "pvp_lost": 1943.0,
+      "pacs": 55
+    },
+    {
+      "drug": "TRIMBOW",
+      "pvp_lost": 1511.0,
+      "pacs": 26
+    },
+    {
+      "drug": "SERTRALINA",
+      "pvp_lost": 1440.0,
+      "pacs": 184
+    },
+    {
+      "drug": "ELIQUIS",
+      "pvp_lost": 1252.0,
+      "pacs": 18
+    },
+    {
+      "drug": "QUETIAPINA",
+      "pvp_lost": 1083.0,
+      "pacs": 72
+    },
+    {
+      "drug": "MIRTAZAPINA",
+      "pvp_lost": 1053.0,
+      "pacs": 92
+    },
+    {
+      "drug": "ESCITALOPRAM",
+      "pvp_lost": 921.0,
+      "pacs": 82
+    },
+    {
+      "drug": "SERETIDE",
+      "pvp_lost": 794.0,
+      "pacs": 25
+    },
+    {
+      "drug": "MONTELUKAST",
+      "pvp_lost": 763.0,
+      "pacs": 50
+    },
+    {
+      "drug": "RELVAR",
+      "pvp_lost": 692.0,
+      "pacs": 21
+    },
+    {
+      "drug": "PAROXETINA",
+      "pvp_lost": 670.0,
+      "pacs": 110
+    }
+  ],
+  "overdue_alerts": [
+    {
+      "pac_id": "deae00",
+      "drug": "MIRTAZAPINA",
+      "family": "Antidepresivos",
+      "last_disp": "2025-09-12",
+      "last_prox": "2026-02-05",
+      "pvp": 16.39,
+      "missed": 1,
+      "status": "perdido",
+      "edad": 35,
+      "sexo": "F"
+    },
+    {
+      "pac_id": "ffd9fe",
+      "drug": "QUETIAPINA",
+      "family": "Antipsicóticos",
+      "last_disp": "2025-09-12",
+      "last_prox": "2026-01-29",
+      "pvp": 5.84,
+      "missed": 1,
+      "status": "en_riesgo",
+      "edad": 79,
+      "sexo": "M"
+    },
+    {
+      "pac_id": "7f0e72",
+      "drug": "EUTIROX",
+      "family": "Tiroides",
+      "last_disp": "2025-10-11",
+      "last_prox": "2026-02-09",
+      "pvp": 4.74,
+      "missed": 1,
+      "status": "en_riesgo",
+      "edad": 61,
+      "sexo": "F"
+    },
+    {
+      "pac_id": "b536bc",
+      "drug": "EUTIROX",
+      "family": "Tiroides",
+      "last_disp": "2025-07-10",
+      "last_prox": "2026-01-11",
+      "pvp": 4.34,
+      "missed": 1,
+      "status": "en_riesgo",
+      "edad": 45,
+      "sexo": "F"
+    },
+    {
+      "pac_id": "646661",
+      "drug": "EUTIROX",
+      "family": "Tiroides",
+      "last_disp": "2025-11-26",
+      "last_prox": "2026-02-25",
+      "pvp": 2.69,
+      "missed": 1,
+      "status": "en_riesgo",
+      "edad": 48,
+      "sexo": "F"
+    },
+    {
+      "pac_id": "1fddbd",
+      "drug": "EUTIROX",
+      "family": "Tiroides",
+      "last_disp": "2025-10-13",
+      "last_prox": "2026-01-12",
+      "pvp": 0.0,
+      "missed": 1,
+      "status": "perdido",
+      "edad": 40,
+      "sexo": "F"
+    },
+    {
+      "pac_id": "687b88",
+      "drug": "TELMISARTAN",
+      "family": "Antihipertensivos",
+      "last_disp": "2025-11-24",
+      "last_prox": "2026-01-12",
+      "pvp": 0.0,
+      "missed": 1,
+      "status": "perdido",
+      "edad": 78,
+      "sexo": "F"
+    }
+  ],
+  "socioeconomic": {
+    "segments": [
+      {
+        "name": "Exento 0%",
+        "copay": 0,
+        "code": "V",
+        "patients": 3753,
+        "pairs": 7881,
+        "fiel": 2824,
+        "en_riesgo": 1540,
+        "infiel_activo": 25,
+        "perdido": 1914,
+        "nuevo": 1578,
+        "tasa_fidelidad": 69.2,
+        "pvp_perdido": 17338.0,
+        "pvp_total": 302360.0
+      },
+      {
+        "name": "Pensionista 10%",
+        "copay": 10,
+        "code": "P",
+        "patients": 641,
+        "pairs": 1291,
+        "fiel": 416,
+        "en_riesgo": 214,
+        "infiel_activo": 7,
+        "perdido": 390,
+        "nuevo": 264,
+        "tasa_fidelidad": 61.3,
+        "pvp_perdido": 2745.0,
+        "pvp_total": 45816.0
+      },
+      {
+        "name": "Mutualista 30%",
+        "copay": 30,
+        "code": "M",
+        "patients": 31,
+        "pairs": 51,
+        "fiel": 17,
+        "en_riesgo": 10,
+        "infiel_activo": 0,
+        "perdido": 16,
+        "nuevo": 8,
+        "tasa_fidelidad": 62.8,
+        "pvp_perdido": 98.0,
+        "pvp_total": 1868.0
+      },
+      {
+        "name": "Activo 40%",
+        "copay": 40,
+        "code": "A1",
+        "patients": 3133,
+        "pairs": 4726,
+        "fiel": 1110,
+        "en_riesgo": 975,
+        "infiel_activo": 21,
+        "perdido": 1479,
+        "nuevo": 1141,
+        "tasa_fidelidad": 58.2,
+        "pvp_perdido": 11815.0,
+        "pvp_total": 85665.0
+      },
+      {
+        "name": "Activo 50%",
+        "copay": 50,
+        "code": "A2",
+        "patients": 1076,
+        "pairs": 1628,
+        "fiel": 411,
+        "en_riesgo": 340,
+        "infiel_activo": 4,
+        "perdido": 502,
+        "nuevo": 371,
+        "tasa_fidelidad": 59.7,
+        "pvp_perdido": 4247.0,
+        "pvp_total": 34563.0
+      },
+      {
+        "name": "Renta alta 60%",
+        "copay": 60,
+        "code": "A3",
+        "patients": 30,
+        "pairs": 47,
+        "fiel": 14,
+        "en_riesgo": 8,
+        "infiel_activo": 0,
+        "perdido": 10,
+        "nuevo": 15,
+        "tasa_fidelidad": 68.8,
+        "pvp_perdido": 86.0,
+        "pvp_total": 1036.0
+      }
+    ],
+    "correlation": -0.177,
+    "conclusion": "weak"
+  },
+  "polypharmacy": {
+    "groups": [
+      {
+        "label": "1 tratamiento",
+        "lo": 1,
+        "hi": 1,
+        "patients": 4969,
+        "pairs": 4969,
+        "evaluable": 10482,
+        "renewed": 6144,
+        "missed": 4338,
+        "tasa": 58.6,
+        "pvp_evaluable": 84078.0,
+        "pvp_renovado": 45477.0,
+        "pct_retenido": 54.1,
+        "fiel": 829,
+        "en_riesgo": 853,
+        "infiel_activo": 14,
+        "perdido": 2194,
+        "nuevo": 1079
+      },
+      {
+        "label": "2 tratamientos",
+        "lo": 2,
+        "hi": 2,
+        "patients": 1991,
+        "pairs": 3982,
+        "evaluable": 12149,
+        "renewed": 8971,
+        "missed": 3178,
+        "tasa": 73.8,
+        "pvp_evaluable": 88285.0,
+        "pvp_renovado": 63059.0,
+        "pct_retenido": 71.4,
+        "fiel": 346,
+        "en_riesgo": 530,
+        "infiel_activo": 17,
+        "perdido": 684,
+        "nuevo": 414
+      },
+      {
+        "label": "3 tratamientos",
+        "lo": 3,
+        "hi": 3,
+        "patients": 901,
+        "pairs": 2703,
+        "evaluable": 11581,
+        "renewed": 9596,
+        "missed": 1985,
+        "tasa": 82.9,
+        "pvp_evaluable": 86109.0,
+        "pvp_renovado": 70314.0,
+        "pct_retenido": 81.7,
+        "fiel": 171,
+        "en_riesgo": 309,
+        "infiel_activo": 9,
+        "perdido": 259,
+        "nuevo": 153
+      },
+      {
+        "label": "4-5 tratamientos",
+        "lo": 4,
+        "hi": 5,
+        "patients": 635,
+        "pairs": 2741,
+        "evaluable": 16053,
+        "renewed": 14252,
+        "missed": 1801,
+        "tasa": 88.8,
+        "pvp_evaluable": 127435.0,
+        "pvp_renovado": 112445.0,
+        "pct_retenido": 88.2,
+        "fiel": 130,
+        "en_riesgo": 277,
+        "infiel_activo": 11,
+        "perdido": 129,
+        "nuevo": 88
+      },
+      {
+        "label": "6-8 tratamientos",
+        "lo": 6,
+        "hi": 8,
+        "patients": 168,
+        "pairs": 1096,
+        "evaluable": 8503,
+        "renewed": 7842,
+        "missed": 661,
+        "tasa": 92.2,
+        "pvp_evaluable": 73245.0,
+        "pvp_renovado": 67373.0,
+        "pct_retenido": 92.0,
+        "fiel": 28,
+        "en_riesgo": 89,
+        "infiel_activo": 4,
+        "perdido": 16,
+        "nuevo": 31
+      },
+      {
+        "label": "9+ tratamientos",
+        "lo": 9,
+        "hi": 99,
+        "patients": 16,
+        "pairs": 154,
+        "evaluable": 1255,
+        "renewed": 1173,
+        "missed": 82,
+        "tasa": 93.5,
+        "pvp_evaluable": 13255.0,
+        "pvp_renovado": 12515.0,
+        "pct_retenido": 94.4,
+        "fiel": 2,
+        "en_riesgo": 11,
+        "infiel_activo": 0,
+        "perdido": 0,
+        "nuevo": 3
+      }
+    ],
+    "correlation": 0.513,
+    "conclusion": "positive"
+  }
+}

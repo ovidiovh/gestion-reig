@@ -160,7 +160,7 @@ export function puedeVer(
  */
 const TODOS_LOS_MODULOS = [
   "financiero_retiradas", "financiero_historial", "financiero_ingresos", "financiero_descuadres", "financiero_tarjetas",
-  "marketing_crm", "marketing_clientes",
+  "marketing_crm", "marketing_clientes", "marketing_fidelidad",
   "rrhh_calendario", "rrhh_guardias", "rrhh_vacaciones",
   "rrhh_equipo", "rrhh_nominas",
   "admin_panel",

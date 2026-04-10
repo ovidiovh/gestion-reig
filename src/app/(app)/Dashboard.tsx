@@ -748,6 +748,7 @@ export default function Dashboard({ userName, role, modulosPermitidos }: Dashboa
                   { label: "Historial", href: "/retiradas/historial", permiso: "financiero_historial" },
                   { label: "Ingresos", href: "/ingresos", permiso: "financiero_ingresos" },
                   { label: "CRM", href: "/crm", permiso: "marketing_crm" },
+                  { label: "Paciente crónico", href: "/marketing/cronico", permiso: "marketing_cronico" },
                   { label: "Equipo", href: "/rrhh/equipo", permiso: "rrhh_equipo" },
                   { label: "Nóminas", href: "/rrhh/nominas", permiso: "rrhh_nominas" },
                 ].filter((a) => puede(a.permiso));

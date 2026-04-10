@@ -56,6 +56,13 @@ export default auth((req) => {
     }
   }
 
+  // Marketing → Paciente crónico: solo admins
+  if (pathname.startsWith("/marketing/cronico")) {
+    if (req.auth.user?.role !== "admin") {
+      return NextResponse.redirect(new URL("/?error=sin-permisos-marketing", req.url));
+    }
+  }
+
   // Marketing → Clientes: whitelist por rol (admin) + permisos en BD.
   // Primera línea: solo admins pasan aquí. Segunda línea: layout.tsx re-chequea
   // contra permisos_modulo en BD (defensa en profundidad).
