@@ -149,7 +149,7 @@ export default function CronicoPage() {
           <NodeBox bg="#f1f8e9" border={VERDE_G4} borderStyle="dashed">
             <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>Sin evaluar</h3>
             <Dato>{fmt(4595)} pacientes</Dato>
-            <Sub>{fmt(5743)} pares - Solo 1 dispensacion por familia - No hay historial para juzgar fidelidad</Sub>
+            <Sub>{fmt(5743)} pares - <strong>1,25 pares/paciente</strong> - Solo 1 dispensacion por familia</Sub>
           </NodeBox>
 
           <SplitLabel>Vuelve otro dia?</SplitLabel>
@@ -218,7 +218,7 @@ export default function CronicoPage() {
               Evaluables: como es la relacion?
             </h3>
             <Dato>{fmt(5202)} pacientes</Dato>
-            <Sub>{fmt(10581)} pares - Tienen historial de renovacion</Sub>
+            <Sub>{fmt(10581)} pares - <strong>2,03 pares/paciente</strong> - Tienen historial de renovacion</Sub>
           </NodeBox>
 
           <SplitLabel>clasificacion</SplitLabel>
