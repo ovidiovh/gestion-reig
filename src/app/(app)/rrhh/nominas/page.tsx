@@ -402,7 +402,7 @@ export default function NominasPage() {
       <header style={{ marginBottom: 24 }}>
         <h1 style={{ color: "var(--color-reig-green-dark)", fontSize: 24, marginBottom: 4 }}>Nóminas</h1>
         <p style={{ color: "var(--color-reig-text-secondary)", fontSize: 14 }}>
-          Cálculo mensual automático (Paso 2.0). Sin generación de PDF ni historial todavía.
+          Cálculo mensual automático con generación de PDFs por empresa y archivo versionado en Google Drive.
         </p>
       </header>
 
