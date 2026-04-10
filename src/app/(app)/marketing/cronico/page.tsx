@@ -35,7 +35,7 @@ function NodeBox({
     <div style={{
       borderRadius: 10, padding: "14px 18px", background: bg,
       border: border ? `2px ${borderStyle || "solid"} ${border}` : undefined,
-      color: color || TXT, textAlign: textCenter ? "center" : undefined,
+      color: color || TXT, textAlign: textCenter === false ? "left" : "center",
       maxWidth, margin: maxWidth ? "0 auto" : undefined, ...style,
     }}>
       {children}
