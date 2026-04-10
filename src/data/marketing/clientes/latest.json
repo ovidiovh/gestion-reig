@@ -5,40 +5,40 @@
   "fuente": "Farmatic Control H + maestro inventario",
   "k_anon": 5,
   "kpis": {
-    "activos_12m": 17982,
-    "fidelizados_12m": 6357,
-    "historicos": 29363,
-    "polifarmacia_5plus_pct": 30.73,
-    "polifarmacia_10plus_pct": 8.97,
-    "polifarmacia_15plus_pct": 3.18,
+    "activos_12m": 18042,
+    "fidelizados_12m": 6374,
+    "historicos": 29399,
+    "polifarmacia_5plus_pct": 30.7,
+    "polifarmacia_10plus_pct": 8.98,
+    "polifarmacia_15plus_pct": 3.2,
     "patologias_detectadas": 12,
-    "inmunosup_total": 195,
+    "inmunosup_total": 196,
     "inmunosup_tx_pattern": 0
   },
   "piramide": [
     {
       "banda": "0-14",
-      "F": 841,
-      "M": 921
+      "F": 843,
+      "M": 925
     },
     {
       "banda": "15-44",
-      "F": 3476,
-      "M": 1938
+      "F": 3487,
+      "M": 1950
     },
     {
       "banda": "45-64",
-      "F": 4405,
-      "M": 2931
+      "F": 4419,
+      "M": 2938
     },
     {
       "banda": "65-74",
-      "F": 1107,
-      "M": 929
+      "F": 1109,
+      "M": 934
     },
     {
       "banda": "75+",
-      "F": 886,
+      "F": 889,
       "M": 548
     }
   ],
@@ -53,249 +53,249 @@
       "X": "Otro / técnico (excluido del perfil)"
     },
     "activos": {
-      "V": 5808,
-      "P": 948,
-      "A1": 7711,
-      "A2": 2814,
+      "V": 5823,
+      "P": 950,
+      "A1": 7738,
+      "A2": 2825,
       "A3": 50,
       "M": 108,
-      "X": 543
+      "X": 548
     },
     "fidelizados": {
-      "V": 2813,
+      "V": 2820,
       "P": 395,
-      "A1": 2252,
-      "A2": 803,
+      "A1": 2257,
+      "A2": 807,
       "A3": 21,
       "M": 33,
-      "X": 40
+      "X": 41
     }
   },
   "patologias": [
     {
       "nombre": "Hipertensión arterial",
-      "n": 4105,
-      "pct": 22.83
+      "n": 4118,
+      "pct": 22.82
     },
     {
       "nombre": "Dolor crónico (opioides + gabapentinoides)",
-      "n": 2993,
-      "pct": 16.64
+      "n": 3004,
+      "pct": 16.65
     },
     {
       "nombre": "Salud mental — depresión",
-      "n": 2884,
-      "pct": 16.04
+      "n": 2893,
+      "pct": 16.03
     },
     {
       "nombre": "Dislipemia",
-      "n": 2845,
+      "n": 2854,
       "pct": 15.82
     },
     {
       "nombre": "Salud mental — ansiedad/insomnio (BZD)",
-      "n": 2807,
-      "pct": 15.61
+      "n": 2819,
+      "pct": 15.62
     },
     {
       "nombre": "EPOC / Asma",
-      "n": 2113,
-      "pct": 11.75
+      "n": 2121,
+      "pct": 11.76
     },
     {
       "nombre": "Diabetes (con tratamiento)",
-      "n": 1847,
-      "pct": 10.27
+      "n": 1857,
+      "pct": 10.29
     },
     {
       "nombre": "Anticoagulación / antiagregación",
-      "n": 1604,
+      "n": 1609,
       "pct": 8.92
     },
     {
       "nombre": "Salud mental — antipsicóticos",
-      "n": 1056,
-      "pct": 5.87
+      "n": 1057,
+      "pct": 5.86
     },
     {
       "nombre": "Hipotiroidismo",
-      "n": 540,
+      "n": 542,
       "pct": 3.0
     },
     {
       "nombre": "Inmunosupresión (incluye trasplante y autoinmunes)",
-      "n": 195,
-      "pct": 1.08
+      "n": 196,
+      "pct": 1.09
     },
     {
       "nombre": "Osteoporosis",
       "n": 109,
-      "pct": 0.61
+      "pct": 0.6
     }
   ],
   "polifarmacia": {
     "5plus": {
-      "n": 5525,
-      "pct": 30.73
+      "n": 5539,
+      "pct": 30.7
     },
     "10plus": {
-      "n": 1613,
-      "pct": 8.97
+      "n": 1620,
+      "pct": 8.98
     },
     "15plus": {
-      "n": 572,
-      "pct": 3.18
+      "n": 577,
+      "pct": 3.2
     }
   },
   "top_grupos": [
     {
       "cod": "M01AE",
       "nombre": "DERIVADOS DEL ACIDO PROPIONICO",
-      "pacientes": 4024,
+      "pacientes": 4038,
       "pct": 22.38
     },
     {
       "cod": "N02BE",
       "nombre": "ANILIDAS",
-      "pacientes": 3740,
-      "pct": 20.8
+      "pacientes": 3751,
+      "pct": 20.79
     },
     {
       "cod": "R06AX",
       "nombre": "OTROS ANTIHISTAMINICOS PARA USO SISTEMICO",
-      "pacientes": 3130,
-      "pct": 17.41
+      "pacientes": 3139,
+      "pct": 17.4
     },
     {
       "cod": "A02BC",
       "nombre": "INHIBIDORES DE LA BOMBA DE PROTONES",
-      "pacientes": 2470,
-      "pct": 13.74
+      "pacientes": 2475,
+      "pct": 13.72
     },
     {
       "cod": "C10AA",
       "nombre": "C10AA",
-      "pacientes": 2020,
+      "pacientes": 2026,
       "pct": 11.23
     },
     {
       "cod": "N02AJ",
       "nombre": "OPIOIDES COMBINADOS CON OTROS ANALGESICOS",
-      "pacientes": 1958,
-      "pct": 10.89
+      "pacientes": 1969,
+      "pct": 10.91
     },
     {
       "cod": "N05BA",
       "nombre": "DERIVADOS DE LA BENZODIAZEPINA",
-      "pacientes": 1867,
+      "pacientes": 1873,
       "pct": 10.38
     },
     {
       "cod": "R01AD",
       "nombre": "CORTICOSTEROIDES",
-      "pacientes": 1785,
-      "pct": 9.93
+      "pacientes": 1790,
+      "pct": 9.92
     },
     {
       "cod": "N02BB",
       "nombre": "PIRAZOLONAS",
-      "pacientes": 1662,
-      "pct": 9.24
+      "pacientes": 1666,
+      "pct": 9.23
     },
     {
       "cod": "N06AX",
       "nombre": "OTROS ANTIDEPRESIVOS",
-      "pacientes": 1613,
-      "pct": 8.97
+      "pacientes": 1617,
+      "pct": 8.96
     },
     {
       "cod": "N06AB",
       "nombre": "INHIBIDORES SELECTIVOS DE LA RECAPTACION DE SEROTONINA",
-      "pacientes": 1313,
-      "pct": 7.3
+      "pacientes": 1319,
+      "pct": 7.31
     },
     {
       "cod": "D07AC",
       "nombre": "CORTICOSTEROIDES POTENTES (GRUPO III)",
-      "pacientes": 1139,
-      "pct": 6.33
+      "pacientes": 1145,
+      "pct": 6.35
     },
     {
       "cod": "M03BA",
       "nombre": "ESTERES DEL ACIDO CARBAMICO",
-      "pacientes": 1035,
+      "pacientes": 1040,
       "pct": 5.76
     },
     {
       "cod": "C09CA",
       "nombre": "ANTAGONISTAS DE LOS RECEPTORES DE ANGIOTENSINA II, MONOTERAPIA",
-      "pacientes": 1012,
-      "pct": 5.63
+      "pacientes": 1014,
+      "pct": 5.62
     },
     {
       "cod": "N02BF",
       "nombre": "GABAPENTINOIDES",
       "pacientes": 991,
-      "pct": 5.51
+      "pct": 5.49
     },
     {
       "cod": "C09AA",
       "nombre": "INHIBIDORES DE LA ECA, MONOFARMACOS",
-      "pacientes": 901,
-      "pct": 5.01
+      "pacientes": 905,
+      "pct": 5.02
     },
     {
       "cod": "D06AX",
       "nombre": "OTROS ANTIBIOTICOS PARA USO TOPICO",
-      "pacientes": 896,
+      "pacientes": 898,
       "pct": 4.98
     },
     {
       "cod": "D01AC",
       "nombre": "DERIVADOS IMIDAZOLICOS Y TRIAZOLICOS",
-      "pacientes": 848,
-      "pct": 4.72
+      "pacientes": 853,
+      "pct": 4.73
     },
     {
       "cod": "B01AC",
       "nombre": "ALGODÓN EN ZIG-ZAG",
-      "pacientes": 781,
-      "pct": 4.34
+      "pacientes": 782,
+      "pct": 4.33
     },
     {
       "cod": "A03FA",
       "nombre": "PROPULSIVOS",
-      "pacientes": 764,
+      "pacientes": 767,
       "pct": 4.25
     },
     {
       "cod": "H02AB",
       "nombre": "GLUCOCORTICOIDES",
-      "pacientes": 754,
-      "pct": 4.19
+      "pacientes": 761,
+      "pct": 4.22
     },
     {
       "cod": "R03AC",
       "nombre": "AGONISTAS SELECTIVOS DE RECEPTORES BETA-2 ADRENERGICOS",
-      "pacientes": 752,
+      "pacientes": 754,
       "pct": 4.18
     },
     {
       "cod": "A11CC",
       "nombre": "VITAMINA D Y ANALOGOS",
-      "pacientes": 720,
-      "pct": 4.0
+      "pacientes": 725,
+      "pct": 4.02
     },
     {
       "cod": "R06AE",
       "nombre": "DERIVADOS DE LA PIPERAZINA",
-      "pacientes": 718,
-      "pct": 3.99
+      "pacientes": 724,
+      "pct": 4.01
     },
     {
-      "cod": "C10BA",
-      "nombre": "COMBINACIONES DE VARIOS AGENTES MODIFICADORES DE LOS LIPIDOS",
-      "pacientes": 710,
+      "cod": "A10BD",
+      "nombre": "COMBINACIONES DE FARMACOS HIPOGLUCEMIANTES ORALES",
+      "pacientes": 713,
       "pct": 3.95
     }
   ],
@@ -312,26 +312,26 @@
       {
         "patologia": "Hipertensión arterial",
         "valores": [
-          32.4,
-          41.24,
-          16.24,
-          18.44,
+          32.41,
+          41.26,
+          16.23,
+          18.48,
           34.0,
           18.52
         ],
         "denoms": [
-          5808,
-          948,
-          7711,
-          2814,
+          5823,
+          950,
+          7738,
+          2825,
           50,
           108
         ],
         "n": [
-          1882,
-          391,
-          1252,
-          519,
+          1887,
+          392,
+          1256,
+          522,
           17,
           20
         ]
@@ -339,26 +339,26 @@
       {
         "patologia": "Diabetes (con tratamiento)",
         "valores": [
-          16.72,
-          19.41,
-          6.08,
-          6.01,
+          16.78,
+          19.37,
+          6.07,
+          6.09,
           16.0,
           5.56
         ],
         "denoms": [
-          5808,
-          948,
-          7711,
-          2814,
+          5823,
+          950,
+          7738,
+          2825,
           50,
           108
         ],
         "n": [
-          971,
+          977,
           184,
-          469,
-          169,
+          470,
+          172,
           8,
           6
         ]
@@ -366,26 +366,26 @@
       {
         "patologia": "Dislipemia",
         "valores": [
-          25.17,
-          29.75,
-          9.73,
-          11.23,
+          25.18,
+          29.79,
+          9.71,
+          11.29,
           30.0,
           14.81
         ],
         "denoms": [
-          5808,
-          948,
-          7711,
-          2814,
+          5823,
+          950,
+          7738,
+          2825,
           50,
           108
         ],
         "n": [
-          1462,
-          282,
-          750,
-          316,
+          1466,
+          283,
+          751,
+          319,
           15,
           16
         ]
@@ -394,25 +394,25 @@
         "patologia": "EPOC / Asma",
         "valores": [
           15.2,
-          12.13,
+          12.11,
           10.13,
-          11.16,
+          11.22,
           12.0,
           8.33
         ],
         "denoms": [
-          5808,
-          948,
-          7711,
-          2814,
+          5823,
+          950,
+          7738,
+          2825,
           50,
           108
         ],
         "n": [
-          883,
+          885,
           115,
-          781,
-          314,
+          784,
+          317,
           6,
           9
         ]
@@ -420,26 +420,26 @@
       {
         "patologia": "Salud mental — depresión",
         "valores": [
-          22.09,
-          17.62,
-          13.18,
-          13.79,
+          22.08,
+          17.58,
+          13.14,
+          13.91,
           12.0,
           10.19
         ],
         "denoms": [
-          5808,
-          948,
-          7711,
-          2814,
+          5823,
+          950,
+          7738,
+          2825,
           50,
           108
         ],
         "n": [
-          1283,
+          1286,
           167,
-          1016,
-          388,
+          1017,
+          393,
           6,
           11
         ]
@@ -447,25 +447,25 @@
       {
         "patologia": "Salud mental — ansiedad/insomnio (BZD)",
         "valores": [
-          21.99,
-          19.3,
-          12.29,
-          12.76,
+          22.0,
+          19.37,
+          12.34,
+          12.71,
           18.0,
           9.26
         ],
         "denoms": [
-          5808,
-          948,
-          7711,
-          2814,
+          5823,
+          950,
+          7738,
+          2825,
           50,
           108
         ],
         "n": [
-          1277,
-          183,
-          948,
+          1281,
+          184,
+          955,
           359,
           9,
           10
@@ -474,23 +474,23 @@
       {
         "patologia": "Salud mental — antipsicóticos",
         "valores": [
-          11.12,
-          5.06,
-          3.68,
-          2.56,
+          11.11,
+          5.05,
+          3.67,
+          2.55,
           2.0,
           0.93
         ],
         "denoms": [
-          5808,
-          948,
-          7711,
-          2814,
+          5823,
+          950,
+          7738,
+          2825,
           50,
           108
         ],
         "n": [
-          646,
+          647,
           48,
           284,
           72,
@@ -501,26 +501,26 @@
       {
         "patologia": "Dolor crónico (opioides + gabapentinoides)",
         "valores": [
-          22.88,
-          21.84,
+          22.93,
+          21.79,
           13.81,
-          12.9,
+          12.88,
           12.0,
           9.26
         ],
         "denoms": [
-          5808,
-          948,
-          7711,
-          2814,
+          5823,
+          950,
+          7738,
+          2825,
           50,
           108
         ],
         "n": [
-          1329,
+          1335,
           207,
-          1065,
-          363,
+          1069,
+          364,
           6,
           10
         ]
@@ -528,25 +528,25 @@
       {
         "patologia": "Anticoagulación / antiagregación",
         "valores": [
-          15.55,
-          17.3,
-          4.79,
-          5.29,
+          15.58,
+          17.26,
+          4.78,
+          5.27,
           16.0,
           10.19
         ],
         "denoms": [
-          5808,
-          948,
-          7711,
-          2814,
+          5823,
+          950,
+          7738,
+          2825,
           50,
           108
         ],
         "n": [
-          903,
+          907,
           164,
-          369,
+          370,
           149,
           8,
           11
@@ -556,24 +556,24 @@
         "patologia": "Hipotiroidismo",
         "valores": [
           3.62,
-          4.54,
+          4.53,
           2.65,
-          2.81,
+          2.8,
           0.0,
           2.78
         ],
         "denoms": [
-          5808,
-          948,
-          7711,
-          2814,
+          5823,
+          950,
+          7738,
+          2825,
           50,
           108
         ],
         "n": [
-          210,
+          211,
           43,
-          204,
+          205,
           79,
           null,
           null
@@ -582,25 +582,25 @@
       {
         "patologia": "Inmunosupresión",
         "valores": [
-          1.5,
+          1.49,
           2.0,
-          0.84,
-          0.82,
+          0.85,
+          0.81,
           0.0,
           0.93
         ],
         "denoms": [
-          5808,
-          948,
-          7711,
-          2814,
+          5823,
+          950,
+          7738,
+          2825,
           50,
           108
         ],
         "n": [
           87,
           19,
-          65,
+          66,
           23,
           null,
           null
@@ -617,10 +617,10 @@
           0.93
         ],
         "denoms": [
-          5808,
-          948,
-          7711,
-          2814,
+          5823,
+          950,
+          7738,
+          2825,
           50,
           108
         ],
